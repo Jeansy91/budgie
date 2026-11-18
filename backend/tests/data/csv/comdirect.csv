@@ -1,0 +1,15 @@
+;
+"Umsätze Girokonto";"Zeitraum: 30 Tage";
+"Neuer Kontostand";"2.345,67 EUR";
+
+"Buchungstag";"Wertstellung (Valuta)";"Vorgang";"Buchungstext";"Umsatz in EUR";
+"offen";"--";"Lastschrift / Belastung";"Tankstelle Nord";"-60,00";
+"14.11.2026";"14.11.2026";"Lastschrift / Belastung";"Auftraggeber: REWE Markt GmbH Buchungstext: REWE SAGT DANKE 12345 Ref. 8F2C1234";"-54,32";
+"30.10.2026";"30.10.2026";"Übertrag / Überweisung";"Auftraggeber: Arbeitgeber AG Kto/IBAN: DE75512108001245126199 BLZ/BIC: SOGEDEFFXXX Buchungstext: Gehalt Oktober 2026 Ref. 1A2B3C";"3.200,00";
+
+"Alter Kontostand";"-799,68 EUR";
+
+"Umsätze Visa-Karte (Kreditkarte)";"Zeitraum: 30 Tage";
+
+"Buchungstag";"Umsatztag";"Vorgang";"Referenz";"Buchungstext";"Umsatz in EUR";
+"10.11.2026";"09.11.2026";"Visa-Umsatz";"1234";"ONLINE SHOP";"-19,99";

@@ -1,0 +1,3 @@
+"Booking Date","Value Date","Partner Name","Partner Iban",Type,"Payment Reference","Account Name","Amount (EUR)","Original Amount","Original Currency","Exchange Rate"
+2026-10-30,2026-10-30,"Arbeitgeber AG",DE75512108001245126199,Credit Transfer,"Gehalt Oktober 2026","Hauptkonto",3200.00,,,
+2026-11-14,2026-11-14,"REWE Markt GmbH",,Presentment,"-","Hauptkonto",-54.32,-54.32,EUR,1.0

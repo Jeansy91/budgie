@@ -20,6 +20,7 @@ from sqlalchemy import (
     ForeignKey,
     Float,
     Integer,
+    JSON,
     LargeBinary,
     Numeric,
     String,
@@ -201,6 +202,24 @@ class ImportBatch(Base):
     rows_imported: Mapped[int] = mapped_column(Integer, default=0)
     rows_duplicate: Mapped[int] = mapped_column(Integer, default=0)
     rows_categorized: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CsvProfile(Base):
+    """A saved column assignment for CSV exports of a bank without a built-in layout.
+
+    Recognized by the header row of the file (`signature`), see app/importers/bank_csv.py.
+    """
+
+    __tablename__ = "csv_profiles"
+    __table_args__ = (UniqueConstraint("household_id", "signature"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    signature: Mapped[str] = mapped_column(String(64))
+    # delimiter, header_row, columns (field → index), date_format, decimal
+    mapping: Mapped[dict] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

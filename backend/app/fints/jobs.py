@@ -1,9 +1,11 @@
 """Sync jobs with TAN approval.
 
-A sync runs in its own thread because the bank may wait for an approval in
-between: with ING you confirm access in the banking app ("decoupled"), with
-other mechanisms you type in a TAN. The UI polls the job state and submits the
-TAN when needed.
+A sync runs in its own thread because the bank may wait for input in between:
+with app approval ("decoupled", e.g. ING, pushTAN 2.0) you confirm access in
+the banking app, with other mechanisms (chipTAN, photoTAN, smsTAN) you type in
+a TAN. On the first sync the user may also have to pick a TAN mechanism or a
+TAN medium (e.g. which phone or TAN generator). The UI polls the job state and
+submits the TAN or the choice when needed.
 
 The FinTS dialog and the PIN only live in this thread's memory and are gone
 after the sync. Jobs are therefore kept in the memory of the API process; the
@@ -34,7 +36,7 @@ from sqlalchemy import func, select
 from .. import crypto
 from ..config import get_settings
 from ..db import SessionLocal
-from ..importers.ing_csv import normalize_iban
+from ..importers.common import normalize_iban
 from ..importers.store import store_transactions
 from ..models import Account, BankConnection, ImportBatch, Transaction, User
 from .convert import to_parsed
@@ -55,6 +57,10 @@ JOB_TTL_SECONDS = 30 * 60
 client_factory: Callable[..., FinTS3PinTanClient] = FinTS3PinTanClient
 
 
+# Resets everything the UI shows while waiting for input
+_CLEARED = {"challenge": None, "challenge_image": None, "challenge_hhduc": None, "choice_kind": None, "options": []}
+
+
 class JobCancelled(Exception):
     pass
 
@@ -68,16 +74,22 @@ class SyncJob:
     id: str
     user_id: int
     connection_id: int
-    # running → (need_tan → running)* → done | error | cancelled
+    # running → (need_choice | need_tan → running)* → done | error | cancelled
     state: str = "running"
     message: str = "Verbinde mit der Bank …"
     challenge: str | None = None
     challenge_image: str | None = None
+    # Flicker code for chipTAN optical (HHD 1.4), shown as text for manual entry
+    challenge_hhduc: str | None = None
     decoupled: bool = False
+    # need_choice: "tan_mechanism" or "tan_medium", with options [{id, name, decoupled}]
+    choice_kind: str | None = None
+    options: list[dict] = field(default_factory=list)
     results: list[dict] = field(default_factory=list)
     error: str | None = None
     updated: float = field(default_factory=time.monotonic)
     _tan: str | None = field(default=None, repr=False)
+    _choice: str | None = field(default=None, repr=False)
     _tan_event: threading.Event = field(default_factory=threading.Event, repr=False)
     _cancel: threading.Event = field(default_factory=threading.Event, repr=False)
 
@@ -93,6 +105,10 @@ class SyncJob:
 
     def submit_tan(self, tan: str) -> None:
         self._tan = tan
+        self._tan_event.set()
+
+    def submit_choice(self, option: str) -> None:
+        self._choice = option
         self._tan_event.set()
 
     def cancel(self) -> None:
@@ -143,10 +159,10 @@ def _run(job: SyncJob, pin: str, start_date: date | None) -> None:
             connection.last_sync_at = datetime.now(UTC)
             connection.last_error = None
             db.commit()
-            job.set(state="done", message="Abruf abgeschlossen", challenge=None, challenge_image=None)
+            job.set(state="done", message="Abruf abgeschlossen", **_CLEARED)
         except JobCancelled:
             db.rollback()
-            job.set(state="cancelled", message="Abruf abgebrochen", challenge=None, challenge_image=None)
+            job.set(state="cancelled", message="Abruf abgebrochen", **_CLEARED)
         except Exception as exc:  # noqa: BLE001  every error should reach the UI
             db.rollback()
             text = _error_text(exc)
@@ -155,7 +171,7 @@ def _run(job: SyncJob, pin: str, start_date: date | None) -> None:
             if connection is not None:
                 connection.last_error = text
                 db.commit()
-            job.set(state="error", error=text, message="Abruf fehlgeschlagen", challenge=None, challenge_image=None)
+            job.set(state="error", error=text, message="Abruf fehlgeschlagen", **_CLEARED)
 
 
 def _error_text(exc: Exception) -> str:
@@ -193,7 +209,7 @@ def _sync(db, job: SyncJob, connection: BankConnection, pin: str, start_date: da
         from_data=state,
     )
 
-    _choose_tan_mechanism(client, connection)
+    _choose_tan_mechanism(job, client, connection)
     _check_cancel(job)
 
     with client:
@@ -247,34 +263,70 @@ def _sync(db, job: SyncJob, connection: BankConnection, pin: str, start_date: da
     connection.client_state_enc = crypto.encrypt(client.deconstruct(including_private=True))
 
 
-def _choose_tan_mechanism(client, connection: BankConnection) -> None:
-    """Selects the TAN mechanism on the first sync, preferring app approval."""
-    if client.get_current_tan_mechanism():
+def _choose_tan_mechanism(job: SyncJob, client, connection: BankConnection) -> None:
+    """Selects the TAN mechanism and, if the bank requires one, the TAN medium.
+
+    On the first sync of a connection, app approval is preferred when the bank
+    offers exactly one such mechanism; otherwise the user picks. After the user
+    reset the choice (stored client state, but no mechanism), they always pick.
+    """
+    reset = connection.client_state_enc is not None and connection.tan_mechanism is None
+    if client.get_current_tan_mechanism() and not reset:
         return
-    client.fetch_tan_mechanisms()
+    if not client.get_current_tan_mechanism():
+        client.fetch_tan_mechanisms()
     mechanisms = client.get_tan_mechanisms()
     if len(mechanisms) > 1:
-        chosen = None
+        decoupled = [f for f, p in mechanisms.items() if _is_decoupled(p)]
         if connection.tan_mechanism in mechanisms:
             chosen = connection.tan_mechanism
+        elif len(decoupled) == 1 and not reset:
+            chosen = decoupled[0]
         else:
-            for function, params in mechanisms.items():
-                if getattr(params, "decoupled_max_poll_number", None) is not None:
-                    chosen = function
-                    break
-            chosen = chosen or next(iter(mechanisms))
+            options = [
+                {"id": f, "name": getattr(p, "name", None) or f, "decoupled": _is_decoupled(p)}
+                for f, p in mechanisms.items()
+            ]
+            chosen = _ask(job, "tan_mechanism", "Bitte wähle ein TAN-Verfahren.", options)
         client.set_tan_mechanism(chosen)
     current = client.get_current_tan_mechanism()
     if current in mechanisms:
         connection.tan_mechanism = current
         connection.tan_mechanism_name = getattr(mechanisms[current], "name", None) or current
 
+    if reset:
+        client.selected_tan_medium = None
     if client.selected_tan_medium is None and client.is_tan_media_required():
         _usage, media = client.get_tan_media()
-        if media:
+        names = [m for m in (getattr(m, "tan_medium_name", None) for m in media) if m]
+        if len(names) > 1:
+            options = [{"id": n, "name": n, "decoupled": False} for n in names]
+            chosen = _ask(job, "tan_medium", "Bitte wähle das Gerät für die TAN.", options)
+            medium = next(m for m in media if getattr(m, "tan_medium_name", None) == chosen)
+            client.set_tan_medium(medium)
+        elif media:
             client.set_tan_medium(media[0])
         else:
             client.selected_tan_medium = ""
+
+
+def _is_decoupled(params) -> bool:
+    return getattr(params, "decoupled_max_poll_number", None) is not None
+
+
+def _ask(job: SyncJob, kind: str, message: str, options: list[dict]) -> str:
+    """Waits until the user picks one of the options in the UI."""
+    job._tan_event.clear()
+    job._choice = None
+    job.set(state="need_choice", choice_kind=kind, options=options, message=message)
+    if not job._tan_event.wait(get_settings().fints_tan_timeout):
+        raise JobFailed("Keine Auswahl getroffen, der Abruf wurde abgebrochen")
+    _check_cancel(job)
+    choice, job._choice = job._choice, None
+    if choice not in {o["id"] for o in options}:
+        raise JobFailed("Ungültige Auswahl")
+    job.set(state="running", message="Verbinde mit der Bank …", **_CLEARED)
+    return choice
 
 
 def _resolve(job: SyncJob, client, response):
@@ -283,7 +335,7 @@ def _resolve(job: SyncJob, client, response):
     poll_seconds = DECOUPLED_POLL_SECONDS
     while isinstance(response, NeedTANResponse):
         image = None
-        if response.challenge_matrix:
+        if getattr(response, "challenge_matrix", None):
             mime, data = response.challenge_matrix
             image = f"data:{mime};base64,{base64.b64encode(data).decode()}"
         job.set(
@@ -291,6 +343,7 @@ def _resolve(job: SyncJob, client, response):
             decoupled=bool(response.decoupled),
             challenge=response.challenge or None,
             challenge_image=image,
+            challenge_hhduc=getattr(response, "challenge_hhduc", None) or None,
             message=(
                 "Bitte den Zugriff in der Banking-App freigeben."
                 if response.decoupled
@@ -311,10 +364,10 @@ def _resolve(job: SyncJob, client, response):
                 raise JobFailed("Keine TAN eingegangen, der Abruf wurde abgebrochen")
             _check_cancel(job)
             tan, job._tan = job._tan or "", None
-            job.set(state="running", message="TAN wird geprüft …", challenge=None, challenge_image=None)
+            job.set(state="running", message="TAN wird geprüft …", **_CLEARED)
             response = client.send_tan(response, tan)
     if job.state == "need_tan":
-        job.set(state="running", message="Freigabe erhalten …", challenge=None, challenge_image=None)
+        job.set(state="running", message="Freigabe erhalten …", **_CLEARED)
     return response
 
 

@@ -65,14 +65,23 @@ class FakeBank:
     def fetch_tan_mechanisms(self):
         self.mechanism = "900"
 
+    mechanisms = {"900": Mechanism("photoTAN"), "902": Mechanism("ING App", decoupled_max_poll_number=60)}
+    media: list = []
+
     def get_tan_mechanisms(self):
-        return {"900": Mechanism("photoTAN"), "902": Mechanism("ING App", decoupled_max_poll_number=60)}
+        return self.mechanisms
 
     def set_tan_mechanism(self, function):
         self.mechanism = function
 
     def is_tan_media_required(self):
-        return False
+        return bool(self.media)
+
+    def get_tan_media(self):
+        return None, self.media
+
+    def set_tan_medium(self, medium):
+        self.selected_tan_medium = medium.tan_medium_name
 
     # Dialog
     def __enter__(self):
@@ -112,6 +121,8 @@ def fake_bank(monkeypatch):
     FakeBank.instances = []
     FakeBank.decoupled = True
     FakeBank.wrong_pin = False
+    FakeBank.mechanisms = {"900": Mechanism("photoTAN"), "902": Mechanism("ING App", decoupled_max_poll_number=60)}
+    FakeBank.media = []
     return FakeBank
 
 
@@ -304,3 +315,126 @@ def test_delete_connection_keeps_account(admin):
     assert admin.delete(f"/api/fints/connections/{conn['id']}").status_code == 204
     accounts = admin.get("/api/accounts").json()
     assert accounts[0]["bank_connection_id"] is None and accounts[0]["transaction_count"] == 5
+
+
+# --- Other banks --------------------------------------------------------------
+
+SPARKASSE_MECHANISMS = {
+    "910": Mechanism("chipTAN optisch"),
+    "913": Mechanism("chipTAN QR"),
+    "921": Mechanism("pushTAN 2.0", decoupled_max_poll_number=60),
+    "922": Mechanism("App-Freigabe Zweitgerät", decoupled_max_poll_number=60),
+}
+
+
+@dataclass
+class Medium:
+    tan_medium_name: str
+
+
+def test_bank_directory(admin):
+    from app.fints import directory
+
+    assert directory.lookup("50010517").server_url == "https://fints.ing.de/fints/"
+    # Cooperative banks moved to Atruvia
+    assert all("atruvia.de" in b.server_url for b in directory.search("volksbank") if b.server_url)
+    hits = admin.get("/api/fints/banks", params={"q": "dkb"}).json()
+    assert hits[0]["bank_code"] == "12030000" and hits[0]["server_url"].startswith("https://")
+    assert admin.get("/api/fints/banks", params={"q": "5001"}).json()[0]["bank_code"].startswith("5001")
+    assert admin.get("/api/fints/banks/12030000").json()["name"].startswith("Deutsche Kreditbank")
+    assert admin.get("/api/fints/banks/99999999").status_code == 404
+
+
+def test_official_institute_list(monkeypatch, tmp_path):
+    from app.fints import directory
+
+    csv = (
+        "Nr.;BLZ;BIC;Institut;Ort;RZ;Organisation;HBCI-Zugang DNS;PIN/TAN-Zugang URL;Version\n"
+        "1;12345678;TESTDEFFXXX;Testbank eG;Musterstadt;;BVR;;https://hbci-pintan.gad.de/cgi-bin/hbciservlet;FinTS V3.0\n"
+    ).encode("cp1252")
+    path = tmp_path / "fints_institute.csv"
+    path.write_bytes(csv)
+    monkeypatch.setattr(get_settings(), "fints_institutes_file", str(path))
+    directory.reload()
+    try:
+        bank = directory.lookup("12345678")
+        assert bank.name == "Testbank eG" and bank.server_url == "https://fints2.atruvia.de/cgi-bin/hbciservlet"
+        assert directory.lookup("50010517") is None
+    finally:
+        monkeypatch.undo()
+        directory.reload()
+
+
+def test_connection_takes_server_from_directory(admin):
+    conn = connect(admin, name="DKB", bank_code="12030000")
+    assert conn["server_url"] == "https://banking-dkb.s-fints-pt-dkb.de/fints30"
+    r = admin.post("/api/fints/connections", json={"login": "x", "bank_code": "99999999"})
+    assert r.status_code == 400 and "FinTS-Adresse" in r.json()["detail"]
+    conn = connect(admin, bank_code="99999999", server_url="https://fints.example.org/")
+    assert conn["server_url"] == "https://fints.example.org/"
+    r = admin.patch(f"/api/fints/connections/{conn['id']}", json={"server_url": "https://fints2.example.org/"})
+    assert r.json()["server_url"] == "https://fints2.example.org/"
+
+
+def test_user_picks_tan_mechanism_and_medium(admin):
+    """Two app approvals and two devices (as with many Sparkassen): the user chooses."""
+    FakeBank.mechanisms = SPARKASSE_MECHANISMS
+    FakeBank.media = [Medium("iPhone"), Medium("Tablet")]
+    conn = connect(admin, name="Sparkasse", bank_code="37050198")
+    job = admin.post(f"/api/fints/connections/{conn['id']}/sync", json={"pin": "12345"}).json()
+
+    job = wait(admin, job["id"], until=("need_choice", "error"))
+    assert job["state"] == "need_choice" and job["choice_kind"] == "tan_mechanism"
+    assert [o["id"] for o in job["options"]] == ["910", "913", "921", "922"]
+    assert [o["decoupled"] for o in job["options"]] == [False, False, True, True]
+    assert admin.post(f"/api/fints/jobs/{job['id']}/choice", json={"option": "999"}).status_code == 400
+    admin.post(f"/api/fints/jobs/{job['id']}/choice", json={"option": "921"})
+
+    time.sleep(0.05)
+    job = wait(admin, job["id"], until=("need_choice", "error"))
+    assert job["choice_kind"] == "tan_medium" and [o["name"] for o in job["options"]] == ["iPhone", "Tablet"]
+    admin.post(f"/api/fints/jobs/{job['id']}/choice", json={"option": "Tablet"})
+
+    job = wait(admin, job["id"])
+    assert job["state"] == "done", job
+    bank = FakeBank.instances[0]
+    assert bank.mechanism == "921" and bank.selected_tan_medium == "Tablet"
+    assert bank.server == "https://banking-rl7.s-fints-pt-rl.de/fints30"
+    assert admin.get("/api/fints/connections").json()[0]["tan_mechanism_name"] == "pushTAN 2.0"
+
+
+def test_single_app_approval_is_chosen_automatically(admin):
+    FakeBank.mechanisms = {"910": Mechanism("chipTAN optisch"), "921": Mechanism("pushTAN 2.0", 60)}
+    FakeBank.media = [Medium("iPhone")]
+    conn = connect(admin, bank_code="37050198")
+    job = wait(admin, admin.post(f"/api/fints/connections/{conn['id']}/sync", json={"pin": "12345"}).json()["id"])
+    assert job["state"] == "done"
+    assert FakeBank.instances[0].mechanism == "921" and FakeBank.instances[0].selected_tan_medium == "iPhone"
+
+
+def test_reset_tan_mechanism_asks_again(admin):
+    conn = connect(admin)
+    wait(admin, admin.post(f"/api/fints/connections/{conn['id']}/sync", json={"pin": "12345"}).json()["id"])
+    r = admin.patch(f"/api/fints/connections/{conn['id']}", json={"reset_tan_mechanism": True})
+    assert r.json()["tan_mechanism_name"] is None
+
+    FakeBank.decoupled = False
+    job = admin.post(f"/api/fints/connections/{conn['id']}/sync", json={"pin": "12345"}).json()
+    job = wait(admin, job["id"], until=("need_choice", "error"))
+    assert job["choice_kind"] == "tan_mechanism"
+    admin.post(f"/api/fints/jobs/{job['id']}/choice", json={"option": "900"})
+    job = wait(admin, job["id"], until=("need_tan", "error"))
+    admin.post(f"/api/fints/jobs/{job['id']}/tan", json={"tan": "123456"})
+    assert wait(admin, job["id"])["state"] == "done"
+    assert FakeBank.instances[1].mechanism == "900"
+    assert admin.get("/api/fints/connections").json()[0]["tan_mechanism_name"] == "photoTAN"
+
+
+def test_cancel_while_choosing(admin):
+    FakeBank.mechanisms = SPARKASSE_MECHANISMS
+    conn = connect(admin, bank_code="37050198")
+    job = admin.post(f"/api/fints/connections/{conn['id']}/sync", json={"pin": "12345"}).json()
+    job = wait(admin, job["id"], until=("need_choice",))
+    admin.post(f"/api/fints/jobs/{job['id']}/cancel")
+    job = wait(admin, job["id"])
+    assert job["state"] == "cancelled" and job["options"] == []
