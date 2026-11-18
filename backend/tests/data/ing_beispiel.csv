@@ -1,0 +1,22 @@
+Umsatzanzeige;Datei erstellt am: 16.11.2026 10:15
+;Letztes Update: aktuell
+
+IBAN;DE89 3704 0044 0532 0130 00
+Kontoname;Girokonto
+Bank;ING
+Kunde;Max Mustermann
+Zeitraum;01.10.2026 - 16.11.2026
+Saldo;2.345,67;EUR
+
+Sortierung;Datum absteigend
+
+In der CSV-Datei finden Sie alle bereits gebuchten Umsätze. Die vorgemerkten Umsätze werden nicht aufgenommen, auch wenn sie in Ihrem Internetbanking angezeigt werden.
+
+Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung
+14.11.2026;14.11.2026;REWE Markt GmbH;Lastschrift;REWE SAGT DANKE 12345;2.345,67;EUR;-54,32;EUR
+14.11.2026;14.11.2026;Bäckerei Schmidt;Lastschrift;Kartenzahlung;2.399,99;EUR;-2,50;EUR
+14.11.2026;14.11.2026;Bäckerei Schmidt;Lastschrift;Kartenzahlung;2.402,49;EUR;-2,50;EUR
+03.11.2026;03.11.2026;Stadtwerke Musterstadt;Lastschrift;Abschlag Strom 11/2026;2.404,99;EUR;-89,00;EUR
+01.11.2026;01.11.2026;Vermieter GmbH;Dauerauftrag;Miete November;2.493,99;EUR;-950,00;EUR
+30.10.2026;30.10.2026;Arbeitgeber AG;Gehalt/Rente;Gehalt Oktober 2026;3.443,99;EUR;3.200,00;EUR
+15.10.2026;15.10.2026;Max Mustermann;Ueberweisung;Sparen Extra-Konto;243,99;EUR;-500,00;EUR

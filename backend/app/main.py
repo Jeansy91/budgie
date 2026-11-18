@@ -1,0 +1,18 @@
+from fastapi import APIRouter, FastAPI
+
+from . import budget_month  # noqa: F401  (registers the automatic recomputation)
+from .routers import accounts, ai, auth, budget, categories, fints, imports, overview, rules, transactions, users
+
+app = FastAPI(title="Budgie", version="0.1.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
+
+api = APIRouter(prefix="/api")
+for module in (auth, users, accounts, categories, rules, transactions, imports, fints, ai, overview, budget):
+    api.include_router(module.router)
+
+
+@api.get("/health", tags=["system"])
+def health():
+    return {"status": "ok"}
+
+
+app.include_router(api)

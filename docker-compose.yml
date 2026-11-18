@@ -1,0 +1,103 @@
+# Budgie as a self-hosted Docker Compose stack.
+# Only web and api are attached to the Traefik network. The database lives in an
+# internal network without published ports. Settings come from .env (see .env.example).
+#
+# api and web are pulled as prebuilt images from the GitHub Container Registry:
+#   docker compose pull && docker compose up -d
+# To build the images yourself instead:
+#   docker compose up -d --build
+
+name: budgie
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: budgie
+      POSTGRES_USER: budgie
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budgie -d budgie"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: ghcr.io/jeansy91/budgie-api:${BUDGIE_VERSION:-latest}
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BUDGIE_DATABASE_URL: postgresql+psycopg://budgie:${POSTGRES_PASSWORD}@db:5432/budgie
+      BUDGIE_COOKIE_SECURE: ${BUDGIE_COOKIE_SECURE:-true}
+      # FinTS: key for stored credentials and product ID from the Deutsche Kreditwirtschaft
+      BUDGIE_SECRET_KEY: ${BUDGIE_SECRET_KEY:-}
+      BUDGIE_FINTS_PRODUCT_ID: ${BUDGIE_FINTS_PRODUCT_ID:-}
+      # AI categorization always runs locally. The language model is used only if BUDGIE_OLLAMA_URL is set.
+      BUDGIE_AI_ENABLED: ${BUDGIE_AI_ENABLED:-true}
+      BUDGIE_AI_AUTO_THRESHOLD: ${BUDGIE_AI_AUTO_THRESHOLD:-0.6}
+      BUDGIE_OLLAMA_URL: ${BUDGIE_OLLAMA_URL:-}
+      BUDGIE_OLLAMA_MODEL: ${BUDGIE_OLLAMA_MODEL:-qwen2.5:7b}
+    networks: [internal, proxy]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+      - traefik.http.routers.budgie-api.rule=Host(`${BUDGIE_HOST:?set BUDGIE_HOST in .env}`) && PathPrefix(`/api`)
+      - traefik.http.routers.budgie-api.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.budgie-api.tls=${TRAEFIK_TLS:-true}
+      - traefik.http.services.budgie-api.loadbalancer.server.port=8000
+
+  web:
+    image: ghcr.io/jeansy91/budgie-web:${BUDGIE_VERSION:-latest}
+    build: ./frontend
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      ORIGIN: ${BUDGIE_ORIGIN:-https://${BUDGIE_HOST}}
+    networks: [proxy]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+      - traefik.http.routers.budgie-web.rule=Host(`${BUDGIE_HOST}`)
+      - traefik.http.routers.budgie-web.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.budgie-web.tls=${TRAEFIK_TLS:-true}
+      - traefik.http.services.budgie-web.loadbalancer.server.port=3000
+
+  # Optional local language model for uncertain cases. Only with the "ai" profile:
+  #   docker compose --profile ai up -d
+  #   docker compose exec ollama ollama pull qwen2.5:7b
+  # and in .env: BUDGIE_OLLAMA_URL=http://ollama:11434
+  # Runs on the CPU; a 7–8B model needs about 6–8 GB of RAM.
+  ollama:
+    image: ollama/ollama:${OLLAMA_VERSION:-latest}
+    profiles: [ai]
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: 15m
+      OLLAMA_NUM_PARALLEL: "1"
+    volumes:
+      - ollama-data:/root/.ollama
+    # internal: reachable by the API. egress: only for downloading models.
+    networks: [internal, egress]
+    deploy:
+      resources:
+        limits:
+          memory: ${OLLAMA_MEMORY_LIMIT:-16g}
+
+networks:
+  egress:
+  internal:
+    internal: true
+  proxy:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}
+
+volumes:
+  db-data:
+  ollama-data:
