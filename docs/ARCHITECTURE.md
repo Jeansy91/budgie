@@ -62,6 +62,7 @@ Overview: monthly totals per category, history, budget month
 - FinTS with PIN/TAN. With ING, the TAN step is "decoupled": the user approves access in the banking app and Budgie polls until the bank continues.
 - Production use requires a free **FinTS product registration** with the Deutsche Kreditwirtschaft. Each installation uses its own product ID.
 - Under PSD2, banks often only return the last 90 days without renewed strong customer authentication, and require it again periodically.
+- Besides date, amount, payee and purpose, Budgie stores the **SEPA details** of the counterparty when the bank delivers them (IBAN, BIC, mandate reference, creditor ID, end-to-end reference). With MT940, the counterparty IBAN arrives glued to the front of the name (subfields `?31` + `?32`); Budgie splits it off. The duplicate fingerprint still uses the name as delivered, so earlier syncs remain recognized.
 - **CSV import** from ING online banking is the second path, for older history and as a fallback.
 - The **PIN is never stored.** It is entered for every sync and only held in memory for its duration. The login name and the python-fints client state (system ID, bank parameters, chosen TAN mechanism) are stored encrypted with a key derived from `BUDGIE_SECRET_KEY` (see `backend/app/crypto.py`).
 

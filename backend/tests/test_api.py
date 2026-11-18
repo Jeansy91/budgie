@@ -91,6 +91,38 @@ def test_manual_correction_with_rule(admin, sample_csv):
     assert other["category_id"] == strom
 
 
+def test_transaction_detail(admin, sample_csv, no_ai):
+    supermarkt = find_category(admin, "Lebensmittel", "Supermarkt")
+    rule = admin.post("/api/rules", json={"category_id": supermarkt, "pattern": "rewe"}).json()
+    upload(admin, sample_csv)
+    rewe = admin.get("/api/transactions", params={"q": "REWE"}).json()["items"][0]
+    r = admin.get(f"/api/transactions/{rewe['id']}")
+    assert r.status_code == 200, r.text
+    detail = r.json()
+    assert detail["purpose"] == "REWE SAGT DANKE 12345"
+    assert detail["balance_after"] == "2345.67"
+    assert detail["account"]["name"] == "Girokonto"
+    assert detail["import_batch"]["source"] == "ing_csv"
+    assert detail["import_batch"]["filename"] == "umsaetze.csv"
+    assert detail["category_source"] == "rule"
+    assert detail["rule"]["id"] == rule["id"] and detail["rule"]["match_count"] == 1
+    # The CSV export carries no SEPA details
+    assert detail["counterparty_iban"] is None and detail["mandate_id"] is None
+
+    assert admin.get("/api/transactions/999999").status_code == 404
+
+
+def test_transaction_detail_hidden_from_other_user(admin, sample_csv):
+    upload(admin, sample_csv)
+    acc = admin.get("/api/accounts").json()[0]
+    admin.patch(f"/api/accounts/{acc['id']}", json={"shared": False})
+    tx = admin.get("/api/transactions").json()["items"][0]
+    admin.post("/api/users", json={"username": "kim", "display_name": "Kim", "password": "geheim123"})
+    other = TestClient(app)
+    other.post("/api/auth/login", json={"username": "kim", "password": "geheim123"})
+    assert other.get(f"/api/transactions/{tx['id']}").status_code == 404
+
+
 def test_overview(admin, sample_csv, no_ai):
     upload(admin, sample_csv)
     sparen = find_category(admin, "Umbuchungen", "Transfers zwischen eigenen Konten")

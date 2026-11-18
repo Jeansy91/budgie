@@ -43,6 +43,12 @@ class ParsedTransaction:
     currency: str
     balance_after: Decimal | None
     dedup_hash: str = ""
+    # SEPA details (only delivered by FinTS); not part of the fingerprint
+    counterparty_iban: str | None = None
+    counterparty_bic: str | None = None
+    mandate_id: str | None = None
+    creditor_id: str | None = None
+    end_to_end_ref: str | None = None
 
 
 @dataclass

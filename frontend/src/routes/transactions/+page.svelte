@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, pushState } from '$app/navigation';
 	import { api } from '$lib/api';
 	import CategorySelect from '$lib/CategorySelect.svelte';
 	import BudgetMonthMenu from '$lib/BudgetMonthMenu.svelte';
+	import TransactionDetail from '$lib/TransactionDetail.svelte';
 	import { MonthPicker, Select, type SelectOption } from '$lib/ui';
 	import { categoryLabels, money } from '$lib/format';
 	import { avatarColor, colorFor, initials } from '$lib/colors';
@@ -119,6 +120,31 @@
 		return '';
 	}
 	const isAi = (t: Transaction) => t.category_source === 'model' || t.category_source === 'llm';
+
+	// Detail panel. Opening adds a history entry, so the back button/gesture closes it.
+	let detailId = $derived(page.state.tx ?? null);
+	function openDetail(t: Transaction) {
+		if (detailId === null) pushState('', { tx: t.id });
+	}
+	function closeDetail() {
+		history.back();
+	}
+	// Clicks on the controls inside a row (category, budget month, confirm) do not open the details
+	const fromControl = (e: Event) =>
+		(e.target as Element).closest('button, a, input, textarea, [role="menu"], .select-trigger') !== null;
+	function rowClick(e: MouseEvent, t: Transaction) {
+		if (!fromControl(e) && !window.getSelection()?.toString()) openDetail(t);
+	}
+	function rowKey(e: KeyboardEvent, t: Transaction) {
+		if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+			e.preventDefault();
+			openDetail(t);
+		}
+	}
+	function detailChanged(n: Transaction) {
+		const item = items.find((x) => x.id === n.id);
+		if (item) Object.assign(item, n);
+	}
 </script>
 
 <div class="page-head">
@@ -180,7 +206,15 @@
 		</div>
 		<div class="card list">
 			{#each g.items as t (t.id)}
-				<article class="tx">
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+				<article
+					class="tx"
+					class:selected={detailId === t.id}
+					tabindex="0"
+					aria-label="{t.payee || t.booking_text}, {money(t.amount)} – Details anzeigen"
+					onclick={(e) => rowClick(e, t)}
+					onkeydown={(e) => rowKey(e, t)}
+				>
 					<span class="avatar" style:background={avatarColor(t.payee || t.booking_text)}>{initials(t.payee || t.booking_text)}</span>
 					<div class="main">
 						<div class="payee-row">
@@ -228,6 +262,16 @@
 
 {#if items.length < total}
 	<div class="more"><button class="secondary" onclick={() => load(true)}>Weitere laden</button></div>
+{/if}
+
+{#if detailId !== null}
+	<TransactionDetail
+		id={detailId}
+		{categories}
+		onclose={closeDetail}
+		onchange={detailChanged}
+		onreload={() => load()}
+	/>
 {/if}
 
 <style>
@@ -298,8 +342,18 @@
 	.tx + .tx {
 		border-top: 1px solid var(--border);
 	}
+	.tx {
+		cursor: pointer;
+	}
 	.tx:hover {
 		background: color-mix(in srgb, var(--surface-2) 50%, transparent);
+	}
+	.tx.selected {
+		background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+	}
+	.tx:focus-visible {
+		outline: none;
+		box-shadow: inset 0 0 0 2px var(--accent);
 	}
 	.avatar {
 		display: grid;

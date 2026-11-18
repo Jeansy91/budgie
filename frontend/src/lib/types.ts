@@ -71,6 +71,21 @@ export interface Transaction {
 	suggestion_confidence: number | null;
 }
 
+/** Everything stored about a transaction (GET /transactions/{id}) */
+export interface TransactionDetail extends Transaction {
+	balance_after: string | null;
+	counterparty_iban: string | null;
+	counterparty_bic: string | null;
+	mandate_id: string | null;
+	creditor_id: string | null;
+	end_to_end_ref: string | null;
+	created_at: string;
+	account: { id: number; name: string; iban: string | null; bank: string };
+	import_batch: { id: number; source: string; filename: string | null; created_at: string } | null;
+	/** The rule that assigned the category */
+	rule: Rule | null;
+}
+
 export interface AiStatus {
 	enabled: boolean;
 	auto_threshold: number;
