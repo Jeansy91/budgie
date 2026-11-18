@@ -174,7 +174,7 @@
 							{@const key = `e-${c.category_id}`}
 							<button class="leg" onclick={() => (open[key] = !open[key])} disabled={!c.children.length}>
 								<span class="dot" style:background={color(c)}></span>
-								<span class="name">{c.name}</span>
+								<span class="name" title={c.name}>{c.name}</span>
 								<span class="share">{pct(c.amount, data.expenses)} %</span>
 								<span class="amount">{money(c.amount)}</span>
 								{#if c.children.length}<span class="chev" class:rot={open[key]}><ChevronDown size={15} /></span>{/if}
@@ -183,7 +183,7 @@
 								<div class="children">
 									{#each c.children as sub (sub.category_id)}
 										<a href={`/transactions?month=${month}&category_id=${sub.category_id}`}>
-											<span>{sub.name}</span>
+											<span class="truncate" title={sub.name}>{sub.name}</span>
 											<span class="track"><span style:width="{pct(sub.amount, c.amount)}%" style:background={color(c)}></span></span>
 											<span class="amount">{money(sub.amount)}</span>
 										</a>
@@ -202,11 +202,11 @@
 			{#each data.income_categories as c (c.category_id ?? 'none')}
 				<div class="inc">
 					<div class="inc-head">
-						<span>{c.name}</span>
+						<span class="break-anywhere">{c.name}</span>
 						<span class="amount pos">{money(c.amount)}</span>
 					</div>
 					{#each c.children as sub (sub.category_id)}
-						<div class="inc-sub"><span>{sub.name}</span><span class="amount">{money(sub.amount)}</span></div>
+						<div class="inc-sub"><span class="break-anywhere">{sub.name}</span><span class="amount">{money(sub.amount)}</span></div>
 					{/each}
 				</div>
 			{/each}
@@ -287,7 +287,7 @@
 
 	.kpis {
 		display: grid;
-		grid-template-columns: 1.4fr 1fr 1fr;
+		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
 		gap: 1rem;
 		margin-bottom: 1rem;
 	}
@@ -380,7 +380,7 @@
 
 	.grid {
 		display: grid;
-		grid-template-columns: 1.7fr 1fr;
+		grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
 		gap: 1rem;
 		margin-bottom: 1rem;
 	}
@@ -389,7 +389,7 @@
 	}
 	.split {
 		display: grid;
-		grid-template-columns: 170px 1fr;
+		grid-template-columns: 170px minmax(0, 1fr);
 		gap: 1.5rem;
 		align-items: start;
 	}
@@ -461,7 +461,7 @@
 	}
 	.children a {
 		display: grid;
-		grid-template-columns: 1fr 70px 7.5em;
+		grid-template-columns: minmax(0, 1fr) 70px 7.5em;
 		gap: 0.75rem;
 		align-items: center;
 		padding: 0.3rem 0;
@@ -491,11 +491,13 @@
 	.inc-head {
 		display: flex;
 		justify-content: space-between;
+		gap: 0.75rem;
 		font-weight: 600;
 	}
 	.inc-sub {
 		display: flex;
 		justify-content: space-between;
+		gap: 0.75rem;
 		color: var(--muted);
 		font-size: 0.87rem;
 		padding-top: 0.3rem;
@@ -586,7 +588,7 @@
 
 	@media (max-width: 1100px) {
 		.split {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 		}
 		.donut {
 			max-width: 200px;
@@ -595,13 +597,13 @@
 	}
 	@media (max-width: 900px) {
 		.kpis {
-			grid-template-columns: 1fr 1fr;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		}
 		.hero {
 			grid-column: 1 / -1;
 		}
 		.grid {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 	@media (max-width: 480px) {
@@ -618,7 +620,7 @@
 			display: none;
 		}
 		.children a {
-			grid-template-columns: 1fr 7em;
+			grid-template-columns: minmax(0, 1fr) 7em;
 		}
 		.track {
 			display: none;

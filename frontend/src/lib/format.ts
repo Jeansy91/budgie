@@ -10,6 +10,9 @@ export const day = (iso: string) => {
 	return `${d}.${m}.${y}`;
 };
 
+/** IBAN in groups of four ("DE85 5001 0517 …"), so it reads well and wraps cleanly. */
+export const iban = (value: string | null | undefined) => (value ? value.replace(/\s+/g, '').replace(/(.{4})(?=.)/g, '$1 ') : '');
+
 const monthFmt = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
 const monthShort = new Intl.DateTimeFormat('de-DE', { month: 'short' });
 

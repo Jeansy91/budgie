@@ -129,6 +129,8 @@
 		border-radius: 14px;
 		box-shadow: var(--shadow-lg);
 		overflow: hidden;
+		/* Long option labels are truncated instead of stretching the panel */
+		max-width: min(28rem, calc(100vw - 16px));
 		animation: pop 0.12s ease-out;
 		transform-origin: top;
 		font-size: 0.92rem;
@@ -154,6 +156,7 @@
 		right: 0;
 		bottom: 0;
 		max-height: 80dvh;
+		max-width: none;
 		border-radius: 22px 22px 0 0;
 		border-bottom: 0;
 		padding-bottom: env(safe-area-inset-bottom);

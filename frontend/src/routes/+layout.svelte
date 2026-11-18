@@ -52,8 +52,8 @@
 			<div class="me">
 				<span class="avatar">{initials(data.me.display_name)}</span>
 				<div class="who">
-					<strong>{data.me.display_name}</strong>
-					<span>{data.me.household_name}</span>
+					<strong title={data.me.display_name}>{data.me.display_name}</strong>
+					<span title={data.me.household_name}>{data.me.household_name}</span>
 				</div>
 				<button class="ghost icon" onclick={logout} title="Abmelden" aria-label="Abmelden"><LogOut size={18} /></button>
 			</div>
@@ -151,6 +151,11 @@
 		min-width: 0;
 		flex: 1;
 		font-size: 0.85rem;
+	}
+	.who strong {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.who span {
 		color: var(--muted);

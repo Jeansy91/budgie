@@ -149,15 +149,15 @@
 	{#each connections as c (c.id)}
 		<div class="conn">
 			<div class="who">
-				<strong>{c.name}</strong>
+				<strong class="break-anywhere">{c.name}</strong>
 				<span class="muted small">
 					Zugang …{c.login_hint} · zuletzt abgerufen {when(c.last_sync_at)}
 					{#if c.tan_mechanism_name}· {c.tan_mechanism_name}{/if}
 				</span>
 				{#if c.accounts.length}
-					<span class="muted small">{c.accounts.map((a) => a.name).join(', ')}</span>
+					<span class="muted small accounts" title={c.accounts.map((a) => a.name).join(', ')}>{c.accounts.map((a) => a.name).join(', ')}</span>
 				{/if}
-				{#if c.last_error && syncFor?.id !== c.id}<span class="small err">{c.last_error}</span>{/if}
+				{#if c.last_error && syncFor?.id !== c.id}<span class="small err break-anywhere">{c.last_error}</span>{/if}
 			</div>
 			{#if syncFor?.id !== c.id}
 				<div class="actions">
@@ -224,8 +224,8 @@
 					{#each job.results as r (r.iban)}
 						<div class="result">
 							<span class="ok-icon"><Check size={16} /></span>
-							<div>
-								<strong>{r.account_name ?? r.iban}</strong>
+							<div class="info">
+								<strong class="break-anywhere">{r.account_name ?? r.iban}</strong>
 								{#if r.account_created}<span class="badge accent">Neues Konto</span>{/if}
 								{#if r.skipped}
 									<span class="muted small">{r.skipped}</span>
@@ -308,8 +308,17 @@
 	.who {
 		display: flex;
 		flex-direction: column;
-		flex: 1;
+		/* Grow next to the buttons, but wrap them below before getting squeezed */
+		flex: 1 1 16rem;
 		min-width: 0;
+	}
+	.accounts {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.actions {
+		flex-wrap: wrap;
 	}
 	.err {
 		color: var(--expense);
@@ -341,7 +350,8 @@
 	}
 	.tan > div {
 		flex: 1;
-		min-width: 13rem;
+		min-width: min(13rem, 100%);
+		overflow-wrap: anywhere;
 	}
 	.tan p {
 		margin: 0.25rem 0 0.5rem;
@@ -390,6 +400,10 @@
 		align-items: flex-start;
 		gap: 0.75rem;
 		margin-bottom: 0.75rem;
+	}
+	.result .info {
+		flex: 1;
+		min-width: 0;
 	}
 	.ok-icon {
 		display: grid;

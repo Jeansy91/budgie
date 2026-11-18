@@ -191,7 +191,7 @@
 	bind:this={trigger}
 	type="button"
 	{id}
-	{title}
+	title={title ?? selected?.label}
 	class="select-trigger {size} {cls}"
 	class:open
 	class:placeholder={!selected}
@@ -256,7 +256,7 @@
 					onkeydown={() => {}}
 				>
 					{#if o.color}<span class="dot" style:background={o.color}></span>{/if}
-					<span class="label">{o.label}</span>
+					<span class="label" title={o.label}>{o.label}</span>
 					{#if o.hint}<span class="hint">{o.hint}</span>{/if}
 					<span class="tick">{#if o.value === value}<Check size={16} />{/if}</span>
 				</div>
@@ -341,6 +341,8 @@
 		white-space: nowrap;
 	}
 	.hint {
+		flex: none;
+		white-space: nowrap;
 		font-size: 0.78rem;
 		color: var(--faint);
 		font-weight: 450;

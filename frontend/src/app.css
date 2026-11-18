@@ -364,6 +364,8 @@ label.inline {
 .ok,
 .warn {
 	display: flex;
+	/* Messages may contain long tokens such as URLs or reference numbers */
+	overflow-wrap: anywhere;
 	align-items: center;
 	gap: 0.6rem;
 	border-radius: var(--radius-sm);
@@ -439,4 +441,35 @@ th {
 	letter-spacing: 0.06em;
 	color: var(--faint);
 	font-weight: 600;
+}
+
+.error > *,
+.ok > *,
+.warn > * {
+	min-width: 0;
+}
+.ok > svg,
+.warn > svg,
+.error > svg {
+	flex: none;
+}
+
+/* Long user content (names, IBANs, file names, messages) must never widen the page.
+   Flex and grid children need min-width: 0 to be allowed to shrink below their content. */
+.truncate {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.clamp-2 {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	overflow-wrap: break-word;
+}
+.break-anywhere {
+	overflow-wrap: anywhere;
 }
