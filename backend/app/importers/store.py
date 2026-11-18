@@ -90,6 +90,11 @@ def store_transactions(
                 booking_text=p.booking_text[:100],
                 purpose=p.purpose,
                 balance_after=p.balance_after,
+                counterparty_iban=_clip(p.counterparty_iban, 34),
+                counterparty_bic=_clip(p.counterparty_bic, 11),
+                mandate_id=_clip(p.mandate_id, 35),
+                creditor_id=_clip(p.creditor_id, 35),
+                end_to_end_ref=_clip(p.end_to_end_ref, 35),
                 import_id=batch.id,
                 dedup_hash=p.dedup_hash,
             )
@@ -112,3 +117,7 @@ def store_transactions(
 
 def _key(booking_date, amount) -> tuple:
     return booking_date, Decimal(amount).quantize(Decimal("0.01"))
+
+
+def _clip(value: str | None, length: int) -> str | None:
+    return value[:length] if value else None

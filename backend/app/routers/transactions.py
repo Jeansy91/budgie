@@ -7,7 +7,14 @@ from ..ai import service as ai
 from ..deps import DB, CurrentUser, visible_account_ids
 from ..models import BudgetShift, Category, CategorySource, Rule, RuleField, RuleMatch, Transaction, User
 from ..rules import apply_rules
-from ..schemas import RuleOut, TransactionOut, TransactionPage, TransactionPatch, TransactionPatchOut
+from ..schemas import (
+    RuleOut,
+    TransactionDetail,
+    TransactionOut,
+    TransactionPage,
+    TransactionPatch,
+    TransactionPatchOut,
+)
 from .categories import get_category
 from .rules import household_transactions, rule_out
 
@@ -75,6 +82,14 @@ def list_transactions(
         query.order_by(Transaction.booking_date.desc(), Transaction.id.desc()).limit(limit).offset(offset)
     ).all()
     return TransactionPage(items=items, total=total)
+
+
+@router.get("/{transaction_id}", response_model=TransactionDetail)
+def get_transaction_detail(transaction_id: int, db: DB, user: CurrentUser):
+    t = get_transaction(db, user, transaction_id)
+    detail = TransactionDetail.model_validate(t)
+    detail.rule = rule_out(db, t.rule) if t.rule is not None else None
+    return detail
 
 
 @router.patch("/{transaction_id}", response_model=TransactionPatchOut)

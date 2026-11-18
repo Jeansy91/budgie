@@ -168,6 +168,37 @@ class TransactionOut(ORM):
     suggestion_confidence: float | None = None
 
 
+class TransactionAccount(ORM):
+    id: int
+    name: str
+    iban: str | None
+    bank: str
+
+
+class TransactionImport(ORM):
+    id: int
+    # "fints" or "ing_csv"
+    source: str
+    filename: str | None
+    created_at: datetime
+
+
+class TransactionDetail(TransactionOut):
+    """Everything stored about a transaction, for the detail view."""
+
+    balance_after: Decimal | None
+    counterparty_iban: str | None
+    counterparty_bic: str | None
+    mandate_id: str | None
+    creditor_id: str | None
+    end_to_end_ref: str | None
+    created_at: datetime
+    account: TransactionAccount
+    import_batch: TransactionImport | None
+    # The rule that assigned the category (category_source = "rule")
+    rule: RuleOut | None = None
+
+
 class TransactionPage(BaseModel):
     items: list[TransactionOut]
     total: int

@@ -240,6 +240,14 @@ class Transaction(Base):
     balance_after: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     note: Mapped[str] = mapped_column(Text, default="")
 
+    # SEPA details of the counterparty, as far as the source delivers them.
+    # FinTS (MT940/camt) usually does; the ING CSV export does not.
+    counterparty_iban: Mapped[str | None] = mapped_column(String(34))
+    counterparty_bic: Mapped[str | None] = mapped_column(String(11))
+    mandate_id: Mapped[str | None] = mapped_column(String(35))
+    creditor_id: Mapped[str | None] = mapped_column(String(35))
+    end_to_end_ref: Mapped[str | None] = mapped_column(String(35))
+
     category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"), index=True)
     category_source: Mapped[CategorySource | None] = mapped_column(_enum(CategorySource, "category_source"))
     rule_id: Mapped[int | None] = mapped_column(ForeignKey("rules.id", ondelete="SET NULL"))
@@ -265,6 +273,8 @@ class Transaction(Base):
 
     account: Mapped[Account] = relationship()
     category: Mapped[Category | None] = relationship(foreign_keys=[category_id])
+    rule: Mapped[Rule | None] = relationship()
+    import_batch: Mapped[ImportBatch | None] = relationship()
 
 
 class ClassifierModel(Base):

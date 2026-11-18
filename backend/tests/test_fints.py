@@ -1,5 +1,6 @@
 """FinTS sync against a fake bank client (no real bank connection)."""
 
+import dataclasses
 import time
 from dataclasses import dataclass
 from datetime import date
@@ -17,7 +18,7 @@ from app import crypto
 from app.config import get_settings
 from app.db import SessionLocal
 from app.fints import jobs
-from app.fints.convert import to_parsed
+from app.fints.convert import split_iban_name, to_parsed
 from app.models import BankConnection
 
 from .conftest import DATA, find_category
@@ -138,8 +139,32 @@ def test_convert_mt940():
     assert strom.payee == "Stadtwerke Musterstadt"
     assert strom.purpose == "Abschlag Strom 11/2026"
     assert strom.booking_text == "Lastschrift"
+    # SEPA details; the IBAN delivered in front of the name is split off
+    assert strom.counterparty_iban == "DE02120300000000202051"
+    assert strom.counterparty_bic == "COBADEFFXXX"
+    assert strom.end_to_end_ref == "ABS-2026-11-0042"
+    assert strom.mandate_id == "SWM-778899"
+    assert strom.creditor_id == "DE98ZZZ09999999999"
+    assert parsed[1].counterparty_iban is None and parsed[1].end_to_end_ref is None
     # Two identical bakery transactions get different fingerprints
     assert parsed[1].dedup_hash != parsed[2].dedup_hash
+
+
+def test_split_iban_name():
+    assert split_iban_name("DE02120300000000202051Stadtwerke") == ("DE02120300000000202051", "Stadtwerke")
+    assert split_iban_name("NL91ABNA0417164300 Shop B.V.") == ("NL91ABNA0417164300", "Shop B.V.")
+    assert split_iban_name("DE Bahn") == (None, "DE Bahn")
+    assert split_iban_name("REWE Markt GmbH") == (None, "REWE Markt GmbH")
+
+
+def test_fingerprint_ignores_iban_split():
+    """Transactions synced before the IBAN was split off are still duplicates."""
+    from app.importers.ing_csv import fingerprint
+
+    parsed = to_parsed(mt940_to_array((DATA / "ing_beispiel.mt940").read_text()))
+    strom = parsed[0]
+    glued = dataclasses.replace(strom, payee=strom.counterparty_iban + strom.payee)
+    assert strom.dedup_hash == fingerprint(glued, 0)
 
 
 def test_status_and_missing_config(admin, monkeypatch):
@@ -181,6 +206,15 @@ def test_sync_with_app_approval(admin):
     assert conn["tan_mechanism_name"] == "ING App"
     assert conn["last_sync_at"] and conn["last_error"] is None
     assert conn["accounts"][0]["iban"] == IBAN
+
+    # Detail view: SEPA fields and the import source
+    strom = admin.get("/api/transactions", params={"q": "Stadtwerke"}).json()["items"][0]
+    detail = admin.get(f"/api/transactions/{strom['id']}").json()
+    assert detail["payee"] == "Stadtwerke Musterstadt"
+    assert detail["counterparty_iban"] == "DE02120300000000202051"
+    assert detail["mandate_id"] == "SWM-778899"
+    assert detail["import_batch"]["source"] == "fints"
+    assert detail["account"]["iban"] == IBAN
 
     # Second sync: state is reused, no duplicates, period overlaps
     job = admin.post(f"/api/fints/connections/{conn['id']}/sync", json={"pin": "12345"}).json()
