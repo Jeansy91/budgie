@@ -5,6 +5,7 @@
 	import { api } from '$lib/api';
 	import { initials } from '$lib/colors';
 	import Logo from '$lib/Logo.svelte';
+	import { getLocale, t, type MessageKey } from '$lib/i18n/index.svelte';
 	import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
 	import Receipt from '@lucide/svelte/icons/receipt';
 	import FileUp from '@lucide/svelte/icons/file-up';
@@ -15,12 +16,12 @@
 
 	let { data, children } = $props();
 
-	const nav = [
-		{ href: '/', label: 'Übersicht', icon: LayoutDashboard },
-		{ href: '/transactions', label: 'Buchungen', icon: Receipt },
-		{ href: '/import', label: 'Import', icon: FileUp },
-		{ href: '/categories', label: 'Kategorien', icon: Tags },
-		{ href: '/rules', label: 'Regeln', icon: WandSparkles }
+	const nav: { href: string; key: MessageKey; icon: typeof LayoutDashboard }[] = [
+		{ href: '/', key: 'nav.overview', icon: LayoutDashboard },
+		{ href: '/transactions', key: 'nav.transactions', icon: Receipt },
+		{ href: '/import', key: 'nav.import', icon: FileUp },
+		{ href: '/categories', key: 'nav.categories', icon: Tags },
+		{ href: '/rules', key: 'nav.rules', icon: WandSparkles }
 	];
 
 	const active = (href: string) =>
@@ -41,13 +42,13 @@
 				{#each nav as item (item.href)}
 					<a href={item.href} class:active={active(item.href)}>
 						<item.icon size={19} strokeWidth={2} />
-						{item.label}
+						{t(item.key)}
 					</a>
 				{/each}
 			</nav>
 			<div class="spacer"></div>
 			<a href="/settings" class="navlink" class:active={active('/settings')}>
-				<Settings size={19} /> Einstellungen
+				<Settings size={19} /> {t('nav.settings')}
 			</a>
 			<div class="me">
 				<span class="avatar">{initials(data.me.display_name)}</span>
@@ -55,24 +56,27 @@
 					<strong title={data.me.display_name}>{data.me.display_name}</strong>
 					<span title={data.me.household_name}>{data.me.household_name}</span>
 				</div>
-				<button class="ghost icon" onclick={logout} title="Abmelden" aria-label="Abmelden"><LogOut size={18} /></button>
+				<button class="ghost icon" onclick={logout} title={t('nav.logout')} aria-label={t('nav.logout')}><LogOut size={18} /></button>
 			</div>
 		</aside>
 
 		<header class="topbar">
 			<a class="brand" href="/"><Logo size={30} /> <span>Budgie</span></a>
-			<a href="/settings" class="avatar" title="Einstellungen">{initials(data.me.display_name)}</a>
+			<a href="/settings" class="avatar" title={t('nav.settings')}>{initials(data.me.display_name)}</a>
 		</header>
 
 		<main>
-			{@render children()}
+			<!-- Remount the page when the language changes, so data the API translates (category names) reloads -->
+			{#key getLocale()}
+				{@render children()}
+			{/key}
 		</main>
 
 		<nav class="tabbar">
 			{#each nav as item (item.href)}
 				<a href={item.href} class:active={active(item.href)}>
 					<item.icon size={21} />
-					<span>{item.label}</span>
+					<span>{t(item.key)}</span>
 				</a>
 			{/each}
 		</nav>

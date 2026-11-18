@@ -5,6 +5,7 @@ from .. import crypto
 from ..config import get_settings
 from ..deps import DB, CurrentUser
 from ..fints import jobs
+from ..i18n import http_error
 from ..models import Account, BankConnection
 from ..schemas import (
     BankConnectionIn,
@@ -32,9 +33,7 @@ def _missing() -> list[str]:
 def _require_enabled() -> None:
     missing = _missing()
     if missing:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, "FinTS ist nicht eingerichtet, es fehlt: " + ", ".join(missing)
-        )
+        raise http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "fints.not_configured", missing=", ".join(missing))
 
 
 def _hint(login: str) -> str:
@@ -45,7 +44,7 @@ def _own_connection(db: DB, user: CurrentUser, connection_id: int) -> BankConnec
     connection = db.get(BankConnection, connection_id)
     # Credentials belong to one person, even within the household
     if connection is None or connection.user_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bankverbindung nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "fints.connection_not_found")
     return connection
 
 
@@ -134,7 +133,7 @@ def start_sync(connection_id: int, data: SyncIn, db: DB, user: CurrentUser):
 def _job(job_id: str, user: CurrentUser) -> jobs.SyncJob:
     job = jobs.get_job(job_id, user.id)
     if job is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Abruf nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "fints.job_not_found")
     return job
 
 
@@ -147,7 +146,7 @@ def get_job(job_id: str, user: CurrentUser):
 def send_tan(job_id: str, data: TanIn, user: CurrentUser):
     job = _job(job_id, user)
     if job.state != "need_tan" or job.decoupled:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Der Abruf wartet gerade auf keine TAN")
+        raise http_error(status.HTTP_409_CONFLICT, "fints.no_tan_expected")
     job.submit_tan(data.tan.strip())
     return _job_out(job)
 

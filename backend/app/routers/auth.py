@@ -1,12 +1,13 @@
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Response, status
 from sqlalchemy import delete, func, select
 
 from ..config import get_settings
 from ..deps import DB, SESSION_COOKIE, CurrentUser
 from ..models import Household, User, UserSession
-from ..schemas import LoginIn, MeOut, PasswordIn, SetupIn, SetupStatus
+from ..i18n import http_error
+from ..schemas import LoginIn, MeOut, MePatch, PasswordIn, SetupIn, SetupStatus
 from ..security import hash_password, hash_token, new_session_token, verify_password
 from ..seed import seed_categories
 
@@ -41,6 +42,7 @@ def _me(user: User) -> MeOut:
         display_name=user.display_name,
         is_admin=user.is_admin,
         household_name=user.household.name,
+        language=user.language,
     )
 
 
@@ -55,7 +57,7 @@ def setup(data: SetupIn, db: DB, response: Response):
     # The lock prevents two concurrent calls from creating two households
     db.execute(select(func.pg_advisory_xact_lock(4711)))
     if db.scalar(select(func.count(User.id))) > 0:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Budgie ist bereits eingerichtet")
+        raise http_error(status.HTTP_409_CONFLICT, "auth.already_set_up")
     household = Household(name=data.household_name)
     db.add(household)
     db.flush()
@@ -78,9 +80,9 @@ def login(data: LoginIn, db: DB, response: Response):
     user = db.scalar(select(User).where(User.username == data.username.strip().lower()))
     if user is None:
         verify_password(data.password, _DUMMY_HASH)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Nutzername oder Passwort falsch")
+        raise http_error(status.HTTP_401_UNAUTHORIZED, "auth.invalid_login")
     if not verify_password(data.password, user.password_hash):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Nutzername oder Passwort falsch")
+        raise http_error(status.HTTP_401_UNAUTHORIZED, "auth.invalid_login")
     _start_session(db, response, user)
     return _me(user)
 
@@ -97,9 +99,17 @@ def me(user: CurrentUser):
     return _me(user)
 
 
+@router.patch("/me", response_model=MeOut)
+def update_me(data: MePatch, db: DB, user: CurrentUser):
+    """Personal preferences. `language: null` follows the browser language."""
+    user.language = data.language
+    db.commit()
+    return _me(user)
+
+
 @router.post("/password", status_code=204)
 def change_password(data: PasswordIn, db: DB, user: CurrentUser):
     if not verify_password(data.current_password, user.password_hash):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Aktuelles Passwort falsch")
+        raise http_error(status.HTTP_400_BAD_REQUEST, "auth.wrong_password")
     user.password_hash = hash_password(data.new_password)
     db.commit()

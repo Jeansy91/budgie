@@ -4,7 +4,8 @@
 	import { api } from '$lib/api';
 	import { Select, type SelectOption } from '$lib/ui';
 	import { colorFor } from '$lib/colors';
-	import { currentMonth, money, monthLabel, monthShortLabel, shiftMonth } from '$lib/format';
+	import { currentMonth, money, monthLabel, monthShortLabel, percent, shiftMonth } from '$lib/format';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Account, Category, CategorySum, Overview } from '$lib/types';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -18,7 +19,7 @@
 	let accountId = $state('');
 	let accounts = $state<Account[]>([]);
 	let accountOptions = $derived<SelectOption<string>[]>([
-		{ value: '', label: 'Alle Konten' },
+		{ value: '', label: t('transactions.allAccounts') },
 		...accounts.map((a) => ({ value: String(a.id), label: a.name, hint: a.iban ? '…' + a.iban.slice(-4) : undefined }))
 	]);
 	let categoryIndex = $state(new Map<number, number>());
@@ -44,6 +45,8 @@
 	const color = (c: CategorySum) => colorFor(c.category_id === null ? undefined : categoryIndex.get(c.category_id));
 	const pct = (part: string | number, total: string | number) =>
 		Number(total) > 0 ? Math.round((Number(part) / Number(total)) * 100) : 0;
+	const share = (part: string | number, total: string | number) =>
+		percent(Number(total) > 0 ? Number(part) / Number(total) : 0);
 
 	// Donut chart: segments as fractions of the circumference
 	const R = 52;
@@ -65,22 +68,22 @@
 	let historyMax = $derived(
 		data ? Math.max(1, ...data.history.flatMap((h) => [Number(h.income), Number(h.expenses)])) : 1
 	);
-	let savingsRate = $derived(data && Number(data.income) > 0 ? pct(data.net, data.income) : null);
+	let savingsRate = $derived(data && Number(data.income) > 0 ? share(data.net, data.income) : null);
 </script>
 
 <div class="page-head">
 	<div>
-		<span class="eyebrow">Monatsübersicht</span>
+		<span class="eyebrow">{t('overview.eyebrow')}</span>
 		<h1>{monthLabel(month)}</h1>
 	</div>
 	<div class="controls">
 		{#if accounts.length > 1}
-			<Select options={accountOptions} bind:value={accountId} label="Konto" />
+			<Select options={accountOptions} bind:value={accountId} label={t('common.account')} />
 		{/if}
 		<div class="switch">
-			<button class="ghost icon" onclick={() => go(shiftMonth(month, -1))} aria-label="Vormonat"><ChevronLeft size={18} /></button>
-			<button class="ghost today" onclick={() => go(currentMonth())} disabled={month === currentMonth()}>Heute</button>
-			<button class="ghost icon" onclick={() => go(shiftMonth(month, 1))} aria-label="Nächster Monat"><ChevronRight size={18} /></button>
+			<button class="ghost icon" onclick={() => go(shiftMonth(month, -1))} aria-label={t('ui.date.prevMonth')}><ChevronLeft size={18} /></button>
+			<button class="ghost today" onclick={() => go(currentMonth())} disabled={month === currentMonth()}>{t('ui.date.today')}</button>
+			<button class="ghost icon" onclick={() => go(shiftMonth(month, 1))} aria-label={t('ui.date.nextMonth')}><ChevronRight size={18} /></button>
 		</div>
 	</div>
 </div>
@@ -92,32 +95,32 @@
 		<div class="card empty">
 			<Sparkles size={22} />
 			<div>
-				<strong>Noch keine Buchungen.</strong>
-				<a href="/import">Importiere deine erste ING-CSV-Datei</a>, dann füllt sich die Übersicht.
+				<strong>{t('overview.emptyTitle')}</strong>
+				<a href="/import">{t('overview.emptyLink')}</a>{t('overview.emptyRest')}
 			</div>
 		</div>
 	{/if}
 
 	<section class="kpis">
 		<div class="hero">
-			<span class="label">Saldo im Monat</span>
+			<span class="label">{t('overview.net')}</span>
 			<strong class="big">{money(data.net)}</strong>
 			<span class="sub">
-				{#if savingsRate !== null}{savingsRate} % der Einnahmen übrig{:else}Noch keine Einnahmen in diesem Monat{/if}
+				{#if savingsRate !== null}{t('overview.savingsRate', { rate: savingsRate })}{:else}{t('overview.noIncomeYet')}{/if}
 			</span>
 			<div class="blob"></div>
 		</div>
 		<div class="card kpi">
 			<span class="chip in"><TrendingUp size={18} /></span>
 			<div>
-				<span class="label">Einnahmen</span>
+				<span class="label">{t('overview.income')}</span>
 				<strong class="pos">{money(data.income)}</strong>
 				{#if Number(data.income_from_previous_month) > 0}
 					<a
 						class="carry small"
 						href={`/transactions?month=${month}`}
-						title="Gehalt vom Monatsende zählt für den Folgemonat. Einstellbar unter Einstellungen › Budgetmonat."
-						>davon {money(data.income_from_previous_month)} aus dem Vormonat</a
+						title={t('overview.carryTitle')}
+						>{t('overview.carry', { amount: money(data.income_from_previous_month) })}</a
 					>
 				{/if}
 			</div>
@@ -125,7 +128,7 @@
 		<div class="card kpi">
 			<span class="chip out"><TrendingDown size={18} /></span>
 			<div>
-				<span class="label">Ausgaben</span>
+				<span class="label">{t('overview.expenses')}</span>
 				<strong>{money(data.expenses)}</strong>
 			</div>
 		</div>
@@ -134,16 +137,16 @@
 	{#if data.uncategorized_count > 0}
 		<a class="warn nudge" href={`/transactions?month=${month}&uncategorized=1`}>
 			<Sparkles size={18} />
-			<span><strong>{data.uncategorized_count} Buchungen</strong> haben noch keine Kategorie.</span>
-			<span class="go">Jetzt zuordnen <ChevronRight size={16} /></span>
+			<span><strong>{t('transactions.count', { count: data.uncategorized_count })}</strong> {t('overview.uncategorized', { count: data.uncategorized_count })}</span>
+			<span class="go">{t('overview.categorizeNow')} <ChevronRight size={16} /></span>
 		</a>
 	{/if}
 
 	<div class="grid">
 		<section class="card">
-			<h2>Ausgaben nach Kategorie</h2>
+			<h2>{t('overview.expensesByCategory')}</h2>
 			{#if segments.length === 0}
-				<p class="muted">Keine Ausgaben in diesem Monat.</p>
+				<p class="muted">{t('overview.noExpenses')}</p>
 			{:else}
 				<div class="split">
 					<div class="donut">
@@ -165,7 +168,7 @@
 							{/each}
 						</svg>
 						<div class="center">
-							<span class="label">Gesamt</span>
+							<span class="label">{t('overview.total')}</span>
 							<strong>{money(data.expenses)}</strong>
 						</div>
 					</div>
@@ -175,7 +178,7 @@
 							<button class="leg" onclick={() => (open[key] = !open[key])} disabled={!c.children.length}>
 								<span class="dot" style:background={color(c)}></span>
 								<span class="name" title={c.name}>{c.name}</span>
-								<span class="share">{pct(c.amount, data.expenses)} %</span>
+								<span class="share">{share(c.amount, data.expenses)}</span>
 								<span class="amount">{money(c.amount)}</span>
 								{#if c.children.length}<span class="chev" class:rot={open[key]}><ChevronDown size={15} /></span>{/if}
 							</button>
@@ -197,8 +200,8 @@
 		</section>
 
 		<section class="card">
-			<h2>Einnahmen</h2>
-			{#if data.income_categories.length === 0}<p class="muted">Keine Einnahmen in diesem Monat.</p>{/if}
+			<h2>{t('overview.income')}</h2>
+			{#if data.income_categories.length === 0}<p class="muted">{t('overview.noIncome')}</p>{/if}
 			{#each data.income_categories as c (c.category_id ?? 'none')}
 				<div class="inc">
 					<div class="inc-head">
@@ -212,7 +215,7 @@
 			{/each}
 			{#if Number(data.transfers) !== 0}
 				<div class="transfer small muted">
-					<ArrowLeftRight size={15} /> Umbuchungen zwischen eigenen Konten: {money(data.transfers)} (nicht mitgezählt)
+					<ArrowLeftRight size={15} /> {t('overview.transfers', { amount: money(data.transfers) })}
 				</div>
 			{/if}
 		</section>
@@ -220,10 +223,10 @@
 
 	<section class="card">
 		<div class="hist-head">
-			<h2>Verlauf der letzten 12 Monate</h2>
+			<h2>{t('overview.history')}</h2>
 			<div class="keys small muted">
-				<span><span class="dot" style:background="var(--accent)"></span> Einnahmen</span>
-				<span><span class="dot" style:background="var(--expense)"></span> Ausgaben</span>
+				<span><span class="dot" style:background="var(--accent)"></span> {t('overview.income')}</span>
+				<span><span class="dot" style:background="var(--expense)"></span> {t('overview.expenses')}</span>
 			</div>
 		</div>
 		<div class="history">
@@ -232,7 +235,7 @@
 					class="col"
 					class:current={h.month === month}
 					onclick={() => go(h.month)}
-					title={`${monthLabel(h.month)}\nEinnahmen ${money(h.income)}\nAusgaben ${money(h.expenses)}`}
+					title={`${monthLabel(h.month)}\n${t('overview.income')} ${money(h.income)}\n${t('overview.expenses')} ${money(h.expenses)}`}
 				>
 					<span class="bars">
 						<span class="b in" style:height="{(Number(h.income) / historyMax) * 100}%"></span>

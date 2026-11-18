@@ -8,13 +8,15 @@
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Popover from './Popover.svelte';
+	import { t } from '../i18n/index.svelte';
+	import { dateFormat } from '../format';
 
 	let {
 		value = $bindable(''),
-		placeholder = 'Monat wählen',
-		label = 'Monat',
+		placeholder,
+		label: labelProp,
 		clearable = true,
-		clearLabel = 'Alle Monate',
+		clearLabel,
 		disabled = false,
 		id,
 		class: cls = '',
@@ -38,16 +40,19 @@
 	};
 	const shift = (ym: string, n: number) => {
 		const [y, m] = ym.split('-').map(Number);
-		const t = y * 12 + (m - 1) + n;
-		return `${Math.floor(t / 12)}-${pad((t % 12) + 1)}`;
+		const total = y * 12 + (m - 1) + n;
+		return `${Math.floor(total / 12)}-${pad((total % 12) + 1)}`;
 	};
-	const long = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
-	const short = new Intl.DateTimeFormat('de-DE', { month: 'short' });
-	const labelOf = (ym: string) => long.format(new Date(`${ym}-01T12:00:00`));
-	const months = Array.from({ length: 12 }, (_, i) => ({
-		m: pad(i + 1),
-		name: short.format(new Date(2024, i, 1, 12)).replace('.', '')
-	}));
+	let label = $derived(labelProp ?? t('ui.month.label'));
+	let placeholderText = $derived(placeholder ?? t('ui.month.placeholder'));
+	const labelOf = (ym: string) => dateFormat({ month: 'long', year: 'numeric' }).format(new Date(`${ym}-01T12:00:00`));
+	let months = $derived.by(() => {
+		const short = dateFormat({ month: 'short' });
+		return Array.from({ length: 12 }, (_, i) => ({
+			m: pad(i + 1),
+			name: short.format(new Date(2024, i, 1, 12)).replace('.', '')
+		}));
+	});
 
 	let open = $state(false);
 	let focused = $state(now());
@@ -99,7 +104,7 @@
 	{disabled}
 	aria-haspopup="dialog"
 	aria-expanded={open}
-	aria-label="{label}: {value ? labelOf(value) : placeholder}"
+	aria-label="{label}: {value ? labelOf(value) : placeholderText}"
 	onclick={() => (open ? hide() : show())}
 	onkeydown={(e) => {
 		if (e.key === 'ArrowDown') {
@@ -109,7 +114,7 @@
 	}}
 >
 	<span class="chev"><Calendar size={16} /></span>
-	<span class="value">{value ? labelOf(value) : placeholder}</span>
+	<span class="value">{value ? labelOf(value) : placeholderText}</span>
 </button>
 
 <Popover bind:open anchor={trigger} {label} matchWidth={false} minWidth={272}>
@@ -127,9 +132,9 @@
 		}}
 	>
 		<div class="head">
-			<button type="button" class="ghost icon" aria-label="Vorjahr" onclick={() => go(shift(focused, -12))}><ChevronLeft size={18} /></button>
+			<button type="button" class="ghost icon" aria-label={t('ui.month.prevYear')} onclick={() => go(shift(focused, -12))}><ChevronLeft size={18} /></button>
 			<strong aria-live="polite">{year}</strong>
-			<button type="button" class="ghost icon" aria-label="Nächstes Jahr" onclick={() => go(shift(focused, 12))}><ChevronRight size={18} /></button>
+			<button type="button" class="ghost icon" aria-label={t('ui.month.nextYear')} onclick={() => go(shift(focused, 12))}><ChevronRight size={18} /></button>
 		</div>
 		<!-- svelte-ignore a11y_interactive_supports_focus -->
 		<div class="grid" role="grid" bind:this={grid} onkeydown={onGridKey}>
@@ -149,8 +154,8 @@
 			{/each}
 		</div>
 		<div class="foot">
-			<button type="button" class="link" onclick={() => set(now())}>Dieser Monat</button>
-			{#if clearable}<button type="button" class="link muted" onclick={() => set('')}>{clearLabel}</button>{/if}
+			<button type="button" class="link" onclick={() => set(now())}>{t('ui.month.thisMonth')}</button>
+			{#if clearable}<button type="button" class="link muted" onclick={() => set('')}>{clearLabel ?? t('ui.month.all')}</button>{/if}
 		</div>
 	</div>
 </Popover>

@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { api } from '$lib/api';
-	import { Checkbox, PasswordInput, Switch } from '$lib/ui';
+	import { Checkbox, PasswordInput, RadioGroup, Switch } from '$lib/ui';
+	import { invalidateAll } from '$app/navigation';
+	import { LOCALES, browserLocale, t, type Locale } from '$lib/i18n/index.svelte';
+	import Languages from '@lucide/svelte/icons/languages';
 	import type { Account, AiStatus, User } from '$lib/types';
 	import { onDestroy } from 'svelte';
 	import Wand from '@lucide/svelte/icons/wand-sparkles';
 	import { initials } from '$lib/colors';
-	import { iban } from '$lib/format';
+	import { dateTime, iban, percent } from '$lib/format';
 	import BudgetMonthSettings from '$lib/BudgetMonthSettings.svelte';
 
 	let { data } = $props();
@@ -29,13 +32,30 @@
 	}
 	run(async () => {});
 
+	// --- Language (per user; "auto" follows the browser) ---
+	let language = $derived<Locale | 'auto'>(data.me?.language ?? 'auto');
+	let languageOptions = $derived([
+		{ value: 'auto' as const, label: t('settings.languageAuto') },
+		...LOCALES.map((l) => ({ value: l.code, label: l.label }))
+	]);
+	const browserLanguage = LOCALES.find((l) => l.code === browserLocale())!.label;
+	async function setLanguage(value: Locale | 'auto') {
+		const preference = value === 'auto' ? null : value;
+		try {
+			await api('/auth/me', { method: 'PATCH', body: { language: preference } });
+			// The layout load applies the new preference (see +layout.ts)
+			await invalidateAll();
+		} catch (e) {
+			error = (e as Error).message;
+		}
+	}
+
 	// --- AI categorization ---
 	let ai = $state<AiStatus | null>(null);
 	let aiBusy = $state(false);
 	let poll: ReturnType<typeof setTimeout> | undefined;
-	const pct = (v: number) => `${Math.round(v * 100)} %`;
-	const when = (iso: string) =>
-		new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
+	const pct = percent;
+	const when = dateTime;
 
 	async function loadAi() {
 		clearTimeout(poll);
@@ -63,18 +83,19 @@
 		aiBusy = false;
 		await loadAi();
 	}
-	const train = () => aiAction('/ai/train', () => 'KI neu trainiert und offene Buchungen neu eingeordnet.');
+	const train = () => aiAction('/ai/train', () => t('ai.trained'));
 	const recategorize = () =>
 		aiAction('/ai/recategorize', (r: { assigned: number; suggested: number; llm_queued: number }) =>
-			`${r.assigned} Buchungen zugeordnet, ${r.suggested} Vorschläge` +
-			(r.llm_queued ? `, ${r.llm_queued} gehen an das Sprachmodell.` : '.')
+			r.llm_queued
+				? t('ai.recategorizedLlm', { assigned: r.assigned, suggested: r.suggested, queued: r.llm_queued })
+				: t('ai.recategorized', { assigned: r.assigned, suggested: r.suggested })
 		);
 
 	const saveAccount = (a: Account) =>
-		run(() => api(`/accounts/${a.id}`, { method: 'PATCH', body: { name: a.name, shared: a.shared, member_ids: a.member_ids } }), 'Konto gespeichert.');
+		run(() => api(`/accounts/${a.id}`, { method: 'PATCH', body: { name: a.name, shared: a.shared, member_ids: a.member_ids } }), t('settings.accountSaved'));
 	const deleteAccount = (a: Account) => {
-		if (confirm(`Konto „${a.name}“ mit allen ${a.transaction_count} Buchungen löschen?`))
-			run(() => api(`/accounts/${a.id}`, { method: 'DELETE' }), 'Konto gelöscht.');
+		if (confirm(t('settings.confirmDeleteAccount', { name: a.name, count: a.transaction_count })))
+			run(() => api(`/accounts/${a.id}`, { method: 'DELETE' }), t('settings.accountDeleted'));
 	};
 	const toggleMember = (a: Account, id: number) => {
 		a.member_ids = a.member_ids.includes(id) ? a.member_ids.filter((m) => m !== id) : [...a.member_ids, id];
@@ -84,41 +105,48 @@
 		run(async () => {
 			await api('/users', { method: 'POST', body: newUser });
 			newUser = { username: '', display_name: '', password: '', is_admin: false };
-		}, 'Nutzer angelegt.');
+		}, t('settings.userCreated'));
 	};
 	const deleteUser = (u: User) => {
-		if (confirm(`Nutzer „${u.display_name}“ löschen?`)) run(() => api(`/users/${u.id}`, { method: 'DELETE' }), 'Nutzer gelöscht.');
+		if (confirm(t('settings.confirmDeleteUser', { name: u.display_name })))
+			run(() => api(`/users/${u.id}`, { method: 'DELETE' }), t('settings.userDeleted'));
 	};
 	const changePassword = (e: SubmitEvent) => {
 		e.preventDefault();
 		run(async () => {
 			await api('/auth/password', { method: 'POST', body: pw });
 			pw = { current_password: '', new_password: '' };
-		}, 'Passwort geändert.');
+		}, t('settings.passwordChanged'));
 	};
 </script>
 
 <div class="page-head">
 	<div>
 		<span class="eyebrow break-anywhere">{data.me?.household_name}</span>
-		<h1>Einstellungen</h1>
+		<h1>{t('nav.settings')}</h1>
 	</div>
 </div>
 {#if error}<div class="error">{error}</div>{/if}
 {#if notice}<div class="ok">{notice}</div>{/if}
 
 <section class="card">
-	<h2>Konten</h2>
+	<h2><Languages size={20} /> {t('settings.language')}</h2>
+	<RadioGroup options={languageOptions} value={language} label={t('settings.language')} onchange={setLanguage} />
+	<p class="muted small">{t('settings.languageHint', { browser: browserLanguage })}</p>
+</section>
+
+<section class="card">
+	<h2>{t('import.accounts')}</h2>
 	{#each accounts as a (a.id)}
 		<div class="account">
 			<div class="row">
-				<label>Name <input bind:value={a.name} /></label>
-				<span class="small muted">{a.iban ? iban(a.iban) : 'ohne IBAN'} · {a.transaction_count} Buchungen</span>
+				<label>{t('common.name')} <input bind:value={a.name} /></label>
+				<span class="small muted">{a.iban ? iban(a.iban) : t('import.noIban')} · {t('transactions.count', { count: a.transaction_count })}</span>
 			</div>
-			<Switch bind:checked={a.shared}>Für alle im Haushalt sichtbar</Switch>
+			<Switch bind:checked={a.shared}>{t('settings.shared')}</Switch>
 			{#if !a.shared}
 				<div class="row small">
-					Sichtbar für:
+					{t('settings.visibleFor')}
 					{#each users as u (u.id)}
 						<Checkbox checked={a.member_ids.includes(u.id)} onchange={() => toggleMember(a, u.id)} disabled={u.id === data.me?.id}>
 							{u.display_name}
@@ -127,82 +155,81 @@
 				</div>
 			{/if}
 			<div class="row">
-				<button class="secondary" onclick={() => saveAccount(a)}>Speichern</button>
-				<button class="danger" onclick={() => deleteAccount(a)}>Löschen</button>
+				<button class="secondary" onclick={() => saveAccount(a)}>{t('common.save')}</button>
+				<button class="danger" onclick={() => deleteAccount(a)}>{t('common.delete')}</button>
 			</div>
 		</div>
 	{:else}
-		<p class="muted">Konten entstehen automatisch beim ersten <a href="/import">CSV-Import</a>.</p>
+		<p class="muted">{t('settings.noAccounts')} <a href="/import">{t('settings.noAccountsLink')}</a></p>
 	{/each}
 </section>
 
 <BudgetMonthSettings />
 
 <section class="card">
-	<h2><Wand size={20} /> KI-Kategorisierung</h2>
+	<h2><Wand size={20} /> {t('ai.title')}</h2>
 	{#if ai}
 		{#if !ai.enabled}
-			<p class="muted">Ausgeschaltet (BUDGIE_AI_ENABLED=false).</p>
+			<p class="muted">{t('ai.disabled')} (BUDGIE_AI_ENABLED=false).</p>
 		{:else}
 			<p class="muted small">
-				Läuft komplett auf deinem Server. Jede Zuordnung, die du änderst oder mit dem Haken bestätigst, ist ein
-				Lernbeispiel. Ab {pct(ai.auto_threshold)} Sicherheit ordnet die KI selbst zu, darunter macht sie einen Vorschlag.
+				{t('ai.intro', { threshold: pct(ai.auto_threshold) })}
 			</p>
 			<div class="stats">
 				<div>
-					<span class="label">Gelernt aus</span>
+					<span class="label">{t('ai.learnedFrom')}</span>
 					<strong>{ai.model ? ai.model.samples : 0}</strong>
-					<span class="small muted">eigenen Buchungen{#if ai.model}, davon {ai.model.corrections} von Hand{/if}</span>
+					<span class="small muted">{t('ai.ownTransactions')}{#if ai.model}{t('ai.manualShare', { count: ai.model.corrections })}{/if}</span>
 				</div>
 				<div>
-					<span class="label">Trefferquote</span>
+					<span class="label">{t('ai.accuracy')}</span>
 					<strong>{ai.model?.accuracy != null ? pct(ai.model.accuracy) : '–'}</strong>
-					<span class="small muted">{ai.model?.accuracy != null ? 'bei deinen eigenen Zuordnungen' : 'ab 20 Zuordnungen von Hand'}</span>
+					<span class="small muted">{ai.model?.accuracy != null ? t('ai.accuracyHint') : t('ai.accuracyLater')}</span>
 				</div>
 				<a class="stat-link" href="/transactions?ai_review=1">
-					<span class="label">Zu prüfen</span>
+					<span class="label">{t('ai.toReview')}</span>
 					<strong>{ai.ai_categorized + ai.suggestions}</strong>
-					<span class="small muted">{ai.ai_categorized} von der KI zugeordnet, {ai.suggestions} Vorschläge</span>
+					<span class="small muted">{t('ai.toReviewHint', { assigned: ai.ai_categorized, suggestions: ai.suggestions })}</span>
 				</a>
 				<a class="stat-link" href="/transactions?uncategorized=1">
-					<span class="label">Ohne Kategorie</span>
+					<span class="label">{t('ai.uncategorized')}</span>
 					<strong>{ai.uncategorized}</strong>
-					<span class="small muted">Buchungen</span>
+					<span class="small muted">{t('ai.transactions', { count: ai.uncategorized })}</span>
 				</a>
 			</div>
 			<p class="small muted">
-				{#if ai.model}Zuletzt trainiert {when(ai.model.trained_at)}.{:else}Noch nicht trainiert. Das passiert beim ersten Import automatisch.{/if}
+				{#if ai.model}{t('ai.lastTrained', { when: when(ai.model.trained_at) })}{:else}{t('ai.notTrained')}{/if}
 			</p>
 
 			<div class="llm">
 				<span class="dot" class:on={ai.llm.configured && ai.llm.model_available} class:off={ai.llm.configured && !ai.llm.model_available}></span>
 				<div>
-					<strong>Sprachmodell für unsichere Fälle</strong>
+					<strong>{t('ai.llmTitle')}</strong>
 					{#if !ai.llm.configured}
 						<div class="small muted">
-							Aus. Optional über Ollama zuschaltbar, siehe README („docker compose --profile ai“ und BUDGIE_OLLAMA_URL).
+							{t('ai.llmOff')}
 						</div>
 					{:else if ai.llm.error}
 						<div class="small warn-text">{ai.llm.error}</div>
 					{:else}
-						<div class="small muted">{ai.llm.model} ist bereit.</div>
+						<div class="small muted">{t('ai.llmReady', { model: ai.llm.model })}</div>
 					{/if}
 					{#if ai.llm.running}
-						<div class="small">Arbeitet gerade: {ai.llm.done} von {ai.llm.total} Buchungen eingeordnet …</div>
+						<div class="small">{t('ai.llmRunning', { done: ai.llm.done, total: ai.llm.total })}</div>
 					{/if}
 				</div>
 			</div>
 
 			<div class="row">
-				<button class="secondary" onclick={train} disabled={aiBusy}>Jetzt neu trainieren</button>
-				<button class="secondary" onclick={recategorize} disabled={aiBusy}>Offene Buchungen neu einordnen</button>
+				<button class="secondary" onclick={train} disabled={aiBusy}>{t('ai.train')}</button>
+				<button class="secondary" onclick={recategorize} disabled={aiBusy}>{t('ai.recategorize')}</button>
 			</div>
 		{/if}
 	{/if}
 </section>
 
 <section class="card">
-	<h2>Nutzer im Haushalt</h2>
+	<h2>{t('settings.users')}</h2>
 	<table class="users">
 		<tbody>
 			{#each users as u (u.id)}
@@ -218,7 +245,7 @@
 						>
 					</td>
 					<td class="amount">
-						{#if data.me?.is_admin && u.id !== data.me.id}<button class="link small" onclick={() => deleteUser(u)}>löschen</button>{/if}
+						{#if data.me?.is_admin && u.id !== data.me.id}<button class="link small" onclick={() => deleteUser(u)}>{t('settings.deleteUser')}</button>{/if}
 					</td>
 				</tr>
 			{/each}
@@ -226,21 +253,21 @@
 	</table>
 	{#if data.me?.is_admin}
 		<form class="row" style="margin-top: 1rem" onsubmit={addUser}>
-			<label>Name <input bind:value={newUser.display_name} required /></label>
-			<label>Nutzername <input bind:value={newUser.username} required pattern="[A-Za-z0-9._\-]+" /></label>
-			<label>Passwort <PasswordInput bind:value={newUser.password} minlength={8} required autocomplete="new-password" /></label>
+			<label>{t('common.name')} <input bind:value={newUser.display_name} required /></label>
+			<label>{t('auth.username')} <input bind:value={newUser.username} required pattern="[A-Za-z0-9._\-]+" /></label>
+			<label>{t('auth.password')} <PasswordInput bind:value={newUser.password} minlength={8} required autocomplete="new-password" /></label>
 			<Checkbox bind:checked={newUser.is_admin} class="admin">Admin</Checkbox>
-			<button>Nutzer anlegen</button>
+			<button>{t('settings.createUser')}</button>
 		</form>
 	{/if}
 </section>
 
 <section class="card">
-	<h2>Passwort ändern</h2>
+	<h2>{t('settings.changePassword')}</h2>
 	<form class="row" onsubmit={changePassword}>
-		<label>Aktuelles Passwort <PasswordInput bind:value={pw.current_password} required autocomplete="current-password" /></label>
-		<label>Neues Passwort <PasswordInput bind:value={pw.new_password} minlength={8} required autocomplete="new-password" /></label>
-		<button>Ändern</button>
+		<label>{t('settings.currentPassword')} <PasswordInput bind:value={pw.current_password} required autocomplete="current-password" /></label>
+		<label>{t('settings.newPassword')} <PasswordInput bind:value={pw.new_password} minlength={8} required autocomplete="new-password" /></label>
+		<button>{t('settings.change')}</button>
 	</form>
 </section>
 

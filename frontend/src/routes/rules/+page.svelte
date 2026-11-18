@@ -5,6 +5,7 @@
 	import { categoryLabels } from '$lib/format';
 	import type { Category, Rule } from '$lib/types';
 	import { colorFor } from '$lib/colors';
+	import { t } from '$lib/i18n/index.svelte';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import WandSparkles from '@lucide/svelte/icons/wand-sparkles';
 
@@ -19,12 +20,20 @@
 	let error = $state('');
 	let notice = $state('');
 
-	let draft = $state({ field: 'payee', match_type: 'contains', pattern: '', category_id: null as number | null, priority: 0 });
+	let draft = $state({
+		field: 'payee' as Rule['field'],
+		match_type: 'contains' as Rule['match_type'],
+		pattern: '',
+		category_id: null as number | null,
+		priority: 0
+	});
 
-	const fieldLabel = { payee: 'Empfänger', purpose: 'Verwendungszweck', any: 'Empfänger oder Zweck' };
-	const matchLabel = { contains: 'enthält', equals: 'ist genau', starts_with: 'beginnt mit', regex: 'passt zu Regex' };
-	const fieldOptions = Object.entries(fieldLabel).map(([value, label]) => ({ value, label }));
-	const matchOptions = Object.entries(matchLabel).map(([value, label]) => ({ value, label }));
+	const fieldLabel = (field: Rule['field']) => t(`rules.field.${field}`);
+	const matchLabel = (match: Rule['match_type']) => t(`rules.match.${match}`);
+	let fieldOptions = $derived((['payee', 'purpose', 'any'] as const).map((value) => ({ value, label: fieldLabel(value) })));
+	let matchOptions = $derived(
+		(['contains', 'equals', 'starts_with', 'regex'] as const).map((value) => ({ value, label: matchLabel(value) }))
+	);
 
 	async function run(fn: () => Promise<unknown>) {
 		try {
@@ -42,31 +51,31 @@
 		e.preventDefault();
 		run(async () => {
 			const r = await api<Rule>('/rules', { method: 'POST', body: draft });
-			notice = `Regel angelegt, ${r.match_count} Buchungen zugeordnet.`;
+			notice = t('rules.created', { count: r.match_count });
 			draft.pattern = '';
 		});
 	};
 	const toggle = (r: Rule) => run(() => api(`/rules/${r.id}`, { method: 'PATCH', body: { active: !r.active } }));
 	const remove = (r: Rule) => {
-		if (confirm(`Regel „${r.pattern}“ löschen? Bereits zugeordnete Buchungen behalten ihre Kategorie.`))
+		if (confirm(t('rules.confirmDelete', { pattern: r.pattern })))
 			run(() => api(`/rules/${r.id}`, { method: 'DELETE' }));
 	};
 	const applyAll = (overwrite: boolean) =>
 		run(async () => {
 			const res = await api<{ changed: number }>('/rules/apply', { method: 'POST', body: { overwrite_rule_results: overwrite } });
-			notice = `${res.changed} Buchungen neu zugeordnet.`;
+			notice = t('rules.reapplied', { count: res.changed });
 		});
 </script>
 
 <div class="page-head">
 	<div>
-		<span class="eyebrow">Automatisch zuordnen</span>
-		<h1>Regeln</h1>
-		<p>Regeln ordnen Buchungen beim Import zu. Höhere Priorität gewinnt, manuelle Zuordnungen bleiben unangetastet.</p>
+		<span class="eyebrow">{t('rules.eyebrow')}</span>
+		<h1>{t('nav.rules')}</h1>
+		<p>{t('rules.intro')}</p>
 	</div>
 	<div class="row">
-		<button class="secondary" onclick={() => applyAll(false)}>Auf offene Buchungen anwenden</button>
-		<button class="secondary" onclick={() => applyAll(true)} title="Auch Zuordnungen durch Regeln neu berechnen, manuelle bleiben">Alles neu berechnen</button>
+		<button class="secondary" onclick={() => applyAll(false)}>{t('rules.applyOpen')}</button>
+		<button class="secondary" onclick={() => applyAll(true)} title={t('rules.recomputeTitle')}>{t('rules.recompute')}</button>
 	</div>
 </div>
 
@@ -75,37 +84,37 @@
 
 <form class="card row builder" onsubmit={create}>
 	<span class="wand"><WandSparkles size={20} /></span>
-	<div class="field">Wenn <Select options={fieldOptions} bind:value={draft.field} label="Feld" /></div>
-	<div class="field">&nbsp;<Select options={matchOptions} bind:value={draft.match_type} label="Vergleich" /></div>
-	<label>Text <input bind:value={draft.pattern} required placeholder="z. B. REWE" /></label>
-	<div class="field">dann <CategorySelect {categories} bind:value={draft.category_id} empty="Kategorie wählen" /></div>
-	<div class="field">Priorität <NumberInput bind:value={draft.priority} label="Priorität" class="prio" /></div>
-	<button disabled={!draft.category_id}>Regel anlegen</button>
+	<div class="field">{t('rules.if')} <Select options={fieldOptions} bind:value={draft.field} label={t('rules.fieldLabel')} /></div>
+	<div class="field">&nbsp;<Select options={matchOptions} bind:value={draft.match_type} label={t('rules.condition')} /></div>
+	<label>{t('rules.text')} <input bind:value={draft.pattern} required placeholder={t('rules.textPlaceholder')} /></label>
+	<div class="field">{t('rules.then')} <CategorySelect {categories} bind:value={draft.category_id} empty={t('categorySelect.choose')} /></div>
+	<div class="field">{t('rules.priority')} <NumberInput bind:value={draft.priority} label={t('rules.priority')} class="prio" /></div>
+	<button disabled={!draft.category_id}>{t('rules.create')}</button>
 </form>
 
 <div class="card">
 	<table class="rules">
 		<thead>
-			<tr><th>Bedingung</th><th>Kategorie</th><th class="amount">Prio</th><th class="amount">Treffer</th><th></th></tr>
+			<tr><th>{t('rules.condition')}</th><th>{t('common.category')}</th><th class="amount">{t('rules.prio')}</th><th class="amount">{t('rules.hits')}</th><th></th></tr>
 		</thead>
 		<tbody>
 			{#each rules as r (r.id)}
 				<tr class:inactive={!r.active}>
-					<td class="cond"><span class="muted">{fieldLabel[r.field]} {matchLabel[r.match_type]}</span> <code>{r.pattern}</code></td>
+					<td class="cond"><span class="muted">{fieldLabel(r.field)} {matchLabel(r.match_type)}</span> <code>{r.pattern}</code></td>
 					<td class="cat">
 						<span class="catpill" style:--c={catColor.get(r.category_id)} title={labels.get(r.category_id)}
 							><span class="dot" style:background="var(--c)"></span><span class="truncate">{labels.get(r.category_id)}</span></span
 						>
 					</td>
-					<td class="amount" data-label="Prio">{r.priority}</td>
-					<td class="amount" data-label="Treffer"><span class="badge">{r.match_count}</span></td>
+					<td class="amount" data-label={t('rules.prio')}>{r.priority}</td>
+					<td class="amount" data-label={t('rules.hits')}><span class="badge">{r.match_count}</span></td>
 					<td class="actions">
-						<Switch checked={r.active} onchange={() => toggle(r)} title={r.active ? 'Aktiv' : 'Inaktiv'} label="Regel aktiv" />
-						<button class="ghost icon" onclick={() => remove(r)} title="Löschen" aria-label="Löschen"><Trash2 size={16} /></button>
+						<Switch checked={r.active} onchange={() => toggle(r)} title={r.active ? t('rules.active') : t('rules.inactive')} label={t('rules.activeLabel')} />
+						<button class="ghost icon" onclick={() => remove(r)} title={t('common.delete')} aria-label={t('common.delete')}><Trash2 size={16} /></button>
 					</td>
 				</tr>
 			{:else}
-				<tr><td colspan="5" class="muted">Noch keine Regeln. Lege eine an oder ordne unter „Buchungen“ zu und setze dort den Haken für Regeln.</td></tr>
+				<tr><td colspan="5" class="muted">{t('rules.empty')}</td></tr>
 			{/each}
 		</tbody>
 	</table>

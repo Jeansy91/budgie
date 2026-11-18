@@ -11,6 +11,7 @@ import hashlib
 from cryptography.fernet import Fernet, InvalidToken
 
 from .config import get_settings
+from .i18n import t
 
 
 class SecretKeyMissing(RuntimeError):
@@ -20,7 +21,7 @@ class SecretKeyMissing(RuntimeError):
 def _fernet() -> Fernet:
     secret = get_settings().secret_key
     if len(secret) < 16:
-        raise SecretKeyMissing("BUDGIE_SECRET_KEY fehlt oder ist kürzer als 16 Zeichen")
+        raise SecretKeyMissing(t("crypto.key_missing"))
     key = hashlib.sha256(b"budgie-fints\x00" + secret.encode()).digest()
     return Fernet(base64.urlsafe_b64encode(key))
 
@@ -35,4 +36,4 @@ def decrypt(token: str) -> bytes:
     try:
         return _fernet().decrypt(token.encode())
     except InvalidToken as exc:
-        raise ValueError("Gespeicherte Bankdaten lassen sich nicht entschlüsseln (BUDGIE_SECRET_KEY geändert?)") from exc
+        raise ValueError(t("crypto.cannot_decrypt")) from exc

@@ -1,10 +1,11 @@
 from datetime import date
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Query, status
 from sqlalchemy import func, or_, select
 
 from ..ai import service as ai
 from ..deps import DB, CurrentUser, visible_account_ids
+from ..i18n import http_error
 from ..models import BudgetShift, Category, CategorySource, Rule, RuleField, RuleMatch, Transaction, User
 from ..rules import apply_rules
 from ..schemas import (
@@ -26,7 +27,7 @@ def month_bounds(month: str) -> tuple[date, date]:
         year, mon = (int(x) for x in month.split("-"))
         start = date(year, mon, 1)
     except ValueError:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Monat im Format JJJJ-MM angeben") from None
+        raise http_error(status.HTTP_400_BAD_REQUEST, "transactions.bad_month") from None
     end = date(year + (mon == 12), mon % 12 + 1, 1)
     return start, end
 
@@ -38,7 +39,7 @@ def get_transaction(db: DB, user: User, transaction_id: int) -> Transaction:
         )
     )
     if t is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Buchung nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "transactions.not_found")
     return t
 
 
@@ -121,7 +122,7 @@ def update_transaction(transaction_id: int, data: TransactionPatch, db: DB, user
             if data.create_rule:
                 pattern = (data.rule_pattern or t.payee).strip()
                 if not pattern:
-                    raise HTTPException(status.HTTP_400_BAD_REQUEST, "Kein Empfänger für die Regel vorhanden")
+                    raise http_error(status.HTTP_400_BAD_REQUEST, "transactions.no_payee_for_rule")
                 rule = Rule(
                     household_id=user.household_id,
                     category_id=category.id,

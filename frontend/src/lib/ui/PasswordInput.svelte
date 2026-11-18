@@ -3,6 +3,7 @@
 	All other attributes (required, minlength, autocomplete, inputmode …) are passed through.
 -->
 <script lang="ts">
+	import { t } from '../i18n/index.svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import Eye from '@lucide/svelte/icons/eye';
 	import EyeOff from '@lucide/svelte/icons/eye-off';
@@ -17,7 +18,7 @@
 		type="button"
 		class="eye"
 		tabindex="-1"
-		aria-label={visible ? 'Passwort verbergen' : 'Passwort anzeigen'}
+		aria-label={visible ? t('ui.password.hide') : t('ui.password.show')}
 		aria-pressed={visible}
 		onclick={() => (visible = !visible)}
 	>

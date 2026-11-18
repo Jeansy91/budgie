@@ -1,11 +1,12 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from typing import Literal
 
-from .models import BudgetShift, CategoryKind, CategorySource, RuleField, RuleMatch
+from .i18n import category_name
+from .models import BudgetShift, Category, CategoryKind, CategorySource, RuleField, RuleMatch
 
 
 class ORM(BaseModel):
@@ -47,6 +48,12 @@ class UserOut(ORM):
 
 class MeOut(UserOut):
     household_name: str
+    # UI language; None = follow the browser
+    language: Literal["de", "en"] | None = None
+
+
+class MePatch(BaseModel):
+    language: Literal["de", "en"] | None
 
 
 class SetupStatus(BaseModel):
@@ -98,11 +105,26 @@ class CategoryPatch(BaseModel):
 
 class CategoryOut(ORM):
     id: int
+    # Default categories in the request language, see app/seed.py
     name: str
     parent_id: int | None
     kind: CategoryKind
     sort_order: int
     children: list["CategoryOut"] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def _localize(cls, data):
+        if isinstance(data, Category):
+            return {
+                "id": data.id,
+                "name": category_name(data),
+                "parent_id": data.parent_id,
+                "kind": data.kind,
+                "sort_order": data.sort_order,
+                "children": list(data.children) if data.parent_id is None else [],
+            }
+        return data
 
 
 # --- Rules ----------------------------------------------------------------

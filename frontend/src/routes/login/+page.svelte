@@ -3,6 +3,8 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api';
 	import Logo from '$lib/Logo.svelte';
+	import LanguageSwitch from '$lib/LanguageSwitch.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let username = $state('');
 	let password = $state('');
@@ -27,14 +29,15 @@
 
 <div class="auth-wrap">
 <div class="auth card">
+	<LanguageSwitch />
 	<div class="logo"><Logo size={52} /></div>
-	<h1>Willkommen zurück</h1>
-	<p class="muted">Melde dich an, um dein Haushaltsbuch zu öffnen.</p>
+	<h1>{t('auth.welcomeBack')}</h1>
+	<p class="muted">{t('auth.loginIntro')}</p>
 	{#if error}<div class="error">{error}</div>{/if}
 	<form onsubmit={submit}>
-		<label>Nutzername <input bind:value={username} autocomplete="username" required /></label>
-		<label>Passwort <PasswordInput bind:value={password} autocomplete="current-password" required /></label>
-		<button disabled={busy}>Anmelden</button>
+		<label>{t('auth.username')} <input bind:value={username} autocomplete="username" required /></label>
+		<label>{t('auth.password')} <PasswordInput bind:value={password} autocomplete="current-password" required /></label>
+		<button disabled={busy}>{t('auth.login')}</button>
 	</form>
 </div>
 </div>

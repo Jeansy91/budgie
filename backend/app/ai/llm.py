@@ -14,6 +14,7 @@ from dataclasses import dataclass
 import httpx
 
 from ..config import get_settings
+from ..i18n import t
 from .features import TxText
 
 log = logging.getLogger(__name__)
@@ -51,10 +52,10 @@ def status() -> OllamaStatus:
             reachable=True,
             model_available=available,
             model=wanted,
-            error=None if available else f"Modell {wanted} fehlt, bitte mit „ollama pull {wanted}“ laden",
+            error=None if available else t("ai.model_missing", model=wanted),
         )
     except (httpx.HTTPError, ValueError) as exc:
-        return OllamaStatus(configured=True, model=settings.ollama_model, error=f"Ollama nicht erreichbar: {exc}")
+        return OllamaStatus(configured=True, model=settings.ollama_model, error=t("ai.ollama_unreachable", error=exc))
 
 
 SYSTEM_PROMPT = (

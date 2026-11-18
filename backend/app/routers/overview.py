@@ -6,6 +6,7 @@ from sqlalchemy import func, literal_column, select
 from sqlalchemy.orm import aliased
 
 from ..deps import DB, CurrentUser, visible_account_ids
+from ..i18n import category_name, t
 from ..models import Category, CategoryKind, Transaction
 from ..schemas import CategorySum, MonthTotal, OverviewOut
 from .transactions import month_bounds
@@ -60,7 +61,7 @@ def overview(
         if sub is not None:
             child = next((c for c in bucket.children if c.category_id == sub.id), None)
             if child is None:
-                child = CategorySum(category_id=sub.id, name=sub.name, amount=ZERO, count=0)
+                child = CategorySum(category_id=sub.id, name=category_name(sub), amount=ZERO, count=0)
                 bucket.children.append(child)
             child.amount += amount
             child.count += count
@@ -71,14 +72,14 @@ def overview(
         if category is None:
             uncategorized_count += count
             kind = CategoryKind.income if amount > 0 else CategoryKind.expense
-            add(kind, None, "Ohne Kategorie", None, amount, count)
+            add(kind, None, t("categories.none"), None, amount, count)
         else:
             main = categories[category.parent_id] if category.parent_id else category
             kind = main.kind
             if kind == CategoryKind.transfer:
                 transfers += amount
                 continue
-            add(kind, main.id, main.name, category if category.parent_id else None, amount, count)
+            add(kind, main.id, category_name(main), category if category.parent_id else None, amount, count)
         if kind == CategoryKind.income:
             income += amount
         else:

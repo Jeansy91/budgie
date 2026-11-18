@@ -3,6 +3,7 @@
 	The up/down arrow keys change the value as well.
 -->
 <script lang="ts">
+	import { t } from '../i18n/index.svelte';
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
 
@@ -43,7 +44,7 @@
 </script>
 
 <div class="num {cls}" class:disabled>
-	<button type="button" tabindex="-1" aria-label="Weniger" onclick={() => set(value - step)} disabled={disabled || (min !== undefined && value <= min)}><Minus size={14} /></button>
+	<button type="button" tabindex="-1" aria-label={t('ui.number.less')} onclick={() => set(value - step)} disabled={disabled || (min !== undefined && value <= min)}><Minus size={14} /></button>
 	<input
 		{id}
 		type="text"
@@ -67,7 +68,7 @@
 			else set(n);
 		}}
 	/>
-	<button type="button" tabindex="-1" aria-label="Mehr" onclick={() => set(value + step)} disabled={disabled || (max !== undefined && value >= max)}><Plus size={14} /></button>
+	<button type="button" tabindex="-1" aria-label={t('ui.number.more')} onclick={() => set(value + step)} disabled={disabled || (max !== undefined && value >= max)}><Plus size={14} /></button>
 </div>
 
 <style>

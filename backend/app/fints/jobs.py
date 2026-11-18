@@ -32,6 +32,7 @@ from fints.exceptions import (
 from sqlalchemy import func, select
 
 from .. import crypto
+from ..i18n import date_text, get_locale, t, use_locale
 from ..config import get_settings
 from ..db import SessionLocal
 from ..importers.ing_csv import normalize_iban
@@ -69,8 +70,10 @@ class SyncJob:
     user_id: int
     connection_id: int
     # running → (need_tan → running)* → done | error | cancelled
+    # Language of the user who started the sync; messages are written in it
+    locale: str = "de"
     state: str = "running"
-    message: str = "Verbinde mit der Bank …"
+    message: str = ""
     challenge: str | None = None
     challenge_image: str | None = None
     decoupled: bool = False
@@ -122,8 +125,14 @@ def start_sync(connection: BankConnection, user: User, pin: str, start_date: dat
     with _lock:
         for other in _jobs.values():
             if other.connection_id == connection.id and not other.finished:
-                raise JobFailed("Für diese Bankverbindung läuft schon ein Abruf")
-        job = SyncJob(id=secrets.token_urlsafe(16), user_id=user.id, connection_id=connection.id)
+                raise JobFailed(t("fints.already_running"))
+        job = SyncJob(
+            id=secrets.token_urlsafe(16),
+            user_id=user.id,
+            connection_id=connection.id,
+            locale=get_locale(),
+            message=t("fints.connecting"),
+        )
         _jobs[job.id] = job
     thread = threading.Thread(target=_run, args=(job, pin, start_date), name=f"fints-{job.id[:6]}", daemon=True)
     thread.start()
@@ -134,19 +143,19 @@ def start_sync(connection: BankConnection, user: User, pin: str, start_date: dat
 
 
 def _run(job: SyncJob, pin: str, start_date: date | None) -> None:
-    with SessionLocal() as db:
+    with use_locale(job.locale), SessionLocal() as db:
         connection = db.get(BankConnection, job.connection_id)
         try:
             if connection is None:
-                raise JobFailed("Bankverbindung nicht gefunden")
+                raise JobFailed(t("fints.connection_not_found"))
             _sync(db, job, connection, pin, start_date)
             connection.last_sync_at = datetime.now(UTC)
             connection.last_error = None
             db.commit()
-            job.set(state="done", message="Abruf abgeschlossen", challenge=None, challenge_image=None)
+            job.set(state="done", message=t("fints.done"), challenge=None, challenge_image=None)
         except JobCancelled:
             db.rollback()
-            job.set(state="cancelled", message="Abruf abgebrochen", challenge=None, challenge_image=None)
+            job.set(state="cancelled", message=t("fints.cancelled"), challenge=None, challenge_image=None)
         except Exception as exc:  # noqa: BLE001  every error should reach the UI
             db.rollback()
             text = _error_text(exc)
@@ -155,30 +164,27 @@ def _run(job: SyncJob, pin: str, start_date: date | None) -> None:
             if connection is not None:
                 connection.last_error = text
                 db.commit()
-            job.set(state="error", error=text, message="Abruf fehlgeschlagen", challenge=None, challenge_image=None)
+            job.set(state="error", error=text, message=t("fints.failed"), challenge=None, challenge_image=None)
 
 
 def _error_text(exc: Exception) -> str:
     if isinstance(exc, FinTSClientPINError):
-        return (
-            "Die Bank hat die Anmeldung abgelehnt. Bitte Zugangsnummer und PIN prüfen. "
-            "Achtung: Nach mehreren falschen PINs sperrt die Bank den Zugang."
-        )
+        return t("fints.pin_rejected")
     if isinstance(exc, FinTSClientTemporaryAuthError):
-        return "Der Zugang ist vorübergehend gesperrt. Bitte im Online-Banking entsperren."
+        return t("fints.temporarily_locked")
     if isinstance(exc, FinTSSCARequiredError):
-        return "Die Bank verlangt eine starke Kundenauthentifizierung, die nicht abgeschlossen wurde."
+        return t("fints.sca_required")
     if isinstance(exc, FinTSConnectionError):
-        return f"Keine Verbindung zum FinTS-Server der Bank: {exc}"
+        return t("fints.connection_error", error=exc)
     if isinstance(exc, (JobFailed, crypto.SecretKeyMissing, ValueError)):
         return str(exc)
-    return f"Fehler beim Abruf: {exc}"
+    return t("fints.error", error=exc)
 
 
 def _sync(db, job: SyncJob, connection: BankConnection, pin: str, start_date: date | None) -> None:
     settings = get_settings()
     if not settings.fints_product_id:
-        raise JobFailed("BUDGIE_FINTS_PRODUCT_ID ist nicht gesetzt")
+        raise JobFailed(t("fints.product_id_missing"))
     user = db.get(User, job.user_id)
 
     state = crypto.decrypt(connection.client_state_enc) if connection.client_state_enc else None
@@ -199,10 +205,10 @@ def _sync(db, job: SyncJob, connection: BankConnection, pin: str, start_date: da
     with client:
         if isinstance(client.init_tan_response, NeedTANResponse):
             _resolve(job, client, client.init_tan_response)
-        job.set(state="running", message="Konten werden abgerufen …")
+        job.set(state="running", message=t("fints.fetching_accounts"))
         sepa_accounts = _resolve(job, client, client.get_sepa_accounts())
         if not sepa_accounts:
-            raise JobFailed("Die Bank hat keine Konten gemeldet")
+            raise JobFailed(t("fints.no_accounts"))
 
         for sepa in sepa_accounts:
             _check_cancel(job)
@@ -211,10 +217,10 @@ def _sync(db, job: SyncJob, connection: BankConnection, pin: str, start_date: da
                 continue
             account, created = _find_or_create_account(db, user, connection, iban)
             if account is None:
-                job.results.append({"iban": iban, "skipped": "Konto gehört einem anderen Nutzer"})
+                job.results.append({"iban": iban, "skipped": t("fints.foreign_account")})
                 continue
             since = start_date or _default_start(db, account)
-            job.set(message=f"Umsätze für {account.name} werden abgerufen …")
+            job.set(message=t("fints.fetching_transactions", account=account.name))
             raw = _resolve(job, client, client.get_transactions(sepa, since, date.today()))
             parsed = to_parsed(raw or [])
             batch = store_transactions(
@@ -224,7 +230,7 @@ def _sync(db, job: SyncJob, connection: BankConnection, pin: str, start_date: da
                 account=account,
                 parsed=parsed,
                 source="fints",
-                filename=f"FinTS ab {since:%d.%m.%Y}",
+                filename=t("fints.import_name", date=date_text(since)),
             )
             _update_balance(job, client, sepa, account)
             db.flush()
@@ -291,11 +297,7 @@ def _resolve(job: SyncJob, client, response):
             decoupled=bool(response.decoupled),
             challenge=response.challenge or None,
             challenge_image=image,
-            message=(
-                "Bitte den Zugriff in der Banking-App freigeben."
-                if response.decoupled
-                else "Bitte die TAN eingeben."
-            ),
+            message=t("fints.approve_in_app") if response.decoupled else t("fints.enter_tan"),
         )
         if response.decoupled:
             while True:
@@ -308,19 +310,19 @@ def _resolve(job: SyncJob, client, response):
             job._tan_event.clear()
             remaining = deadline - time.monotonic()
             if remaining <= 0 or not job._tan_event.wait(remaining):
-                raise JobFailed("Keine TAN eingegangen, der Abruf wurde abgebrochen")
+                raise JobFailed(t("fints.no_tan"))
             _check_cancel(job)
             tan, job._tan = job._tan or "", None
-            job.set(state="running", message="TAN wird geprüft …", challenge=None, challenge_image=None)
+            job.set(state="running", message=t("fints.checking_tan"), challenge=None, challenge_image=None)
             response = client.send_tan(response, tan)
     if job.state == "need_tan":
-        job.set(state="running", message="Freigabe erhalten …", challenge=None, challenge_image=None)
+        job.set(state="running", message=t("fints.approved"), challenge=None, challenge_image=None)
     return response
 
 
 def _wait(job: SyncJob, seconds: float, deadline: float) -> None:
     if time.monotonic() + seconds > deadline:
-        raise JobFailed("Keine Freigabe in der App erhalten, der Abruf wurde abgebrochen")
+        raise JobFailed(t("fints.no_approval"))
     if job._cancel.wait(seconds):
         raise JobCancelled()
 

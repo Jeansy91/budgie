@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from sqlalchemy import select
 
 from ..deps import DB, AdminUser, CurrentUser
+from ..i18n import http_error
 from ..models import User
 from ..schemas import UserIn, UserOut
 from ..security import hash_password
@@ -18,7 +19,7 @@ def list_users(db: DB, user: CurrentUser):
 def create_user(data: UserIn, db: DB, admin: AdminUser):
     username = data.username.lower()
     if db.scalar(select(User).where(User.username == username)):
-        raise HTTPException(status.HTTP_409_CONFLICT, "Nutzername ist vergeben")
+        raise http_error(status.HTTP_409_CONFLICT, "users.username_taken")
     user = User(
         household_id=admin.household_id,
         username=username,
@@ -35,8 +36,8 @@ def create_user(data: UserIn, db: DB, admin: AdminUser):
 def delete_user(user_id: int, db: DB, admin: AdminUser):
     user = db.get(User, user_id)
     if user is None or user.household_id != admin.household_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Nutzer nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "users.not_found")
     if user.id == admin.id:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Du kannst dich nicht selbst löschen")
+        raise http_error(status.HTTP_400_BAD_REQUEST, "users.cannot_delete_self")
     db.delete(user)
     db.commit()

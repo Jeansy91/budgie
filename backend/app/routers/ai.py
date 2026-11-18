@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from sqlalchemy import func
 
 from ..ai import llm
 from ..ai import service as ai
 from ..config import get_settings
 from ..deps import DB, CurrentUser
+from ..i18n import http_error
 from ..models import CategorySource, Transaction
 from ..schemas import AiModelInfo, AiStatus, LlmInfo, RecategorizeIn, RecategorizeOut
 
@@ -56,7 +57,7 @@ def ai_status(db: DB, user: CurrentUser):
 
 def _require_enabled() -> None:
     if not get_settings().ai_enabled:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Die KI-Kategorisierung ist ausgeschaltet (BUDGIE_AI_ENABLED)")
+        raise http_error(status.HTTP_409_CONFLICT, "ai.disabled")
 
 
 @router.post("/train", response_model=AiStatus)

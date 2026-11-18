@@ -6,7 +6,8 @@
 	import BudgetMonthMenu from '$lib/BudgetMonthMenu.svelte';
 	import TransactionDetail from '$lib/TransactionDetail.svelte';
 	import { MonthPicker, Select, type SelectOption } from '$lib/ui';
-	import { categoryLabels, money } from '$lib/format';
+	import { categoryLabels, dateFormat, money, percent } from '$lib/format';
+	import { t } from '$lib/i18n/index.svelte';
 	import { avatarColor, colorFor, initials } from '$lib/colors';
 	import Search from '@lucide/svelte/icons/search';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
@@ -42,14 +43,14 @@
 		});
 		return map;
 	});
-	const weekday = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+	let weekday = $derived(dateFormat({ weekday: 'long', day: 'numeric', month: 'long' }));
 	let groups = $derived.by(() => {
 		const out: { date: string; items: Transaction[]; sum: number }[] = [];
-		for (const t of items) {
+		for (const tx of items) {
 			let g = out.at(-1);
-			if (!g || g.date !== t.booking_date) out.push((g = { date: t.booking_date, items: [], sum: 0 }));
-			g.items.push(t);
-			g.sum += Number(t.amount);
+			if (!g || g.date !== tx.booking_date) out.push((g = { date: tx.booking_date, items: [], sum: 0 }));
+			g.items.push(tx);
+			g.sum += Number(tx.amount);
 		}
 		return out;
 	});
@@ -58,13 +59,13 @@
 	api<Account[]>('/accounts').then((a) => (accounts = a));
 
 	let accountOptions = $derived<SelectOption<string>[]>([
-		{ value: '', label: 'Alle Konten' },
+		{ value: '', label: t('transactions.allAccounts') },
 		...accounts.map((a) => ({ value: String(a.id), label: a.name }))
 	]);
 	let categoryOptions = $derived<SelectOption<number | null>[]>([
-		{ value: null, label: 'Alle Kategorien' },
+		{ value: null, label: t('transactions.allCategories') },
 		...categories.flatMap((main, i) => [
-			{ value: main.id, label: main.name, color: colorFor(i), hint: 'alle' },
+			{ value: main.id, label: main.name, color: colorFor(i), hint: t('transactions.allOfMain') },
 			...main.children.map((sub) => ({ value: sub.id, label: sub.name, color: colorFor(i), indent: true }))
 		])
 	]);
@@ -89,19 +90,19 @@
 		const qs = new URLSearchParams();
 		for (const [k, v] of Object.entries(f)) if (v) qs.set(k, v === true ? '1' : String(v));
 		goto(`?${qs}`, { replaceState: true, keepFocus: true, noScroll: true });
-		const t = setTimeout(() => load(), 200);
-		return () => clearTimeout(t);
+		const tx = setTimeout(() => load(), 200);
+		return () => clearTimeout(tx);
 	});
 
-	async function setCategory(t: Transaction, category_id: number | null, allowRule = true) {
+	async function setCategory(tx: Transaction, category_id: number | null, allowRule = true) {
 		try {
 			const res = await api<{ transaction: Transaction; rule: unknown; other_changed: number }>(
-				`/transactions/${t.id}`,
+				`/transactions/${tx.id}`,
 				{ method: 'PATCH', body: { category_id, create_rule: allowRule && makeRule && category_id !== null } }
 			);
-			Object.assign(t, res.transaction);
+			Object.assign(tx, res.transaction);
 			notice = res.rule
-				? `Regel für „${t.payee}“ angelegt, ${res.other_changed} weitere Buchungen zugeordnet.`
+				? t('transactions.ruleCreated', { payee: tx.payee, count: res.other_changed })
 				: '';
 			if (res.other_changed) await load();
 		} catch (e) {
@@ -109,22 +110,22 @@
 		}
 	}
 
-	const pct = (v: number | null) => (v === null ? '' : `${Math.round(v * 100)} %`);
-	function sourceLabel(t: Transaction): string {
-		if (t.category_source === 'model') return `KI ${pct(t.category_confidence)}`;
-		return { manual: 'manuell', rule: 'Regel', llm: 'KI', model: 'KI' }[t.category_source!];
+	const pct = percent;
+	function sourceLabel(tx: Transaction): string {
+		if (tx.category_source === 'model') return `${t('source.ai')} ${pct(tx.category_confidence)}`;
+		return t(`source.${tx.category_source!}`);
 	}
-	function sourceTitle(t: Transaction): string {
-		if (t.category_source === 'model') return `Von der KI zugeordnet, ${pct(t.category_confidence)} sicher`;
-		if (t.category_source === 'llm') return 'Vom lokalen Sprachmodell zugeordnet';
+	function sourceTitle(tx: Transaction): string {
+		if (tx.category_source === 'model') return t('source.modelTitle', { confidence: pct(tx.category_confidence) });
+		if (tx.category_source === 'llm') return t('source.llmTitle');
 		return '';
 	}
-	const isAi = (t: Transaction) => t.category_source === 'model' || t.category_source === 'llm';
+	const isAi = (tx: Transaction) => tx.category_source === 'model' || tx.category_source === 'llm';
 
 	// Detail panel. Opening adds a history entry, so the back button/gesture closes it.
 	let detailId = $derived(page.state.tx ?? null);
-	function openDetail(t: Transaction) {
-		if (detailId === null) pushState('', { tx: t.id });
+	function openDetail(tx: Transaction) {
+		if (detailId === null) pushState('', { tx: tx.id });
 	}
 	function closeDetail() {
 		history.back();
@@ -132,13 +133,13 @@
 	// Clicks on the controls inside a row (category, budget month, confirm) do not open the details
 	const fromControl = (e: Event) =>
 		(e.target as Element).closest('button, a, input, textarea, [role="menu"], .select-trigger') !== null;
-	function rowClick(e: MouseEvent, t: Transaction) {
-		if (!fromControl(e) && !window.getSelection()?.toString()) openDetail(t);
+	function rowClick(e: MouseEvent, tx: Transaction) {
+		if (!fromControl(e) && !window.getSelection()?.toString()) openDetail(tx);
 	}
-	function rowKey(e: KeyboardEvent, t: Transaction) {
+	function rowKey(e: KeyboardEvent, tx: Transaction) {
 		if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
 			e.preventDefault();
-			openDetail(t);
+			openDetail(tx);
 		}
 	}
 	function detailChanged(n: Transaction) {
@@ -149,44 +150,44 @@
 
 <div class="page-head">
 	<div>
-		<span class="eyebrow">Alle Konten</span>
-		<h1>Buchungen</h1>
+		<span class="eyebrow">{t('transactions.allAccounts')}</span>
+		<h1>{t('nav.transactions')}</h1>
 	</div>
-	<span class="badge">{total} Buchungen</span>
+	<span class="badge">{t('transactions.count', { count: total })}</span>
 </div>
 
 <div class="card filters">
 	<div class="search">
 		<Search size={18} />
-		<input type="search" bind:value={q} placeholder="Empfänger oder Verwendungszweck suchen" />
+		<input type="search" bind:value={q} placeholder={t('transactions.searchPlaceholder')} />
 	</div>
 	<div class="row">
-		<div class="field">Monat <MonthPicker bind:value={month} placeholder="Alle Monate" /></div>
+		<div class="field">{t('common.month')} <MonthPicker bind:value={month} placeholder={t('ui.month.all')} /></div>
 		{#if accounts.length > 1}
-			<div class="field">Konto <Select options={accountOptions} bind:value={accountId} label="Konto" /></div>
+			<div class="field">{t('common.account')} <Select options={accountOptions} bind:value={accountId} label={t('common.account')} /></div>
 		{/if}
 		<div class="field">
-			Kategorie
-			<Select options={categoryOptions} bind:value={categoryId} label="Kategorie" searchable searchPlaceholder="Kategorie suchen …" />
+			{t('common.category')}
+			<Select options={categoryOptions} bind:value={categoryId} label={t('common.category')} searchable searchPlaceholder={t('categorySelect.search')} />
 		</div>
 		<button class="pill" class:on={uncategorized} onclick={() => (uncategorized = !uncategorized)}>
-			{#if uncategorized}<Check size={15} />{/if} Nur ohne Kategorie
+			{#if uncategorized}<Check size={15} />{/if} {t('transactions.onlyUncategorized')}
 		</button>
 		<button
 			class="pill"
 			class:on={aiReview}
 			onclick={() => (aiReview = !aiReview)}
-			title="Zuordnungen und Vorschläge der KI, die noch niemand bestätigt hat"
+			title={t('transactions.aiReviewTitle')}
 		>
-			{#if aiReview}<Check size={15} />{:else}<Wand size={15} />{/if} KI prüfen
+			{#if aiReview}<Check size={15} />{:else}<Wand size={15} />{/if} {t('transactions.aiReview')}
 		</button>
 		<button
 			class="pill"
 			class:on={makeRule}
 			onclick={() => (makeRule = !makeRule)}
-			title="Beim Zuordnen eine Regel „Empfänger enthält …“ anlegen und auf ähnliche Buchungen anwenden"
+			title={t('transactions.learnRulesTitle')}
 		>
-			<Sparkles size={15} /> Regeln lernen
+			<Sparkles size={15} /> {t('transactions.learnRules')}
 		</button>
 	</div>
 </div>
@@ -195,7 +196,7 @@
 {#if notice}<div class="ok"><Sparkles size={18} /> {notice}</div>{/if}
 
 {#if items.length === 0}
-	<div class="card muted">Keine Buchungen für diese Filter.</div>
+	<div class="card muted">{t('transactions.empty')}</div>
 {/if}
 
 {#each groups as g (g.date)}
@@ -205,47 +206,47 @@
 			<span class="amount">{money(g.sum)}</span>
 		</div>
 		<div class="card list">
-			{#each g.items as t (t.id)}
+			{#each g.items as tx (tx.id)}
 				<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 				<article
 					class="tx"
-					class:selected={detailId === t.id}
+					class:selected={detailId === tx.id}
 					tabindex="0"
-					aria-label="{t.payee || t.booking_text}, {money(t.amount)} – Details anzeigen"
-					onclick={(e) => rowClick(e, t)}
-					onkeydown={(e) => rowKey(e, t)}
+					aria-label={t('transactions.rowLabel', { payee: tx.payee || tx.booking_text, amount: money(tx.amount) })}
+					onclick={(e) => rowClick(e, tx)}
+					onkeydown={(e) => rowKey(e, tx)}
 				>
-					<span class="avatar" style:background={avatarColor(t.payee || t.booking_text)}>{initials(t.payee || t.booking_text)}</span>
+					<span class="avatar" style:background={avatarColor(tx.payee || tx.booking_text)}>{initials(tx.payee || tx.booking_text)}</span>
 					<div class="main">
 						<div class="payee-row">
-							<span class="payee" title={t.payee || t.booking_text}>{t.payee || t.booking_text}</span>
-							<BudgetMonthMenu {t} onchange={(n) => Object.assign(t, n)} onerror={(m) => (error = m)} />
+							<span class="payee" title={tx.payee || tx.booking_text}>{tx.payee || tx.booking_text}</span>
+							<BudgetMonthMenu {tx} onchange={(n) => Object.assign(tx, n)} onerror={(m) => (error = m)} />
 						</div>
-						<div class="purpose" title={t.purpose || t.booking_text}>
-							{t.booking_text}{#if t.purpose}{' · '}{t.purpose}{/if}
-							{#if accounts.length > 1}{' · '}{accountNames.get(t.account_id)}{/if}
+						<div class="purpose" title={tx.purpose || tx.booking_text}>
+							{tx.booking_text}{#if tx.purpose}{' · '}{tx.purpose}{/if}
+							{#if accounts.length > 1}{' · '}{accountNames.get(tx.account_id)}{/if}
 						</div>
 					</div>
-					{#if t.category_id === null && t.suggested_category_id !== null}
+					{#if tx.category_id === null && tx.suggested_category_id !== null}
 						<button
 							class="suggest"
-							onclick={() => setCategory(t, t.suggested_category_id, false)}
-							title="Vorschlag der KI mit einem Klick übernehmen: {labels.get(t.suggested_category_id)}"
+							onclick={() => setCategory(tx, tx.suggested_category_id, false)}
+							title={t('transactions.suggestionTitle', { category: labels.get(tx.suggested_category_id) ?? '' })}
 						>
-							<Wand size={13} /> <span class="lbl">Vorschlag:</span> <strong>{labels.get(t.suggested_category_id)?.split(' › ').pop()}</strong>
-							<span class="conf">{pct(t.suggestion_confidence)}</span>
-							<span class="take">Übernehmen</span>
+							<Wand size={13} /> <span class="lbl">{t('transactions.suggestion')}</span> <strong>{labels.get(tx.suggested_category_id)?.split(' › ').pop()}</strong>
+							<span class="conf">{pct(tx.suggestion_confidence)}</span>
+							<span class="take">{t('transactions.accept')}</span>
 						</button>
 					{/if}
-					<div class="cat" style:--c={t.category_id ? catColor.get(t.category_id) : 'var(--faint)'} title={t.category_id ? labels.get(t.category_id) : ''}>
-						<CategorySelect {categories} value={t.category_id} onchange={(v) => setCategory(t, v)} />
-						{#if t.category_source}<span class="src" class:ai={isAi(t)} title={sourceTitle(t)}>{sourceLabel(t)}</span>{/if}
-						{#if isAi(t)}
+					<div class="cat" style:--c={tx.category_id ? catColor.get(tx.category_id) : 'var(--faint)'} title={tx.category_id ? labels.get(tx.category_id) : ''}>
+						<CategorySelect {categories} value={tx.category_id} onchange={(v) => setCategory(tx, v)} />
+						{#if tx.category_source}<span class="src" class:ai={isAi(tx)} title={sourceTitle(tx)}>{sourceLabel(tx)}</span>{/if}
+						{#if isAi(tx)}
 							<button
 								class="confirm"
-								onclick={() => setCategory(t, t.category_id, false)}
-								title="Passt – Zuordnung bestätigen. Die KI lernt daraus."
-								aria-label="Zuordnung bestätigen"
+								onclick={() => setCategory(tx, tx.category_id, false)}
+								title={t('transactions.confirmTitle')}
+								aria-label={t('transactions.confirm')}
 							>
 								<Check size={15} />
 							</button>
@@ -253,7 +254,7 @@
 							<span class="confirm-slot"></span>
 						{/if}
 					</div>
-					<div class="amount sum" class:pos={Number(t.amount) > 0}>{money(t.amount)}</div>
+					<div class="amount sum" class:pos={Number(tx.amount) > 0}>{money(tx.amount)}</div>
 				</article>
 			{/each}
 		</div>
@@ -261,7 +262,7 @@
 {/each}
 
 {#if items.length < total}
-	<div class="more"><button class="secondary" onclick={() => load(true)}>Weitere laden</button></div>
+	<div class="more"><button class="secondary" onclick={() => load(true)}>{t('transactions.loadMore')}</button></div>
 {/if}
 
 {#if detailId !== null}

@@ -2,7 +2,8 @@
 	import { DatePicker, PasswordInput } from '$lib/ui';
 	import { onDestroy } from 'svelte';
 	import { api } from '$lib/api';
-	import { day } from '$lib/format';
+	import { dateTime, day } from '$lib/format';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { BankConnection, FintsStatus, SyncJob } from '$lib/types';
 	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 	import Smartphone from '@lucide/svelte/icons/smartphone';
@@ -52,7 +53,7 @@
 	}
 
 	async function removeConnection(c: BankConnection) {
-		if (!confirm(`Zugang „${c.name}“ entfernen? Konten und Buchungen bleiben erhalten.`)) return;
+		if (!confirm(t('bank.confirmRemove', { name: c.name }))) return;
 		await api(`/fints/connections/${c.id}`, { method: 'DELETE' });
 		await load();
 	}
@@ -120,10 +121,7 @@
 		job = null;
 	}
 
-	const when = (iso: string | null) =>
-		iso
-			? new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso))
-			: 'noch nie';
+	const when = (iso: string | null) => (iso ? dateTime(iso) : t('bank.never'));
 
 	onDestroy(() => clearTimeout(timer));
 </script>
@@ -132,8 +130,8 @@
 	<div class="head">
 		<span class="icon"><RefreshCw size={20} /></span>
 		<div>
-			<h2>Direkt von der Bank abrufen</h2>
-			<p class="muted small">Per FinTS. Die PIN gibst du bei jedem Abruf ein, gespeichert wird sie nicht.</p>
+			<h2>{t('bank.title')}</h2>
+			<p class="muted small">{t('bank.intro')}</p>
 		</div>
 	</div>
 
@@ -142,7 +140,7 @@
 	{#if status && !status.enabled}
 		<div class="warn">
 			<CircleAlert size={18} />
-			<span>FinTS ist noch nicht eingerichtet. In der <code>.env</code> fehlt: {status.missing.join(', ')}.</span>
+			<span>{t('bank.notConfigured')} <code>.env</code>: {status.missing.join(', ')}</span>
 		</div>
 	{/if}
 
@@ -151,7 +149,7 @@
 			<div class="who">
 				<strong class="break-anywhere">{c.name}</strong>
 				<span class="muted small">
-					Zugang …{c.login_hint} · zuletzt abgerufen {when(c.last_sync_at)}
+					{t('bank.login', { hint: c.login_hint })} · {t('bank.lastSync', { when: when(c.last_sync_at) })}
 					{#if c.tan_mechanism_name}· {c.tan_mechanism_name}{/if}
 				</span>
 				{#if c.accounts.length}
@@ -161,8 +159,8 @@
 			</div>
 			{#if syncFor?.id !== c.id}
 				<div class="actions">
-					<button onclick={() => openSync(c)} disabled={!status?.enabled}>Umsätze abrufen</button>
-					<button class="ghost small" onclick={() => removeConnection(c)}>Entfernen</button>
+					<button onclick={() => openSync(c)} disabled={!status?.enabled}>{t('bank.sync')}</button>
+					<button class="ghost small" onclick={() => removeConnection(c)}>{t('bank.remove')}</button>
 				</div>
 			{/if}
 		</div>
@@ -172,40 +170,40 @@
 				{#if !job}
 					<form class="row" onsubmit={startSync}>
 						<label
-							>PIN fürs Online-Banking
+							>{t('bank.pin')}
 							<PasswordInput bind:value={pin} required autocomplete="off" inputmode="numeric" />
 						</label>
 						<div class="field">
-							<span>Ab Datum <span class="muted small">(optional)</span></span>
-							<DatePicker bind:value={startDate} label="Ab Datum" placeholder="Automatisch" max={today} />
+							<span>{t('bank.since')} <span class="muted small">({t('common.optional')})</span></span>
+							<DatePicker bind:value={startDate} label={t('bank.since')} placeholder={t('budgetMenu.auto')} max={today} />
 						</div>
-						<button>Abrufen</button>
-						<button type="button" class="ghost" onclick={close}>Abbrechen</button>
+						<button>{t('bank.fetch')}</button>
+						<button type="button" class="ghost" onclick={close}>{t('common.cancel')}</button>
 					</form>
 					<p class="muted small">
-						Ohne Datum holt Budgie beim ersten Mal die letzten 90 Tage, danach ab dem letzten Abruf.
+						{t('bank.sinceHint')}
 					</p>
 				{:else if job.state === 'need_tan' && job.decoupled}
 					<div class="tan">
 						<span class="pulse"><Smartphone size={26} /></span>
 						<div>
-							<strong>Bitte in der Banking-App freigeben</strong>
+							<strong>{t('bank.approveInApp')}</strong>
 							{#if job.challenge}<p class="muted small">{job.challenge}</p>{/if}
-							<p class="muted small">Budgie wartet auf die Freigabe und macht dann automatisch weiter.</p>
+							<p class="muted small">{t('bank.waiting')}</p>
 						</div>
-						<button class="ghost" onclick={cancel}>Abbrechen</button>
+						<button class="ghost" onclick={cancel}>{t('common.cancel')}</button>
 					</div>
 				{:else if job.state === 'need_tan'}
 					<div class="tan">
 						<span class="pulse"><KeyRound size={24} /></span>
 						<div>
-							<strong>TAN eingeben</strong>
+							<strong>{t('bank.enterTan')}</strong>
 							{#if job.challenge}<p class="muted small">{job.challenge}</p>{/if}
-							{#if job.challenge_image}<img src={job.challenge_image} alt="TAN-Grafik" />{/if}
+							{#if job.challenge_image}<img src={job.challenge_image} alt={t('bank.tanImage')} />{/if}
 							<form class="row" onsubmit={sendTan}>
 								<input bind:value={tan} required autocomplete="one-time-code" inputmode="numeric" />
-								<button>Senden</button>
-								<button type="button" class="ghost" onclick={cancel}>Abbrechen</button>
+								<button>{t('bank.send')}</button>
+								<button type="button" class="ghost" onclick={cancel}>{t('common.cancel')}</button>
 							</form>
 						</div>
 					</div>
@@ -216,33 +214,33 @@
 					</div>
 				{:else if job.state === 'error'}
 					<div class="error"><CircleAlert size={18} /> {job.error}</div>
-					<button class="secondary" onclick={() => openSync(c)}>Noch einmal</button>
+					<button class="secondary" onclick={() => openSync(c)}>{t('bank.retry')}</button>
 				{:else if job.state === 'cancelled'}
-					<p class="muted">Abruf abgebrochen.</p>
-					<button class="secondary" onclick={close}>Schließen</button>
+					<p class="muted">{t('bank.cancelled')}</p>
+					<button class="secondary" onclick={close}>{t('common.close')}</button>
 				{:else}
 					{#each job.results as r (r.iban)}
 						<div class="result">
 							<span class="ok-icon"><Check size={16} /></span>
 							<div class="info">
 								<strong class="break-anywhere">{r.account_name ?? r.iban}</strong>
-								{#if r.account_created}<span class="badge accent">Neues Konto</span>{/if}
+								{#if r.account_created}<span class="badge accent">{t('import.newAccount')}</span>{/if}
 								{#if r.skipped}
 									<span class="muted small">{r.skipped}</span>
 								{:else}
 									<div class="stats">
-										<span><b>{r.rows_imported}</b> neu</span>
-										<span><b>{r.rows_duplicate}</b> schon vorhanden</span>
-										<span><b>{r.rows_categorized}</b> per Regel zugeordnet</span>
-										{#if r.since}<span>ab {day(r.since)}</span>{/if}
+										<span><b>{r.rows_imported}</b> {t('import.new')}</span>
+										<span><b>{r.rows_duplicate}</b> {t('import.duplicate')}</span>
+										<span><b>{r.rows_categorized}</b> {t('import.byRule')}</span>
+										{#if r.since}<span>{t('bank.from', { date: day(r.since) })}</span>{/if}
 									</div>
 								{/if}
 							</div>
 						</div>
 					{/each}
 					<div class="row">
-						<a href="/transactions?uncategorized=1">Zuordnen →</a>
-						<button class="ghost" onclick={close}>Schließen</button>
+						<a href="/transactions?uncategorized=1">{t('import.categorize')} →</a>
+						<button class="ghost" onclick={close}>{t('common.close')}</button>
 					</div>
 				{/if}
 			</div>
@@ -252,20 +250,19 @@
 	{#if status?.enabled}
 		{#if adding}
 			<form class="row add" onsubmit={addConnection}>
-				<label>Name <input bind:value={form.name} required /></label>
+				<label>{t('common.name')} <input bind:value={form.name} required /></label>
 				<label
-					>Zugangsnummer
-					<input bind:value={form.login} required autocomplete="off" placeholder="10-stellig, wie beim Login" />
+					>{t('bank.loginNumber')}
+					<input bind:value={form.login} required autocomplete="off" placeholder={t('bank.loginPlaceholder')} />
 				</label>
-				<button>Zugang speichern</button>
-				{#if connections.length}<button type="button" class="ghost" onclick={() => (adding = false)}>Abbrechen</button>{/if}
+				<button>{t('bank.saveLogin')}</button>
+				{#if connections.length}<button type="button" class="ghost" onclick={() => (adding = false)}>{t('common.cancel')}</button>{/if}
 			</form>
 			<p class="muted small">
-				Für die ING sind Bankleitzahl und FinTS-Server schon eingestellt. Die Zugangsnummer wird verschlüsselt
-				gespeichert.
+				{t('bank.ingHint')}
 			</p>
 		{:else}
-			<button class="link small" onclick={() => (adding = true)}>+ Weiteren Zugang hinzufügen</button>
+			<button class="link small" onclick={() => (adding = true)}>+ {t('bank.addAnother')}</button>
 		{/if}
 	{/if}
 </section>
