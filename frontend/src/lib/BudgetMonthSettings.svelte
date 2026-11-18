@@ -274,6 +274,9 @@
 	.chip {
 		display: inline-flex;
 		align-items: center;
+		max-width: 100%;
+		overflow-wrap: anywhere;
+		text-align: left;
 		gap: 0.3rem;
 		padding: 0.4rem 0.85rem;
 		border-radius: 999px;

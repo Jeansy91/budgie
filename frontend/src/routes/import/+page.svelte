@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { api } from '$lib/api';
-	import { Select, type SelectOption } from '$lib/ui';
+	import { MiddleTruncate, Select, type SelectOption } from '$lib/ui';
 	import BankSync from '$lib/BankSync.svelte';
-	import { money } from '$lib/format';
+	import { iban, money } from '$lib/format';
 	import type { Account, ImportResult } from '$lib/types';
 	import Upload from '@lucide/svelte/icons/upload';
 	import Landmark from '@lucide/svelte/icons/landmark';
@@ -91,12 +91,12 @@
 
 {#each results as r (r.name)}
 	{#if r.error}
-		<div class="error"><CircleAlert size={18} /> <span><strong>{r.name}:</strong> {r.error}</span></div>
+		<div class="error"><CircleAlert size={18} /> <span><strong class="break-anywhere">{r.name}:</strong> {r.error}</span></div>
 	{:else if r.result}
 		<div class="card result">
 			<span class="ok-icon"><Check size={18} /></span>
-			<div>
-				<strong>{r.name}</strong>
+			<div class="info">
+				<strong class="file"><MiddleTruncate text={r.name} /></strong>
 				{#if r.result.account_created}<span class="badge accent">Neues Konto</span>{/if}
 				<div class="stats">
 					<span><b>{r.result.rows_imported}</b> neu</span>
@@ -104,7 +104,7 @@
 					<span><b>{r.result.rows_categorized}</b> per Regel zugeordnet</span>
 				</div>
 			</div>
-			<a href="/transactions?uncategorized=1">Zuordnen →</a>
+			<a class="go" href="/transactions?uncategorized=1">Zuordnen →</a>
 		</div>
 	{/if}
 {/each}
@@ -115,9 +115,9 @@
 		{#each accounts as a (a.id)}
 			<div class="card acc">
 				<span class="bank"><Landmark size={20} /></span>
-				<div>
-					<strong>{a.name}</strong>
-					<span class="muted small">{a.iban ?? 'ohne IBAN'}</span>
+				<div class="who">
+					<strong class="clamp-2" title={a.name}>{a.name}</strong>
+					<span class="muted small">{a.iban ? iban(a.iban) : 'ohne IBAN'}</span>
 				</div>
 				<div class="bal">
 					<span class="amount">{a.balance === null ? '–' : money(a.balance)}</span>
@@ -180,15 +180,25 @@
 		font-size: 0.9rem;
 	}
 	.target :global(.select-trigger) {
-		min-width: 16rem;
+		min-width: min(16rem, 100%);
 	}
 	.result {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.5rem 1rem;
 	}
-	.result > div {
-		flex: 1;
+	.result .info {
+		flex: 1 1 14rem;
+		min-width: 0;
+	}
+	.file {
+		display: block;
+	}
+	.go {
+		flex: none;
+		white-space: nowrap;
+		margin-left: auto;
 	}
 	.ok-icon {
 		display: grid;
@@ -223,29 +233,40 @@
 	}
 	.accounts {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
 		gap: 1rem;
 	}
 	.acc {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.9rem;
+		gap: 0.4rem 0.9rem;
 		margin: 0;
+		container-type: inline-size;
 	}
 	.acc > div {
 		display: flex;
 		flex-direction: column;
 	}
-	.acc > div:nth-child(2) {
+	.acc .who {
 		flex: 1;
 		min-width: 0;
 	}
-	.acc > div:nth-child(2) span {
-		overflow-wrap: anywhere;
-	}
 	.bal {
+		flex: none;
 		text-align: right;
 		align-items: end;
+	}
+	/* Narrow cards: give the name the full width and put the balance below it */
+	@container (max-width: 420px) {
+		.acc > .bal {
+			flex: 1 0 100%;
+			flex-direction: row;
+			align-items: baseline;
+			gap: 0.6rem;
+			padding-left: 3.5rem;
+			text-align: left;
+		}
 	}
 	.bal .amount {
 		font-weight: 700;

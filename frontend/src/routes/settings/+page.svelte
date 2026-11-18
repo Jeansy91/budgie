@@ -5,6 +5,7 @@
 	import { onDestroy } from 'svelte';
 	import Wand from '@lucide/svelte/icons/wand-sparkles';
 	import { initials } from '$lib/colors';
+	import { iban } from '$lib/format';
 	import BudgetMonthSettings from '$lib/BudgetMonthSettings.svelte';
 
 	let { data } = $props();
@@ -99,7 +100,7 @@
 
 <div class="page-head">
 	<div>
-		<span class="eyebrow">{data.me?.household_name}</span>
+		<span class="eyebrow break-anywhere">{data.me?.household_name}</span>
 		<h1>Einstellungen</h1>
 	</div>
 </div>
@@ -112,7 +113,7 @@
 		<div class="account">
 			<div class="row">
 				<label>Name <input bind:value={a.name} /></label>
-				<span class="small muted">{a.iban ?? 'ohne IBAN'} · {a.transaction_count} Buchungen</span>
+				<span class="small muted">{a.iban ? iban(a.iban) : 'ohne IBAN'} · {a.transaction_count} Buchungen</span>
 			</div>
 			<Switch bind:checked={a.shared}>Für alle im Haushalt sichtbar</Switch>
 			{#if !a.shared}
@@ -182,7 +183,7 @@
 							Aus. Optional über Ollama zuschaltbar, siehe README („docker compose --profile ai“ und BUDGIE_OLLAMA_URL).
 						</div>
 					{:else if ai.llm.error}
-						<div class="small warn">{ai.llm.error}</div>
+						<div class="small warn-text">{ai.llm.error}</div>
 					{:else}
 						<div class="small muted">{ai.llm.model} ist bereit.</div>
 					{/if}
@@ -202,13 +203,19 @@
 
 <section class="card">
 	<h2>Nutzer im Haushalt</h2>
-	<table>
+	<table class="users">
 		<tbody>
 			{#each users as u (u.id)}
 				<tr>
 					<td>
-						<span class="user"><span class="av">{initials(u.display_name)}</span> <span><strong>{u.display_name}</strong> <span class="muted small">@{u.username}</span></span>
-						{#if u.is_admin}<span class="badge accent">Admin</span>{/if}</span>
+						<span class="user"
+							><span class="av">{initials(u.display_name)}</span>
+							<span class="who"
+								><strong class="truncate" title={u.display_name}>{u.display_name}</strong>
+								<span class="muted small truncate" title="@{u.username}">@{u.username}</span></span
+							>
+							{#if u.is_admin}<span class="badge accent">Admin</span>{/if}</span
+						>
 					</td>
 					<td class="amount">
 						{#if data.me?.is_admin && u.id !== data.me.id}<button class="link small" onclick={() => deleteUser(u)}>löschen</button>{/if}
@@ -238,12 +245,30 @@
 </section>
 
 <style>
+	/* Let the name cell take the remaining width and shrink instead of widening the table */
+	.users td:first-child {
+		width: 100%;
+		max-width: 0;
+	}
+	.users td:last-child {
+		width: 1%;
+	}
 	.user {
 		display: flex;
 		align-items: center;
 		gap: 0.7rem;
+		min-width: 0;
+	}
+	.user .who {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+	.user .badge {
+		flex: none;
 	}
 	.av {
+		flex: none;
 		display: grid;
 		place-items: center;
 		width: 2.2rem;
@@ -306,6 +331,12 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-sm);
 	}
+	.llm > div {
+		flex: 1;
+		min-width: 0;
+		/* Error messages from the model server contain long URLs */
+		overflow-wrap: anywhere;
+	}
 	.llm .dot {
 		flex: none;
 		width: 0.7rem;
@@ -320,7 +351,7 @@
 	.llm .dot.off {
 		background: var(--warn);
 	}
-	.warn {
+	.warn-text {
 		color: var(--warn);
 	}
 	.account > :global(.switch) {

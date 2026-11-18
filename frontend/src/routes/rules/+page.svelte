@@ -83,18 +83,22 @@
 	<button disabled={!draft.category_id}>Regel anlegen</button>
 </form>
 
-<div class="card" style="overflow-x: auto">
-	<table>
+<div class="card">
+	<table class="rules">
 		<thead>
 			<tr><th>Bedingung</th><th>Kategorie</th><th class="amount">Prio</th><th class="amount">Treffer</th><th></th></tr>
 		</thead>
 		<tbody>
 			{#each rules as r (r.id)}
 				<tr class:inactive={!r.active}>
-					<td><span class="muted">{fieldLabel[r.field]} {matchLabel[r.match_type]}</span> <code>{r.pattern}</code></td>
-					<td><span class="catpill" style:--c={catColor.get(r.category_id)}><span class="dot" style:background="var(--c)"></span>{labels.get(r.category_id)}</span></td>
-					<td class="amount">{r.priority}</td>
-					<td class="amount"><span class="badge">{r.match_count}</span></td>
+					<td class="cond"><span class="muted">{fieldLabel[r.field]} {matchLabel[r.match_type]}</span> <code>{r.pattern}</code></td>
+					<td class="cat">
+						<span class="catpill" style:--c={catColor.get(r.category_id)} title={labels.get(r.category_id)}
+							><span class="dot" style:background="var(--c)"></span><span class="truncate">{labels.get(r.category_id)}</span></span
+						>
+					</td>
+					<td class="amount" data-label="Prio">{r.priority}</td>
+					<td class="amount" data-label="Treffer"><span class="badge">{r.match_count}</span></td>
 					<td class="actions">
 						<Switch checked={r.active} onchange={() => toggle(r)} title={r.active ? 'Aktiv' : 'Inaktiv'} label="Regel aktiv" />
 						<button class="ghost icon" onclick={() => remove(r)} title="Löschen" aria-label="Löschen"><Trash2 size={16} /></button>
@@ -124,7 +128,24 @@
 	.inactive td:not(.actions) {
 		opacity: 0.45;
 	}
+	.rules {
+		table-layout: fixed;
+	}
+	.rules th:nth-child(1) {
+		width: 50%;
+	}
+	.rules th:nth-child(3) {
+		width: 4rem;
+	}
+	.rules th:nth-child(4) {
+		width: 5.5rem;
+	}
+	.rules th:nth-child(5) {
+		width: 7rem;
+	}
 	code {
+		/* Patterns can be long, unbroken strings (regexes, reference numbers) */
+		overflow-wrap: anywhere;
 		font-family: inherit;
 		font-weight: 650;
 		background: var(--surface-2);
@@ -133,6 +154,7 @@
 	}
 	.catpill {
 		display: inline-flex;
+		max-width: 100%;
 		align-items: center;
 		gap: 0.45rem;
 		padding: 0.25rem 0.7rem;
@@ -149,6 +171,57 @@
 	}
 	.field :global(.select-trigger) {
 		min-width: 9rem;
+	}
+	.catpill .dot {
+		flex: none;
+	}
+	/* Phones: each rule becomes a small card instead of a cramped table row */
+	@media (max-width: 640px) {
+		.rules,
+		.rules tbody {
+			display: block;
+		}
+		.rules thead {
+			display: none;
+		}
+		.rules tr {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto auto;
+			grid-template-areas: 'cond cond cond' 'cat cat cat' 'prio hits actions';
+			align-items: center;
+			gap: 0.5rem 1rem;
+			padding: 0.85rem 0;
+			border-bottom: 1px solid var(--border);
+		}
+		.rules tr:last-child {
+			border-bottom: 0;
+		}
+		.rules td {
+			padding: 0;
+			border: 0;
+			text-align: left;
+		}
+		.rules .cond {
+			grid-area: cond;
+		}
+		.rules .cat {
+			grid-area: cat;
+			min-width: 0;
+		}
+		.rules td[data-label]::before {
+			content: attr(data-label) ' ';
+			color: var(--muted);
+			font-size: 0.8rem;
+		}
+		.rules td[data-label='Prio'] {
+			grid-area: prio;
+		}
+		.rules td[data-label='Treffer'] {
+			grid-area: hits;
+		}
+		.rules .actions {
+			grid-area: actions;
+		}
 	}
 	.builder :global(.prio) {
 		width: 8.5rem;

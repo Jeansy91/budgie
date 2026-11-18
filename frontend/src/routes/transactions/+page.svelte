@@ -184,25 +184,25 @@
 					<span class="avatar" style:background={avatarColor(t.payee || t.booking_text)}>{initials(t.payee || t.booking_text)}</span>
 					<div class="main">
 						<div class="payee-row">
-							<span class="payee">{t.payee || t.booking_text}</span>
+							<span class="payee" title={t.payee || t.booking_text}>{t.payee || t.booking_text}</span>
 							<BudgetMonthMenu {t} onchange={(n) => Object.assign(t, n)} onerror={(m) => (error = m)} />
 						</div>
-						<div class="purpose">
+						<div class="purpose" title={t.purpose || t.booking_text}>
 							{t.booking_text}{#if t.purpose}{' · '}{t.purpose}{/if}
 							{#if accounts.length > 1}{' · '}{accountNames.get(t.account_id)}{/if}
 						</div>
-						{#if t.category_id === null && t.suggested_category_id !== null}
-							<button
-								class="suggest"
-								onclick={() => setCategory(t, t.suggested_category_id, false)}
-								title="Vorschlag der KI mit einem Klick übernehmen"
-							>
-								<Wand size={13} /> Vorschlag: <strong>{labels.get(t.suggested_category_id)}</strong>
-								<span class="conf">{pct(t.suggestion_confidence)}</span>
-								<span class="take">Übernehmen</span>
-							</button>
-						{/if}
 					</div>
+					{#if t.category_id === null && t.suggested_category_id !== null}
+						<button
+							class="suggest"
+							onclick={() => setCategory(t, t.suggested_category_id, false)}
+							title="Vorschlag der KI mit einem Klick übernehmen: {labels.get(t.suggested_category_id)}"
+						>
+							<Wand size={13} /> <span class="lbl">Vorschlag:</span> <strong>{labels.get(t.suggested_category_id)?.split(' › ').pop()}</strong>
+							<span class="conf">{pct(t.suggestion_confidence)}</span>
+							<span class="take">Übernehmen</span>
+						</button>
+					{/if}
 					<div class="cat" style:--c={t.category_id ? catColor.get(t.category_id) : 'var(--faint)'} title={t.category_id ? labels.get(t.category_id) : ''}>
 						<CategorySelect {categories} value={t.category_id} onchange={(v) => setCategory(t, v)} />
 						{#if t.category_source}<span class="src" class:ai={isAi(t)} title={sourceTitle(t)}>{sourceLabel(t)}</span>{/if}
@@ -290,8 +290,9 @@
 	}
 	.tx {
 		display: grid;
-		grid-template-columns: auto 1fr auto 8em;
-		gap: 1rem;
+		grid-template-columns: auto minmax(0, 1fr) auto 8em;
+		grid-template-areas: 'av main cat sum' 'av suggest cat sum';
+		gap: 0 1rem;
 		align-items: center;
 		padding: 0.8rem 1.25rem;
 	}
@@ -302,6 +303,7 @@
 		background: color-mix(in srgb, var(--surface-2) 50%, transparent);
 	}
 	.avatar {
+		grid-area: av;
 		display: grid;
 		place-items: center;
 		width: 2.6rem;
@@ -312,7 +314,14 @@
 		font-size: 0.85rem;
 	}
 	.main {
+		grid-area: main;
 		min-width: 0;
+	}
+	.cat {
+		grid-area: cat;
+	}
+	.sum {
+		grid-area: sum;
 	}
 	.payee-row {
 		display: flex;
@@ -394,10 +403,13 @@
 		filter: none;
 	}
 	.suggest {
+		grid-area: suggest;
+		justify-self: start;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.35rem;
 		max-width: 100%;
+		min-width: 0;
 		margin-top: 0.35rem;
 		padding: 0.25rem 0.4rem 0.25rem 0.65rem;
 		border-radius: 999px;
@@ -408,8 +420,15 @@
 		font-weight: 500;
 		white-space: nowrap;
 		overflow: hidden;
+		/* The global button style centres content; keep the start visible when it overflows */
+		justify-content: flex-start;
 	}
-	.suggest strong {
+	.suggest > :global(*) {
+		flex: none;
+	}
+	.suggest > strong {
+		flex: 0 1 auto;
+		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		font-weight: 650;
@@ -440,26 +459,28 @@
 	}
 	@media (max-width: 760px) {
 		.tx {
-			grid-template-columns: auto 1fr auto;
-			grid-template-areas: 'av main sum' 'av cat cat';
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			grid-template-areas: 'av main sum' 'av suggest suggest' 'av cat cat';
 			gap: 0.5rem 0.85rem;
 			padding: 0.8rem 1rem;
 		}
 		.avatar {
-			grid-area: av;
 			align-self: start;
 		}
-		.main {
-			grid-area: main;
-		}
-		.sum {
-			grid-area: sum;
-		}
-		.cat {
-			grid-area: cat;
+		/* Narrow rows: allow the payee two lines instead of cutting it after a few letters */
+		.payee {
+			white-space: normal;
+			display: -webkit-box;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+			overflow-wrap: break-word;
 		}
 		.cat :global(.select-trigger) {
 			width: 100%;
+		}
+		.suggest .lbl {
+			display: none;
 		}
 	}
 </style>
