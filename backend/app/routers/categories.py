@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from ..deps import DB, CurrentUser
+from ..i18n import category_name, http_error
 from ..models import Category, Transaction, User
 from ..schemas import CategoryIn, CategoryOut, CategoryPatch
 
@@ -13,7 +14,7 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 def get_category(db: DB, user: User, category_id: int) -> Category:
     category = db.get(Category, category_id)
     if category is None or category.household_id != user.household_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Kategorie nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "categories.not_found")
     return category
 
 
@@ -35,7 +36,7 @@ def create_category(data: CategoryIn, db: DB, user: CurrentUser):
     if data.parent_id is not None:
         parent = get_category(db, user, data.parent_id)
         if parent.parent_id is not None:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Nur zwei Ebenen: Haupt- und Unterkategorie")
+            raise http_error(status.HTTP_400_BAD_REQUEST, "categories.two_levels")
         kind = parent.kind  # Subcategories inherit the kind of their main category
         siblings = siblings.where(Category.parent_id == parent.id)
     else:
@@ -49,20 +50,22 @@ def create_category(data: CategoryIn, db: DB, user: CurrentUser):
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "Diese Kategorie gibt es schon") from None
+        raise http_error(status.HTTP_409_CONFLICT, "categories.exists") from None
     return category
 
 
 @router.patch("/{category_id}", response_model=CategoryOut)
 def update_category(category_id: int, data: CategoryPatch, db: DB, user: CurrentUser):
     category = get_category(db, user, category_id)
-    if data.name is not None:
+    # The UI shows default categories translated; only a real change of the name counts
+    if data.name is not None and data.name != category_name(category):
         category.name = data.name
+        category.default_key = None  # now the user's own name, never translated
     if data.sort_order is not None:
         category.sort_order = data.sort_order
     if data.kind is not None:
         if category.parent_id is not None:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Die Art wird an der Hauptkategorie festgelegt")
+            raise http_error(status.HTTP_400_BAD_REQUEST, "categories.kind_on_main")
         category.kind = data.kind
         for child in category.children:
             child.kind = data.kind
@@ -70,7 +73,7 @@ def update_category(category_id: int, data: CategoryPatch, db: DB, user: Current
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, "Diese Kategorie gibt es schon") from None
+        raise http_error(status.HTTP_409_CONFLICT, "categories.exists") from None
     return category
 
 

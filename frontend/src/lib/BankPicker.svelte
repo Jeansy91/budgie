@@ -5,6 +5,7 @@
 <script lang="ts">
 	import { api } from '$lib/api';
 	import type { Bank } from '$lib/types';
+	import { t } from '$lib/i18n/index.svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import Landmark from '@lucide/svelte/icons/landmark';
 
@@ -65,9 +66,9 @@
 		<span class="bank-icon"><Landmark size={18} /></span>
 		<div class="who">
 			<strong class="break-anywhere">{value.name}</strong>
-			<span class="muted small">BLZ {value.bank_code}{value.location ? ` · ${value.location}` : ''}</span>
+			<span class="muted small">{t('bank.bankCode')} {value.bank_code}{value.location ? ` · ${value.location}` : ''}</span>
 		</div>
-		<button type="button" class="ghost small" onclick={() => (value = null)}>Ändern</button>
+		<button type="button" class="ghost small" onclick={() => (value = null)}>{t('bank.changeBank')}</button>
 	</div>
 {:else}
 	<div class="picker">
@@ -78,9 +79,9 @@
 				value={query}
 				oninput={(e) => search(e.currentTarget.value)}
 				{onkeydown}
-				placeholder="Bank, Ort, BLZ oder BIC"
+				placeholder={t('bank.searchPlaceholder')}
 				style:padding-left="2.3rem"
-				aria-label="Bank suchen"
+				aria-label={t('bank.search')}
 				role="combobox"
 				aria-expanded={results.length > 0}
 				aria-controls="bank-results"
@@ -94,15 +95,15 @@
 						<button type="button" class:active={i === active} onclick={() => pick(b)} onmouseenter={() => (active = i)}>
 							<span class="name break-anywhere">{b.name}</span>
 							<span class="muted small">
-								{b.location} · BLZ {b.bank_code}
-								{#if !b.server_url}· keine FinTS-Adresse bekannt{/if}
+								{b.location} · {t('bank.bankCode')} {b.bank_code}
+								{#if !b.server_url}· {t('bank.noServerUrlShort')}{/if}
 							</span>
 						</button>
 					</li>
 				{/each}
 			</ul>
 		{:else if searched}
-			<p class="muted small">Keine Bank gefunden. Tipp: Die Bankleitzahl steht in deiner IBAN an Stelle 5 bis 12.</p>
+			<p class="muted small">{t('bank.notFound')}</p>
 		{:else}
 			<div class="chips">
 				{#each popular as p (p)}

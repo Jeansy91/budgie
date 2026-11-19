@@ -3,8 +3,10 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { api } from '$lib/api';
 	import Logo from '$lib/Logo.svelte';
+	import LanguageSwitch from '$lib/LanguageSwitch.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
-	let household_name = $state('Unser Haushalt');
+	let household_name = $state(t('auth.defaultHousehold'));
 	let display_name = $state('');
 	let username = $state('');
 	let password = $state('');
@@ -29,22 +31,22 @@
 
 <div class="auth-wrap">
 <div class="auth card">
+	<LanguageSwitch />
 	<div class="logo"><Logo size={52} /></div>
-	<h1>Willkommen bei Budgie</h1>
+	<h1>{t('auth.welcome')}</h1>
 	<p class="muted">
-		Lege deinen Haushalt und das erste Konto an. Die Startkategorien werden automatisch eingerichtet. Weitere
-		Nutzer kannst du danach in den Einstellungen anlegen.
+		{t('auth.setupIntro')}
 	</p>
 	{#if error}<div class="error">{error}</div>{/if}
 	<form onsubmit={submit}>
-		<label>Name des Haushalts <input bind:value={household_name} required /></label>
-		<label>Dein Name <input bind:value={display_name} required /></label>
-		<label>Nutzername <input bind:value={username} autocomplete="username" required pattern="[A-Za-z0-9._\-]+" /></label>
+		<label>{t('auth.householdName')} <input bind:value={household_name} required /></label>
+		<label>{t('auth.yourName')} <input bind:value={display_name} required /></label>
+		<label>{t('auth.username')} <input bind:value={username} autocomplete="username" required pattern="[A-Za-z0-9._\-]+" /></label>
 		<label
-			>Passwort (mindestens 8 Zeichen)
+			>{t('auth.passwordMin')}
 			<PasswordInput bind:value={password} autocomplete="new-password" minlength={8} required /></label
 		>
-		<button disabled={busy}>Einrichten</button>
+		<button disabled={busy}>{t('auth.setup')}</button>
 	</form>
 </div>
 </div>

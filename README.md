@@ -16,7 +16,7 @@
 Budgie (budgerigar + budget) pulls your transactions straight from your bank via FinTS/HBCI or from a CSV export, sorts them into categories with a classifier that learns from your corrections, and shows where your money goes each month. Everything runs in your own Docker stack: no cloud service ever sees your banking data.
 
 > [!NOTE]
-> The user interface is currently available in **German** only. FinTS sync works with German banks that offer PIN/TAN access; it was built for ING first, and other banks are supported through a bank directory and TAN mechanism selection (see [Supported banks](#supported-banks)).
+> The user interface is available in **German** and **English**; each user picks a language in the settings (by default Budgie follows the browser language). FinTS sync works with German banks that offer PIN/TAN access; it was built for ING first, and other banks are supported through a bank directory and TAN mechanism selection (see [Supported banks](#supported-banks)).
 
 ## Features
 

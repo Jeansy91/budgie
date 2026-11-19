@@ -4,6 +4,7 @@
 	import { MiddleTruncate, Select, type SelectOption } from '$lib/ui';
 	import BankSync from '$lib/BankSync.svelte';
 	import { iban, money } from '$lib/format';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Account, CsvFormat, CsvPreview, CsvProfile, ImportResult } from '$lib/types';
 	import Upload from '@lucide/svelte/icons/upload';
 	import Landmark from '@lucide/svelte/icons/landmark';
@@ -12,7 +13,7 @@
 
 	let accounts = $state<Account[]>([]);
 	let accountOptions = $derived<SelectOption<string>[]>([
-		{ value: '', label: 'Konto automatisch über die IBAN erkennen' },
+		{ value: '', label: t('import.autoAccount') },
 		...accounts.map((a) => ({ value: String(a.id), label: a.name, hint: a.iban ? '…' + a.iban.slice(-4) : undefined }))
 	]);
 	let accountId = $state('');
@@ -81,7 +82,7 @@
 	}
 
 	async function removeProfile(p: CsvProfile) {
-		if (!confirm(`Vorlage „${p.name}“ löschen?`)) return;
+		if (!confirm(t('import.confirmDeleteProfile', { name: p.name }))) return;
 		await api(`/imports/csv/profiles/${p.id}`, { method: 'DELETE' });
 		await loadProfiles();
 	}
@@ -91,18 +92,17 @@
 
 <div class="page-head">
 	<div>
-		<span class="eyebrow">Bankkonten</span>
-		<h1>Umsätze importieren</h1>
-		<p>Direkt per FinTS abrufen oder eine CSV-Datei hochladen. Doppelte Buchungen werden übersprungen.</p>
+		<span class="eyebrow">{t('import.eyebrow')}</span>
+		<h1>{t('import.title')}</h1>
+		<p>{t('import.intro')}</p>
 	</div>
 </div>
 
 <BankSync onsynced={loadAccounts} />
 
-<h2 class="section first">CSV-Datei hochladen</h2>
+<h2 class="section first">{t('import.csvTitle')}</h2>
 <p class="muted small hint">
-	Budgie erkennt CSV-Exporte von {bankNames.join(', ')} automatisch. Dateien anderer Banken ordnest du einmal den Spalten
-	zu.
+	{t('import.csvHint', { banks: bankNames.join(', ') })}
 </p>
 
 <label
@@ -121,8 +121,8 @@
 	}}
 >
 	<span class="icon"><Upload size={26} /></span>
-	<strong>{busy ? 'Importiere …' : 'CSV-Dateien hierher ziehen'}</strong>
-	<span class="muted">oder klicken, um Dateien auszuwählen</span>
+	<strong>{busy ? t('import.importing') : t('import.drop')}</strong>
+	<span class="muted">{t('import.orClick')}</span>
 	<input
 		bind:this={input}
 		type="file"
@@ -134,8 +134,8 @@
 </label>
 
 <div class="target">
-	<span class="muted">Importieren in</span>
-	<Select options={accountOptions} bind:value={accountId} label="Konto" />
+	<span class="muted">{t('import.into')}</span>
+	<Select options={accountOptions} bind:value={accountId} label={t('common.account')} />
 </div>
 
 {#if pending.length}
@@ -159,43 +159,43 @@
 			<div class="info">
 				<strong class="file"><MiddleTruncate text={r.name} /></strong>
 				{#if r.result.format_name}<span class="badge">{r.result.format_name}</span>{/if}
-				{#if r.result.account_created}<span class="badge accent">Neues Konto</span>{/if}
+				{#if r.result.account_created}<span class="badge accent">{t('import.newAccount')}</span>{/if}
 				<div class="stats">
-					<span><b>{r.result.rows_imported}</b> neu</span>
-					<span><b>{r.result.rows_duplicate}</b> schon vorhanden</span>
-					<span><b>{r.result.rows_categorized}</b> per Regel zugeordnet</span>
+					<span><b>{r.result.rows_imported}</b> {t('import.new')}</span>
+					<span><b>{r.result.rows_duplicate}</b> {t('import.duplicate')}</span>
+					<span><b>{r.result.rows_categorized}</b> {t('import.byRule')}</span>
 				</div>
 			</div>
-			<a class="go" href="/transactions?uncategorized=1">Zuordnen →</a>
+			<a class="go" href="/transactions?uncategorized=1">{t('import.categorize')} →</a>
 		</div>
 	{/if}
 {/each}
 
 {#if profiles.length}
-	<h2 class="section">Eigene CSV-Vorlagen</h2>
+	<h2 class="section">{t('import.profiles')}</h2>
 	<div class="profiles">
 		{#each profiles as p (p.id)}
 			<span class="profile">
 				<span class="break-anywhere">{p.name}</span>
-				<button class="ghost small" onclick={() => removeProfile(p)} aria-label="Vorlage {p.name} löschen">Löschen</button>
+				<button class="ghost small" onclick={() => removeProfile(p)} aria-label={t('import.deleteProfile', { name: p.name })}>{t('common.delete')}</button>
 			</span>
 		{/each}
 	</div>
 {/if}
 
 {#if accounts.length}
-	<h2 class="section">Konten</h2>
+	<h2 class="section">{t('import.accounts')}</h2>
 	<div class="accounts">
 		{#each accounts as a (a.id)}
 			<div class="card acc">
 				<span class="bank"><Landmark size={20} /></span>
 				<div class="who">
 					<strong class="clamp-2" title={a.name}>{a.name}</strong>
-					<span class="muted small">{a.iban ? iban(a.iban) : 'ohne IBAN'}</span>
+					<span class="muted small">{a.iban ? iban(a.iban) : t('import.noIban')}</span>
 				</div>
 				<div class="bal">
 					<span class="amount">{a.balance === null ? '–' : money(a.balance)}</span>
-					<span class="muted small">{a.transaction_count} Buchungen</span>
+					<span class="muted small">{t('transactions.count', { count: a.transaction_count })}</span>
 				</div>
 			</div>
 		{/each}

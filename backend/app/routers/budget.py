@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from sqlalchemy import func, select
 
 from ..budget_month import get_settings, recompute
 from ..deps import DB, CurrentUser
+from ..i18n import http_error
 from ..models import Account, Category, Transaction
 from ..schemas import BudgetSettingsIn, BudgetSettingsOut
 
@@ -37,7 +38,7 @@ def update_settings(data: BudgetSettingsIn, db: DB, user: CurrentUser):
             db.scalars(select(Category.id).where(Category.household_id == user.household_id, Category.id.in_(ids)))
         )
         if known != ids:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unbekannte Kategorie")
+            raise http_error(status.HTTP_400_BAD_REQUEST, "categories.unknown")
     settings = get_settings(db, user.household_id)
     settings.salary_shift_enabled = data.salary_shift_enabled
     settings.salary_shift_days = data.salary_shift_days

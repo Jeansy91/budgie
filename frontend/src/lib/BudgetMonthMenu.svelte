@@ -2,38 +2,39 @@
 	import { api } from './api';
 	import { monthLabel, shiftMonth } from './format';
 	import type { Transaction } from './types';
+	import { t } from './i18n/index.svelte';
 	import CalendarArrowDown from '@lucide/svelte/icons/calendar-arrow-down';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import Check from '@lucide/svelte/icons/check';
 
 	/** Shows a transaction's budget month and lets the user override it. */
 	let {
-		t,
+		tx,
 		onchange,
 		onerror
-	}: { t: Transaction; onchange?: (t: Transaction) => void; onerror?: (message: string) => void } = $props();
+	}: { tx: Transaction; onchange?: (tx: Transaction) => void; onerror?: (message: string) => void } = $props();
 
 	let open = $state(false);
 	let root = $state<HTMLElement>();
 
-	let bookingMonth = $derived(t.booking_date.slice(0, 7));
-	let budgetMonth = $derived(t.budget_date.slice(0, 7));
+	let bookingMonth = $derived(tx.booking_date.slice(0, 7));
+	let budgetMonth = $derived(tx.budget_date.slice(0, 7));
 	let shifted = $derived(budgetMonth !== bookingMonth);
 	let nextMonth = $derived(shiftMonth(bookingMonth, 1));
-	let current = $derived(t.budget_shift ?? 'auto');
+	let current = $derived(tx.budget_shift ?? 'auto');
 	let short = $derived(monthLabel(budgetMonth).split(' ')[0]);
 
 	const options = $derived([
-		{ value: 'auto', label: 'Automatisch', hint: 'Gehalt zum Monatsende zählt für den Folgemonat' },
-		{ value: 'same', label: monthLabel(bookingMonth), hint: 'Buchungsmonat' },
-		{ value: 'next', label: monthLabel(nextMonth), hint: 'Folgemonat' }
+		{ value: 'auto', label: t('budgetMenu.auto'), hint: t('budgetMenu.autoHint') },
+		{ value: 'same', label: monthLabel(bookingMonth), hint: t('budgetMenu.bookingMonth') },
+		{ value: 'next', label: monthLabel(nextMonth), hint: t('budgetMenu.nextMonth') }
 	] as const);
 
 	async function choose(value: 'auto' | 'same' | 'next') {
 		open = false;
 		if (value === current) return;
 		try {
-			const res = await api<{ transaction: Transaction }>(`/transactions/${t.id}`, {
+			const res = await api<{ transaction: Transaction }>(`/transactions/${tx.id}`, {
 				method: 'PATCH',
 				body: { budget_shift: value }
 			});
@@ -50,33 +51,33 @@
 
 <svelte:window onpointerdown={outside} onkeydown={(e) => e.key === 'Escape' && (open = false)} />
 
-<span class="bm" class:visible={shifted || t.budget_shift || Number(t.amount) > 0} bind:this={root}>
+<span class="bm" class:visible={shifted || tx.budget_shift || Number(tx.amount) > 0} bind:this={root}>
 	<button
 		type="button"
 		class="trigger"
 		class:shifted
-		class:manual={t.budget_shift !== null}
+		class:manual={tx.budget_shift !== null}
 		aria-haspopup="menu"
 		aria-expanded={open}
-		title={shifted ? `Zählt für ${monthLabel(budgetMonth)}` : 'Budgetmonat festlegen'}
+		title={shifted ? t('budgetMenu.countsFor', { month: monthLabel(budgetMonth) }) : t('budgetMenu.set')}
 		onclick={() => (open = !open)}
 	>
 		{#if shifted}
-			<CalendarArrowDown size={13} /> zählt für {short}
+			<CalendarArrowDown size={13} /> {t('budgetMenu.countsForShort', { month: short })}
 		{:else}
 			<CalendarDays size={13} />
-			{#if t.budget_shift === 'same'}<span>{short}</span>{/if}
+			{#if tx.budget_shift === 'same'}<span>{short}</span>{/if}
 		{/if}
 	</button>
 	{#if open}
 		<div class="menu" role="menu">
-			<div class="head">Zählt im Monat</div>
+			<div class="head">{t('budgetMenu.title')}</div>
 			{#each options as o (o.value)}
 				<button type="button" role="menuitemradio" aria-checked={current === o.value} onclick={() => choose(o.value)}>
 					<span class="check">{#if current === o.value}<Check size={15} />{/if}</span>
 					<span class="txt">
 						<span class="lbl">{o.label}</span>
-						<span class="hint">{o.hint}{#if o.value === 'auto'}{' · jetzt '}{monthLabel(budgetMonth)}{/if}</span>
+						<span class="hint">{o.hint}{#if o.value === 'auto'}{' · '}{t('budgetMenu.now', { month: monthLabel(budgetMonth) })}{/if}</span>
 					</span>
 				</button>
 			{/each}

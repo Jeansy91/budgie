@@ -97,7 +97,7 @@ Salary usually arrives at the end of a month but pays for the following one. Bud
 
 ## Default categories
 
-Categories can be changed at any time in the UI. The default scheme is German, matching the UI:
+Categories can be changed at any time in the UI. The default categories carry a stable key (`app/seed.py`) and are shown in the user's language (English names are listed in `app/seed.py`); the database stores the German names below. Once a category is renamed it keeps the name the user typed in every language, and categories the user creates are never translated.
 
 | Main category | Subcategories |
 | --- | --- |
@@ -115,6 +115,14 @@ Categories can be changed at any time in the UI. The default scheme is German, m
 | Einnahmen | Gehalt, Kindergeld, Erstattungen, Zinsen/Dividenden, Sonstige Einnahmen |
 | Umbuchungen | Transfers zwischen eigenen Konten (transfers between own accounts; counted as neither income nor expense) |
 | Sonstiges | Bargeld, Unkategorisiert |
+
+## Languages
+
+The UI is available in German (default) and English.
+
+- **Frontend:** texts live in `frontend/src/lib/i18n/de.ts` and `en.ts`; `en.ts` is type-checked against the German keys, so a missing translation fails `npm run check`. Amounts, dates and percentages are formatted with `Intl` for the current language (English uses the browser's English region, falling back to `en-GB`).
+- **Language choice:** each user stores a preference (`users.language`; `NULL` follows the browser). Before login, the language switch on the login page is remembered in the browser only.
+- **Backend:** the UI sends its language in the `Accept-Language` header. API error messages, FinTS sync status texts and the names of default categories are returned in that language (`app/i18n.py`). The prompt for the optional language model stays German, because transaction texts and stored category names are German.
 
 ## Roadmap
 

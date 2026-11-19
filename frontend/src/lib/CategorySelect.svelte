@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from './i18n/index.svelte';
 	import Select from './ui/Select.svelte';
 	import type { SelectOption } from './ui/types';
 	import { colorFor } from './colors';
@@ -7,7 +8,7 @@
 	let {
 		categories,
 		value = $bindable(),
-		empty = '– ohne Kategorie –',
+		empty,
 		onchange
 	}: {
 		categories: Category[];
@@ -16,9 +17,11 @@
 		onchange?: (value: number | null) => void;
 	} = $props();
 
+	let emptyLabel = $derived(empty ?? t('categorySelect.none'));
+
 	// Subcategories grouped under their main category; the search also matches the main category name.
 	let options = $derived<SelectOption<number | null>[]>([
-		{ value: null, label: empty },
+		{ value: null, label: emptyLabel },
 		...categories.flatMap((main, i) =>
 			main.children.map((sub) => ({ value: sub.id, label: sub.name, group: main.name, color: colorFor(i) }))
 		)
@@ -28,9 +31,9 @@
 <Select
 	{options}
 	bind:value
-	label="Kategorie"
-	placeholder={empty}
+	label={t('common.category')}
+	placeholder={emptyLabel}
 	searchable
-	searchPlaceholder="Kategorie suchen …"
+	searchPlaceholder={t('categorySelect.search')}
 	onchange={(v) => onchange?.(v)}
 />

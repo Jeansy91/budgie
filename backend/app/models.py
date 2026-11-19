@@ -91,6 +91,8 @@ class User(Base):
     display_name: Mapped[str] = mapped_column(String(100))
     password_hash: Mapped[str] = mapped_column(String(255))
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    # UI language ("de", "en"); NULL = follow the browser
+    language: Mapped[str | None] = mapped_column(String(5))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     household: Mapped[Household] = relationship()
@@ -183,6 +185,9 @@ class Category(Base):
     name: Mapped[str] = mapped_column(String(100))
     kind: Mapped[CategoryKind] = mapped_column(_enum(CategoryKind, "category_kind"), default=CategoryKind.expense)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    # Key of a default category (see app/seed.py), e.g. "groceries.supermarket". Its name is
+    # shown in the user's language. NULL for categories the user created or renamed.
+    default_key: Mapped[str | None] = mapped_column(String(50))
 
     parent: Mapped[Category | None] = relationship(remote_side=[id], back_populates="children")
     children: Mapped[list[Category]] = relationship(

@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+from ..i18n import t
 from . import ing_csv
 from .common import CsvError, ParsedStatement, ParsedTransaction, assign_fingerprints, decode, normalize_iban
 
@@ -325,18 +326,18 @@ class CustomMapping:
 
     def validate(self) -> None:
         if self.delimiter not in (";", ",", "\t", "|"):
-            raise CsvError("Ungültiges Trennzeichen")
+            raise CsvError(t("csv.invalid_delimiter"))
         if self.date_format not in DATE_FORMATS:
-            raise CsvError("Unbekanntes Datumsformat")
+            raise CsvError(t("csv.unknown_date_format"))
         if self.decimal not in ("comma", "point"):
-            raise CsvError("Unbekanntes Zahlenformat")
+            raise CsvError(t("csv.unknown_number_format"))
         unknown = set(self.columns) - set(FIELDS)
         if unknown:
-            raise CsvError("Unbekannte Felder: " + ", ".join(sorted(unknown)))
+            raise CsvError(t("csv.unknown_fields", fields=", ".join(sorted(unknown))))
         if "booking_date" not in self.columns:
-            raise CsvError("Bitte die Spalte mit dem Buchungsdatum zuordnen")
+            raise CsvError(t("csv.need_date_column"))
         if "amount" not in self.columns and not {"debit", "credit"} & set(self.columns):
-            raise CsvError("Bitte die Spalte mit dem Betrag zuordnen")
+            raise CsvError(t("csv.need_amount_column"))
 
 
 # --- Reading ----------------------------------------------------------------
@@ -401,7 +402,7 @@ def parse(raw: bytes, fmt: CsvFormat, table: CsvTable | None = None, header_row:
     if table is None or header_row is None:
         found = detect(raw)
         if found is None or found[0] is not fmt:
-            raise CsvError(f"Die Datei sieht nicht wie ein {fmt.name}-Export aus")
+            raise CsvError(t("csv.wrong_format", name=fmt.name))
         _, table, header_row = found
     header = [norm(c) for c in table.rows[header_row]]
     columns: dict[str, int] = {}
@@ -427,10 +428,10 @@ def parse_custom(raw: bytes, mapping: CustomMapping) -> ParsedStatement:
     mapping.validate()
     table = read_table(raw, mapping.delimiter)
     if not 0 <= mapping.header_row < len(table.rows):
-        raise CsvError("Die Kopfzeile liegt außerhalb der Datei")
+        raise CsvError(t("csv.header_outside"))
     width = len(table.rows[mapping.header_row])
     if any(not 0 <= idx < max(width, 1) for idx in mapping.columns.values()):
-        raise CsvError("Eine zugeordnete Spalte gibt es in der Datei nicht")
+        raise CsvError(t("csv.column_missing"))
     return _parse_rows(
         table.rows,
         mapping.header_row,
@@ -451,7 +452,7 @@ def parse_amount(value: str, decimal: str = "comma") -> Decimal:
     try:
         amount = Decimal(cleaned)
     except InvalidOperation as exc:
-        raise CsvError(f"Ungültiger Betrag: {value!r}") from exc
+        raise CsvError(t("csv.invalid_amount", value=repr(value))) from exc
     return -amount if negative else amount
 
 
@@ -461,7 +462,7 @@ def parse_date(value: str, formats: tuple[str, ...]) -> date:
             return datetime.strptime(value.strip(), fmt).date()
         except ValueError:
             continue
-    raise CsvError(f"Ungültiges Datum: {value!r}")
+    raise CsvError(t("csv.invalid_date", value=repr(value)))
 
 
 def _parse_rows(
@@ -517,7 +518,7 @@ def _parse_rows(
             payee = get(row, "payee")
             if amount > 0 and get(row, "payer"):
                 payee = get(row, "payer")
-            t = ParsedTransaction(
+            tx = ParsedTransaction(
                 booking_date=parse_date(raw_date, date_formats),
                 value_date=parse_date(value_date, date_formats) if value_date else None,
                 payee=payee,
@@ -534,20 +535,20 @@ def _parse_rows(
                 end_to_end_ref=_reference(get(row, "end_to_end_ref")),
             )
         except CsvError as exc:
-            raise CsvError(f"Zeile {line_no}: {exc}") from exc
+            raise CsvError(t("csv.line", line=line_no, error=exc)) from exc
         if postprocess is not None:
-            postprocess(t)
-        if t.counterparty_iban and not IBAN_RE.fullmatch(t.counterparty_iban):
+            postprocess(tx)
+        if tx.counterparty_iban and not IBAN_RE.fullmatch(tx.counterparty_iban):
             # Old account numbers (Kontonummer) are not IBANs
-            t.counterparty_iban = None
+            tx.counterparty_iban = None
         if not statement.iban and (own := normalize_iban(get(row, "own_iban"))) and IBAN_RE.fullmatch(own):
             statement.iban = own
         if not statement.account_name and get(row, "account_name"):
             statement.account_name = get(row, "account_name")
-        statement.transactions.append(t)
+        statement.transactions.append(tx)
 
     if not statement.transactions and header_row + 1 >= len(rows):
-        raise CsvError("Die Datei enthält keine Buchungen")
+        raise CsvError(t("csv.no_transactions"))
     # Most banks export the newest transaction first; store oldest first, keeping
     # the order within a day stable so fingerprints match across exports.
     txs = statement.transactions

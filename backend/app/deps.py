@@ -1,11 +1,12 @@
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Cookie, Depends, status
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from .db import get_db
+from .i18n import http_error
 from .models import Account, User, UserSession, account_members
 from .security import hash_token
 
@@ -16,10 +17,10 @@ DB = Annotated[Session, Depends(get_db)]
 
 def current_user(db: DB, budgie_session: Annotated[str | None, Cookie()] = None) -> User:
     if not budgie_session:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Nicht angemeldet")
+        raise http_error(status.HTTP_401_UNAUTHORIZED, "auth.not_signed_in")
     session = db.get(UserSession, hash_token(budgie_session))
     if session is None or session.expires_at <= datetime.now(UTC):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sitzung abgelaufen")
+        raise http_error(status.HTTP_401_UNAUTHORIZED, "auth.session_expired")
     return session.user
 
 
@@ -28,7 +29,7 @@ CurrentUser = Annotated[User, Depends(current_user)]
 
 def require_admin(user: CurrentUser) -> User:
     if not user.is_admin:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Nur für Administratoren")
+        raise http_error(status.HTTP_403_FORBIDDEN, "auth.admin_only")
     return user
 
 
@@ -51,5 +52,5 @@ def visible_account_ids(user: User):
 def get_visible_account(db: Session, user: User, account_id: int) -> Account:
     account = db.scalar(visible_accounts_query(user).where(Account.id == account_id))
     if account is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Konto nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "accounts.not_found")
     return account

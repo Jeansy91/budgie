@@ -10,6 +10,7 @@ from ..deps import DB, CurrentUser, get_visible_account, visible_accounts_query
 from ..importers import bank_csv, ing_csv
 from ..importers.common import CsvError, ParsedStatement
 from ..importers.store import store_transactions
+from ..i18n import http_error, t
 from ..models import Account, CsvProfile, ImportBatch, User
 from ..schemas import CsvFormatOut, CsvMappingIn, CsvPreviewOut, CsvProfileOut, ImportOut
 
@@ -27,7 +28,7 @@ def list_imports(db: DB, user: CurrentUser):
 async def _read(file: UploadFile) -> bytes:
     raw = await file.read(get_settings().max_upload_bytes + 1)
     if len(raw) > get_settings().max_upload_bytes:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Datei ist zu groß")
+        raise http_error(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "import.too_large")
     return raw
 
 
@@ -36,15 +37,14 @@ def _target_account(db: DB, user: User, statement: ParsedStatement, account_id: 
     if account_id is not None:
         account = get_visible_account(db, user, account_id)
         if statement.iban and account.iban and statement.iban != account.iban:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                f"Die Datei gehört zu {statement.iban}, nicht zu {account.iban}",
+            raise http_error(
+                status.HTTP_400_BAD_REQUEST, "import.wrong_account", file_iban=statement.iban, account_iban=account.iban
             )
         if statement.iban and not account.iban:
             account.iban = statement.iban
         return account, False
     if not statement.iban:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Keine IBAN in der Datei, bitte Konto auswählen")
+        raise http_error(status.HTTP_400_BAD_REQUEST, "import.no_iban")
     account = db.scalar(
         select(Account).where(Account.household_id == user.household_id, Account.iban == statement.iban)
     )
@@ -98,7 +98,7 @@ def _saved_profile(db: DB, user: User, raw: bytes) -> tuple[CsvProfile, bank_csv
 @router.get("/csv/formats", response_model=list[CsvFormatOut])
 def csv_formats(user: CurrentUser):
     """Bank export layouts Budgie recognizes on its own."""
-    return [{"id": f.id, "name": f.name, "hint": f.hint} for f in bank_csv.FORMATS]
+    return [{"id": f.id, "name": f.name, "hint": t(f"csv.hint.{f.id}") if f.hint else ""} for f in bank_csv.FORMATS]
 
 
 @router.post("/csv/preview", response_model=CsvPreviewOut)
@@ -135,7 +135,7 @@ async def import_csv(
             try:
                 chosen = CsvMappingIn.model_validate(json.loads(mapping))
             except (ValueError, ValidationError):
-                raise CsvError("Ungültige Spaltenzuordnung") from None
+                raise CsvError(t("csv.invalid_mapping")) from None
             custom = bank_csv.CustomMapping(**chosen.model_dump())
             statement = bank_csv.parse_custom(raw, custom)
             name = (save_as or "").strip() or None
@@ -170,7 +170,7 @@ async def import_csv(
         status.HTTP_422_UNPROCESSABLE_CONTENT,
         {
             "code": "unknown_format",
-            "message": "Dieses CSV-Format kennt Budgie noch nicht. Bitte die Spalten zuordnen.",
+            "message": t("csv.unknown_format"),
         },
     )
 
@@ -186,7 +186,7 @@ def list_csv_profiles(db: DB, user: CurrentUser):
 def delete_csv_profile(profile_id: int, db: DB, user: CurrentUser):
     profile = db.get(CsvProfile, profile_id)
     if profile is None or profile.household_id != user.household_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Vorlage nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "csv.profile_not_found")
     db.delete(profile)
     db.commit()
 

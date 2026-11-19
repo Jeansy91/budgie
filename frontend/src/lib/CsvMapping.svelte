@@ -7,6 +7,7 @@
 	import type { CsvField, CsvPreview } from '$lib/types';
 	import Columns3 from '@lucide/svelte/icons/columns-3';
 	import { untrack } from 'svelte';
+	import { t } from '$lib/i18n/index.svelte';
 
 	let {
 		filename,
@@ -22,22 +23,23 @@
 		oncancel: () => void;
 	} = $props();
 
-	const fields: { key: CsvField; label: string; required?: boolean }[] = [
-		{ key: 'booking_date', label: 'Buchungsdatum', required: true },
-		{ key: 'value_date', label: 'Wertstellung' },
-		{ key: 'payee', label: 'Empfänger / Auftraggeber' },
-		{ key: 'purpose', label: 'Verwendungszweck' },
-		{ key: 'booking_text', label: 'Buchungstext / Art' },
-		{ key: 'amount', label: 'Betrag (mit Vorzeichen)' },
-		{ key: 'debit', label: 'Soll / Ausgang' },
-		{ key: 'credit', label: 'Haben / Eingang' },
-		{ key: 'balance', label: 'Saldo danach' },
-		{ key: 'counterparty_iban', label: 'IBAN Gegenkonto' }
+	const fields: { key: CsvField; required?: boolean }[] = [
+		{ key: 'booking_date', required: true },
+		{ key: 'value_date' },
+		{ key: 'payee' },
+		{ key: 'purpose' },
+		{ key: 'booking_text' },
+		{ key: 'amount' },
+		{ key: 'debit' },
+		{ key: 'credit' },
+		{ key: 'balance' },
+		{ key: 'counterparty_iban' }
 	];
+	const fieldLabel = (key: CsvField) => t(`csv.field.${key}`);
 
 	const columnOptions = $derived<SelectOption<string>[]>([
-		{ value: '', label: '– nicht vorhanden –' },
-		...preview.columns.map((c, i) => ({ value: String(i), label: c.trim() || `Spalte ${i + 1}` }))
+		{ value: '', label: t('csv.notPresent') },
+		...preview.columns.map((c, i) => ({ value: String(i), label: c.trim() || t('csv.column', { n: String(i + 1) }) }))
 	]);
 
 	// Starts from Budgie's guess; the parent re-creates the component for the next file.
@@ -87,9 +89,9 @@
 	<div class="head">
 		<span class="icon"><Columns3 size={20} /></span>
 		<div>
-			<h2>Spalten zuordnen</h2>
+			<h2>{t('csv.title')}</h2>
 			<p class="muted small break-anywhere">
-				Das Format von <strong>{filename}</strong> kennt Budgie noch nicht. Sag einmal, welche Spalte was enthält.
+				{t('csv.introBefore')} <strong>{filename}</strong> {t('csv.introAfter')}
 			</p>
 		</div>
 	</div>
@@ -114,34 +116,34 @@
 	<div class="grid">
 		{#each fields as f (f.key)}
 			<div class="field">
-				<span>{f.label}{#if f.required}<span class="req"> *</span>{/if}</span>
-				<Select options={columnOptions} bind:value={chosen[f.key]} label={f.label} />
+				<span>{fieldLabel(f.key)}{#if f.required}<span class="req"> *</span>{/if}</span>
+				<Select options={columnOptions} bind:value={chosen[f.key]} label={fieldLabel(f.key)} />
 			</div>
 		{/each}
 		<div class="field">
-			<span>Datumsformat</span>
-			<Select options={dateOptions} bind:value={dateFormat} label="Datumsformat" />
+			<span>{t('csv.dateFormat')}</span>
+			<Select options={dateOptions} bind:value={dateFormat} label={t('csv.dateFormat')} />
 		</div>
 		<div class="field">
-			<span>Zahlenformat</span>
-			<RadioGroup options={decimalOptions} bind:value={decimal} label="Zahlenformat" />
+			<span>{t('csv.numberFormat')}</span>
+			<RadioGroup options={decimalOptions} bind:value={decimal} label={t('csv.numberFormat')} />
 		</div>
 	</div>
 	{#if !hasAmount}
-		<p class="muted small">Bitte den Betrag zuordnen, entweder als eine Spalte mit Vorzeichen oder getrennt nach Soll und Haben.</p>
+		<p class="muted small">{t('csv.needAmount')}</p>
 	{/if}
 
 	<div class="row save">
 		<label class="grow"
-			>Als Vorlage speichern
-			<input bind:value={saveAs} maxlength="100" placeholder="optional, z. B. Name der Bank" />
+			>{t('csv.saveAs')}
+			<input bind:value={saveAs} maxlength="100" placeholder={t('csv.saveAsPlaceholder')} />
 		</label>
 	</div>
-	<p class="muted small">Mit Vorlage erkennt Budgie Dateien mit denselben Spalten künftig von selbst.</p>
+	<p class="muted small">{t('csv.saveAsHint')}</p>
 
 	<div class="row">
-		<button disabled={!valid || busy}>{busy ? 'Importiere …' : 'Importieren'}</button>
-		<button type="button" class="ghost" onclick={oncancel}>Abbrechen</button>
+		<button disabled={!valid || busy}>{busy ? t('import.importing') : t('csv.import')}</button>
+		<button type="button" class="ghost" onclick={oncancel}>{t('common.cancel')}</button>
 	</div>
 </form>
 

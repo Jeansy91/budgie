@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from sqlalchemy import func, select
 
 from ..deps import DB, CurrentUser, get_visible_account, visible_accounts_query
+from ..i18n import http_error
 from ..importers.common import normalize_iban
 from ..models import Account, Transaction, User
 from ..schemas import AccountIn, AccountOut, AccountPatch
@@ -31,7 +32,7 @@ def account_out(db: DB, account: Account) -> AccountOut:
 def _members(db: DB, user: User, ids: list[int]) -> list[User]:
     members = db.scalars(select(User).where(User.household_id == user.household_id, User.id.in_(ids))).all()
     if len(members) != len(set(ids)):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Unbekannter Nutzer")
+        raise http_error(status.HTTP_400_BAD_REQUEST, "accounts.unknown_user")
     return list(members)
 
 
@@ -44,7 +45,7 @@ def list_accounts(db: DB, user: CurrentUser):
 def create_account(data: AccountIn, db: DB, user: CurrentUser):
     iban = normalize_iban(data.iban) if data.iban else None
     if iban and db.scalar(select(Account).where(Account.household_id == user.household_id, Account.iban == iban)):
-        raise HTTPException(status.HTTP_409_CONFLICT, "Ein Konto mit dieser IBAN gibt es schon")
+        raise http_error(status.HTTP_409_CONFLICT, "accounts.iban_exists")
     account = Account(household_id=user.household_id, name=data.name, iban=iban, bank=data.bank, shared=data.shared)
     # Whoever creates a non-shared account can see it themselves
     account.members = _members(db, user, list({*data.member_ids, user.id}))

@@ -5,6 +5,7 @@
 	("Wohnen" shows all subcategories of Wohnen).
 -->
 <script lang="ts" generics="T">
+	import { t } from '../i18n/index.svelte';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import Check from '@lucide/svelte/icons/check';
 	import Search from '@lucide/svelte/icons/search';
@@ -14,9 +15,9 @@
 	let {
 		options,
 		value = $bindable(),
-		placeholder = 'Bitte wählen',
+		placeholder,
 		searchable = 'auto',
-		searchPlaceholder = 'Suchen …',
+		searchPlaceholder,
 		label = '',
 		disabled = false,
 		size = 'md',
@@ -39,6 +40,7 @@
 		title?: string;
 		onchange?: (value: T) => void;
 	} = $props();
+	let placeholderText = $derived(placeholder ?? t('ui.select.placeholder'));
 
 	const uid = $props.id();
 	let open = $state(false);
@@ -199,12 +201,12 @@
 	aria-haspopup="listbox"
 	aria-expanded={open}
 	aria-controls={open ? `${uid}-list` : undefined}
-	aria-label={label ? `${label}: ${selected?.label ?? placeholder}` : undefined}
+	aria-label={label ? `${label}: ${selected?.label ?? placeholderText}` : undefined}
 	onclick={() => (open ? hide() : show())}
 	onkeydown={onTriggerKey}
 >
 	{#if selected?.color}<span class="dot" style:background={selected.color}></span>{/if}
-	<span class="value">{selected?.label ?? placeholder}</span>
+	<span class="value">{selected?.label ?? placeholderText}</span>
 	<span class="chev"><ChevronDown size={16} /></span>
 </button>
 
@@ -218,8 +220,8 @@
 					bind:this={search}
 					bind:value={query}
 					type="text"
-					placeholder={searchPlaceholder}
-					aria-label="Suchen"
+					placeholder={searchPlaceholder ?? t('ui.select.searchPlaceholder')}
+					aria-label={t('ui.select.search')}
 					aria-controls="{uid}-list"
 					aria-activedescendant={filtered[active] ? optId(active) : undefined}
 					autocomplete="off"
@@ -261,7 +263,7 @@
 					<span class="tick">{#if o.value === value}<Check size={16} />{/if}</span>
 				</div>
 			{:else}
-				<div class="empty">Nichts gefunden</div>
+				<div class="empty">{t('ui.select.noResults')}</div>
 			{/each}
 		</div>
 	</div>

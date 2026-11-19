@@ -24,6 +24,7 @@ import io
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+from ..i18n import t
 # Re-exported for code that imported them from here before other banks were supported
 from .common import (  # noqa: F401
     CsvError,
@@ -45,14 +46,14 @@ def parse_amount(value: str) -> Decimal:
     try:
         return Decimal(cleaned)
     except InvalidOperation as exc:
-        raise IngCsvError(f"Ungültiger Betrag: {value!r}") from exc
+        raise IngCsvError(t("csv.invalid_amount", value=repr(value))) from exc
 
 
 def parse_date(value: str) -> date:
     try:
         return datetime.strptime(value.strip(), "%d.%m.%Y").date()
     except ValueError as exc:
-        raise IngCsvError(f"Ungültiges Datum: {value!r}") from exc
+        raise IngCsvError(t("csv.invalid_date", value=repr(value))) from exc
 
 
 _HEADER_ALIASES = {
@@ -84,7 +85,7 @@ def _map_header(header: list[str]) -> dict[str, int]:
         previous = _HEADER_ALIASES.get(key)
     missing = {"booking_date", "amount"} - mapping.keys()
     if missing:
-        raise IngCsvError("Spalten fehlen: " + ", ".join(sorted(missing)))
+        raise IngCsvError(t("csv.missing_columns", columns=", ".join(sorted(missing))))
     return mapping
 
 
@@ -113,7 +114,7 @@ def parse(raw: bytes) -> ParsedStatement:
                 ascending = "aufsteigend" in row[1].lower()
 
     if header_idx is None:
-        raise IngCsvError("Keine ING-Umsatzanzeige erkannt (Kopfzeile „Buchung;…“ fehlt).")
+        raise IngCsvError(t("csv.not_ing"))
 
     cols = _map_header(rows[header_idx])
 
@@ -140,7 +141,7 @@ def parse(raw: bytes) -> ParsedStatement:
                 )
             )
         except IngCsvError as exc:
-            raise IngCsvError(f"Zeile {line_no}: {exc}") from exc
+            raise IngCsvError(t("csv.line", line=line_no, error=exc)) from exc
 
     # Store chronologically, oldest transaction first
     if not ascending:

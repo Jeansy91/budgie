@@ -3,6 +3,7 @@
 	import type { Category, Kind } from '$lib/types';
 	import { colorFor } from '$lib/colors';
 	import { RadioGroup, Select } from '$lib/ui';
+	import { t } from '$lib/i18n/index.svelte';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -13,8 +14,9 @@
 	let newMainKind = $state<Kind>('expense');
 	let newSub = $state<Record<number, string>>({});
 
-	const kindLabel: Record<Kind, string> = { expense: 'Ausgabe', income: 'Einnahme', transfer: 'Umbuchung' };
-	const kindOptions = Object.entries(kindLabel).map(([value, label]) => ({ value: value as Kind, label }));
+	let kindOptions = $derived(
+		(['expense', 'income', 'transfer'] as const).map((value) => ({ value: value as Kind, label: t(`categories.kind.${value}`) }))
+	);
 
 	async function run(fn: () => Promise<unknown>) {
 		try {
@@ -38,22 +40,22 @@
 			newSub[parent.id] = '';
 		});
 	const rename = (c: Category) => {
-		const name = prompt('Neuer Name', c.name);
+		const name = prompt(t('categories.newName'), c.name);
 		if (name && name !== c.name) run(() => api(`/categories/${c.id}`, { method: 'PATCH', body: { name } }));
 	};
 	const setKind = (c: Category, kind: Kind) => run(() => api(`/categories/${c.id}`, { method: 'PATCH', body: { kind } }));
 	const remove = (c: Category) => {
-		const what = c.children?.length ? `„${c.name}“ mit allen Unterkategorien` : `„${c.name}“`;
-		if (confirm(`${what} löschen? Zugeordnete Buchungen werden wieder unkategorisiert, passende Regeln gelöscht.`))
+		const key = c.children?.length ? 'categories.confirmDeleteMain' : 'categories.confirmDelete';
+		if (confirm(t(key, { name: c.name })))
 			run(() => api(`/categories/${c.id}`, { method: 'DELETE' }));
 	};
 </script>
 
 <div class="page-head">
 	<div>
-		<span class="eyebrow">Haushalt</span>
-		<h1>Kategorien</h1>
-		<p>Buchungen werden immer einer Unterkategorie zugeordnet. Die Art legt fest, ob sie als Ausgabe, Einnahme oder Umbuchung zählt.</p>
+		<span class="eyebrow">{t('categories.eyebrow')}</span>
+		<h1>{t('nav.categories')}</h1>
+		<p>{t('categories.intro')}</p>
 	</div>
 </div>
 {#if error}<div class="error">{error}</div>{/if}
@@ -63,35 +65,35 @@
 		<section class="card" style:--c={colorFor(i)}>
 			<div class="head">
 				<h2><span class="dot" style:background="var(--c)"></span>{main.name}</h2>
-				<Select options={kindOptions} value={main.kind} onchange={(k) => setKind(main, k)} size="sm" label="Art" title="Art" />
+				<Select options={kindOptions} value={main.kind} onchange={(k) => setKind(main, k)} size="sm" label={t('categories.kindLabel')} title={t('categories.kindLabel')} />
 			</div>
 			<ul>
 				{#each main.children as sub (sub.id)}
 					<li>
 						<span>{sub.name}</span>
 						<span class="actions">
-							<button class="ghost icon sm" onclick={() => rename(sub)} title="Umbenennen" aria-label="Umbenennen"><Pencil size={14} /></button>
-							<button class="ghost icon sm" onclick={() => remove(sub)} title="Löschen" aria-label="Löschen"><Trash2 size={14} /></button>
+							<button class="ghost icon sm" onclick={() => rename(sub)} title={t('categories.rename')} aria-label={t('categories.rename')}><Pencil size={14} /></button>
+							<button class="ghost icon sm" onclick={() => remove(sub)} title={t('common.delete')} aria-label={t('common.delete')}><Trash2 size={14} /></button>
 						</span>
 					</li>
 				{/each}
 			</ul>
 			<form class="add" onsubmit={(e) => { e.preventDefault(); addSub(main); }}>
-				<input placeholder="Neue Unterkategorie" bind:value={newSub[main.id]} required />
-				<button class="secondary icon" aria-label="Hinzufügen"><Plus size={18} /></button>
+				<input placeholder={t('categories.newSub')} bind:value={newSub[main.id]} required />
+				<button class="secondary icon" aria-label={t('common.add')}><Plus size={18} /></button>
 			</form>
 			<div class="foot">
-				<button class="ghost small" onclick={() => rename(main)}><Pencil size={14} /> Umbenennen</button>
-				<button class="ghost small" onclick={() => remove(main)}><Trash2 size={14} /> Löschen</button>
+				<button class="ghost small" onclick={() => rename(main)}><Pencil size={14} /> {t('categories.rename')}</button>
+				<button class="ghost small" onclick={() => remove(main)}><Trash2 size={14} /> {t('common.delete')}</button>
 			</div>
 		</section>
 	{/each}
 	<section class="card new">
-		<h2><Plus size={18} /> Neue Hauptkategorie</h2>
+		<h2><Plus size={18} /> {t('categories.newMain')}</h2>
 		<form class="add col" onsubmit={(e) => { e.preventDefault(); addMain(); }}>
-			<input placeholder="Name" bind:value={newMain} required />
-			<RadioGroup options={kindOptions} bind:value={newMainKind} label="Art" class="kind" />
-			<button>Anlegen</button>
+			<input placeholder={t('common.name')} bind:value={newMain} required />
+			<RadioGroup options={kindOptions} bind:value={newMainKind} label={t('categories.kindLabel')} class="kind" />
+			<button>{t('common.create')}</button>
 		</form>
 	</section>
 </div>

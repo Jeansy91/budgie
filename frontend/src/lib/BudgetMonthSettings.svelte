@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { api } from './api';
 	import type { BudgetSettings, Category } from './types';
+	import { t } from './i18n/index.svelte';
 	import CalendarArrowDown from '@lucide/svelte/icons/calendar-arrow-down';
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
@@ -47,7 +48,7 @@
 			const { shifted_count, ...body } = s;
 			s = await api<BudgetSettings>('/budget-month/settings', { method: 'PUT', body });
 			error = '';
-			notice = `Gespeichert. ${s.shifted_count} ${s.shifted_count === 1 ? 'Buchung zählt' : 'Buchungen zählen'} jetzt für den Folgemonat.`;
+			notice = t('budget.saved', { count: s.shifted_count });
 		} catch (e) {
 			error = (e as Error).message;
 			notice = '';
@@ -67,10 +68,9 @@
 	<div class="title">
 		<span class="ic"><CalendarArrowDown size={18} /></span>
 		<div>
-			<h2>Budgetmonat</h2>
+			<h2>{t('detail.budgetMonth')}</h2>
 			<p class="muted small">
-				Das Gehalt kommt zum Monatsende, gelebt wird davon im Folgemonat. Gehaltseingänge aus den letzten Tagen eines Monats
-				zählen deshalb in Übersicht und Monatssummen für den nächsten Monat. Der Buchungstag bleibt erhalten.
+				{t('budget.intro')}
 			</p>
 		</div>
 	</div>
@@ -80,29 +80,29 @@
 	{#if s}
 		<div class="opt">
 			<div>
-				<strong>Gehalt dem Folgemonat zuordnen</strong>
-				<span class="muted small">{s.shifted_count} {s.shifted_count === 1 ? 'Buchung' : 'Buchungen'} derzeit verschoben</span>
+				<strong>{t('budget.shift')}</strong>
+				<span class="muted small">{t('budget.shiftedCount', { count: s.shifted_count })}</span>
 			</div>
-			{@render toggle(s.salary_shift_enabled, 'Gehalt dem Folgemonat zuordnen', () => s && (s.salary_shift_enabled = !s.salary_shift_enabled))}
+			{@render toggle(s.salary_shift_enabled, t('budget.shift'), () => s && (s.salary_shift_enabled = !s.salary_shift_enabled))}
 		</div>
 
 		<div class="body" class:off={!s.salary_shift_enabled}>
 			<div class="opt">
 				<div>
-					<strong>Zeitraum zum Monatsende</strong>
-					<span class="muted small">Eingänge in den letzten {s.salary_shift_days} Tagen eines Monats</span>
+					<strong>{t('budget.window')}</strong>
+					<span class="muted small">{t('budget.windowHint', { count: s.salary_shift_days })}</span>
 				</div>
 				<div class="stepper">
-					<button type="button" aria-label="Weniger Tage" onclick={() => setDays(s!.salary_shift_days - 1)} disabled={s.salary_shift_days <= 1}><Minus size={15} /></button>
-					<span class="val"><strong>{s.salary_shift_days}</strong> Tage</span>
-					<button type="button" aria-label="Mehr Tage" onclick={() => setDays(s!.salary_shift_days + 1)} disabled={s.salary_shift_days >= 15}><Plus size={15} /></button>
+					<button type="button" aria-label={t('budget.fewerDays')} onclick={() => setDays(s!.salary_shift_days - 1)} disabled={s.salary_shift_days <= 1}><Minus size={15} /></button>
+					<span class="val"><strong>{s.salary_shift_days}</strong> {t('budget.days', { count: s.salary_shift_days })}</span>
+					<button type="button" aria-label={t('budget.moreDays')} onclick={() => setDays(s!.salary_shift_days + 1)} disabled={s.salary_shift_days >= 15}><Plus size={15} /></button>
 				</div>
 			</div>
 
 			<div class="opt col">
 				<div>
-					<strong>Als Gehalt zählen diese Kategorien</strong>
-					<span class="muted small">Buchungen in Ausgaben- und Umbuchungskategorien werden nie verschoben.</span>
+					<strong>{t('budget.categories')}</strong>
+					<span class="muted small">{t('budget.categoriesHint')}</span>
 				</div>
 				<div class="chips">
 					{#each incomeCategories as main (main.id)}
@@ -118,39 +118,38 @@
 
 			<div class="opt col">
 				<div>
-					<strong>Auftraggeber</strong>
-					<span class="muted small">Eingänge von diesen Auftraggebern zählen immer als Gehalt (Teil des Namens genügt).</span>
+					<strong>{t('budget.payers')}</strong>
+					<span class="muted small">{t('budget.payersHint')}</span>
 				</div>
 				<div class="chips">
 					{#each s.salary_payees as p (p)}
 						<span class="chip on tag"
-							>{p}<button type="button" aria-label={`${p} entfernen`} onclick={() => s && (s.salary_payees = s.salary_payees.filter((x) => x !== p))}
+							>{p}<button type="button" aria-label={t('budget.removePayer', { name: p })} onclick={() => s && (s.salary_payees = s.salary_payees.filter((x) => x !== p))}
 								><X size={13} /></button
 							></span
 						>
 					{/each}
 					<form class="add" onsubmit={addPayee}>
-						<input bind:value={payee} placeholder="z. B. Arbeitgeber AG" aria-label="Auftraggeber hinzufügen" />
-						<button type="submit" class="secondary" disabled={!payee.trim()}><Plus size={15} /> Hinzufügen</button>
+						<input bind:value={payee} placeholder={t('budget.payerPlaceholder')} aria-label={t('budget.addPayer')} />
+						<button type="submit" class="secondary" disabled={!payee.trim()}><Plus size={15} /> {t('common.add')}</button>
 					</form>
 				</div>
 			</div>
 
 			<div class="opt">
 				<div>
-					<strong>Automatisch erkennen</strong>
+					<strong>{t('budget.autoDetect')}</strong>
 					<span class="muted small"
-						>Für Buchungen ohne Kategorie: Buchungstext „Gehalt/Rente“ oder ein Auftraggeber, der auch in anderen Monaten zum
-						Monatsende einen ähnlichen Betrag überweist.</span
+						>{t('budget.autoDetectHint')}</span
 					>
 				</div>
-				{@render toggle(s.salary_auto_detect, 'Automatisch erkennen', () => s && (s.salary_auto_detect = !s.salary_auto_detect))}
+				{@render toggle(s.salary_auto_detect, t('budget.autoDetect'), () => s && (s.salary_auto_detect = !s.salary_auto_detect))}
 			</div>
 		</div>
 
-		<p class="muted small">Einzelne Buchungen legst du in der Buchungsliste über das Kalender-Symbol fest.</p>
+		<p class="muted small">{t('budget.perTransaction')}</p>
 		<div class="row foot">
-			<button onclick={save} disabled={saving}>{saving ? 'Speichert …' : 'Speichern'}</button>
+			<button onclick={save} disabled={saving}>{saving ? t('common.saving') : t('common.save')}</button>
 			{#if notice}<span class="saved small"><Check size={15} /> {notice}</span>{/if}
 		</div>
 	{/if}

@@ -11,7 +11,8 @@
 	import CategorySelect from './CategorySelect.svelte';
 	import { RadioGroup, Select, Switch, type SelectOption } from './ui';
 	import { avatarColor, initials } from './colors';
-	import { categoryLabels, day, money, monthLabel, shiftMonth } from './format';
+	import { categoryLabels, dateFormat, dateTime, day, money, monthLabel, percent, shiftMonth } from './format';
+	import { t } from './i18n/index.svelte';
 	import type { Category, Rule, Transaction, TransactionDetail } from './types';
 	import X from '@lucide/svelte/icons/x';
 	import Check from '@lucide/svelte/icons/check';
@@ -35,12 +36,12 @@
 		categories: Category[];
 		onclose: () => void;
 		/** The transaction changed (category, budget month, note) */
-		onchange?: (t: Transaction) => void;
+		onchange?: (tx: Transaction) => void;
 		/** Other transactions may have changed too (a rule was applied) */
 		onreload?: () => void;
 	} = $props();
 
-	let t = $state<TransactionDetail | null>(null);
+	let tx = $state<TransactionDetail | null>(null);
 	let error = $state('');
 	let notice = $state('');
 	let note = $state('');
@@ -49,8 +50,8 @@
 
 	async function load() {
 		try {
-			t = await api<TransactionDetail>(`/transactions/${id}`);
-			note = t.note;
+			tx = await api<TransactionDetail>(`/transactions/${id}`);
+			note = tx.note;
 			error = '';
 		} catch (e) {
 			error = (e as Error).message;
@@ -59,7 +60,7 @@
 
 	$effect(() => {
 		void id;
-		t = null;
+		tx = null;
 		notice = '';
 		ruleOpen = false;
 		load();
@@ -81,11 +82,11 @@
 	}
 
 	async function patch(body: Record<string, unknown>) {
-		if (!t) return;
+		if (!tx) return;
 		try {
-			const res = await api<{ transaction: Transaction }>(`/transactions/${t.id}`, { method: 'PATCH', body });
-			Object.assign(t, res.transaction);
-			if (res.transaction.category_source !== 'rule') t.rule = null;
+			const res = await api<{ transaction: Transaction }>(`/transactions/${tx.id}`, { method: 'PATCH', body });
+			Object.assign(tx, res.transaction);
+			if (res.transaction.category_source !== 'rule') tx.rule = null;
 			onchange?.(res.transaction);
 			error = '';
 		} catch (e) {
@@ -94,37 +95,28 @@
 	}
 
 	// --- Category -----------------------------------------------------------
-	const pct = (v: number | null) => (v === null ? '' : `${Math.round(v * 100)} %`);
-	let isAi = $derived(t?.category_source === 'model' || t?.category_source === 'llm');
-	const fieldLabel: Record<Rule['field'], string> = {
-		payee: 'Empfänger',
-		purpose: 'Verwendungszweck',
-		any: 'Empfänger oder Zweck'
-	};
-	const matchLabel: Record<Rule['match_type'], string> = {
-		contains: 'enthält',
-		equals: 'ist genau',
-		starts_with: 'beginnt mit',
-		regex: 'passt zu Regex'
-	};
+	const pct = percent;
+	let isAi = $derived(tx?.category_source === 'model' || tx?.category_source === 'llm');
+	const fieldLabel = (field: Rule['field']) => t(`rules.field.${field}`);
+	const matchLabel = (match: Rule['match_type']) => t(`rules.match.${match}`);
 
 	// --- Budget month -------------------------------------------------------
-	let bookingMonth = $derived(t ? t.booking_date.slice(0, 7) : '');
-	let budgetMonth = $derived(t ? t.budget_date.slice(0, 7) : '');
-	let budgetValue = $derived<'auto' | 'same' | 'next'>(t?.budget_shift ?? 'auto');
+	let bookingMonth = $derived(tx ? tx.booking_date.slice(0, 7) : '');
+	let budgetMonth = $derived(tx ? tx.budget_date.slice(0, 7) : '');
+	let budgetValue = $derived<'auto' | 'same' | 'next'>(tx?.budget_shift ?? 'auto');
 	let budgetOptions = $derived<SelectOption<'auto' | 'same' | 'next'>[]>(
-		t
+		tx
 			? [
-					{ value: 'auto', label: 'Automatisch' },
-					{ value: 'same', label: `${monthLabel(bookingMonth)} (Buchungsmonat)` },
-					{ value: 'next', label: `${monthLabel(shiftMonth(bookingMonth, 1))} (Folgemonat)` }
+					{ value: 'auto', label: t('budgetMenu.auto') },
+					{ value: 'same', label: `${monthLabel(bookingMonth)} (${t('detail.bookingMonthNote')})` },
+					{ value: 'next', label: `${monthLabel(shiftMonth(bookingMonth, 1))} (${t('detail.nextMonthNote')})` }
 				]
 			: []
 	);
 
 	// --- Note ---------------------------------------------------------------
 	function saveNote() {
-		if (t && note !== t.note) patch({ note });
+		if (tx && note !== tx.note) patch({ note });
 	}
 
 	// --- Rule from this transaction ------------------------------------------
@@ -136,22 +128,22 @@
 		category_id: null as number | null,
 		apply: true
 	});
-	const fieldOptions = Object.entries(fieldLabel).map(([value, label]) => ({ value, label })) as SelectOption<
-		Rule['field']
-	>[];
-	const matchOptions = Object.entries(matchLabel).map(([value, label]) => ({ value, label })) as SelectOption<
-		Rule['match_type']
-	>[];
+	let fieldOptions = $derived<SelectOption<Rule['field']>[]>(
+		(['payee', 'purpose', 'any'] as const).map((value) => ({ value, label: fieldLabel(value) }))
+	);
+	let matchOptions = $derived<SelectOption<Rule['match_type']>[]>(
+		(['contains', 'equals', 'starts_with', 'regex'] as const).map((value) => ({ value, label: matchLabel(value) }))
+	);
 	const defaultPattern = (field: Rule['field']) =>
-		!t ? '' : field === 'purpose' ? t.purpose : t.payee || t.purpose;
+		!tx ? '' : field === 'purpose' ? tx.purpose : tx.payee || tx.purpose;
 
 	function openRule() {
-		if (!t) return;
+		if (!tx) return;
 		rule = {
-			field: t.payee ? 'payee' : 'purpose',
+			field: tx.payee ? 'payee' : 'purpose',
 			match_type: 'contains',
 			pattern: '',
-			category_id: t.category_id ?? t.suggested_category_id,
+			category_id: tx.category_id ?? tx.suggested_category_id,
 			apply: true
 		};
 		rule.pattern = defaultPattern(rule.field);
@@ -167,10 +159,10 @@
 
 	/** Same matching as the backend (app/rules.py), for a live hint. */
 	let ruleMatchesThis = $derived.by(() => {
-		if (!t) return false;
+		if (!tx) return false;
 		const pattern = rule.pattern.trim();
 		if (!pattern) return false;
-		const texts = rule.field === 'payee' ? [t.payee] : rule.field === 'purpose' ? [t.purpose] : [t.payee, t.purpose];
+		const texts = rule.field === 'payee' ? [tx.payee] : rule.field === 'purpose' ? [tx.purpose] : [tx.payee, tx.purpose];
 		const norm = (s: string) => s.split(/\s+/).filter(Boolean).join(' ').toLocaleLowerCase('de');
 		return texts.some((text) => {
 			if (rule.match_type === 'regex') {
@@ -190,7 +182,7 @@
 
 	async function createRule(e: SubmitEvent) {
 		e.preventDefault();
-		if (!t || rule.category_id === null) return;
+		if (!tx || rule.category_id === null) return;
 		try {
 			const { apply, ...body } = rule;
 			const created = await api<Rule>('/rules', {
@@ -200,11 +192,11 @@
 			});
 			ruleOpen = false;
 			notice = apply
-				? `Regel angelegt, ${created.match_count} ${created.match_count === 1 ? 'Buchung' : 'Buchungen'} zugeordnet.`
-				: 'Regel angelegt. Sie gilt ab dem nächsten Import.';
+				? t('rules.created', { count: created.match_count })
+				: t('detail.ruleCreatedLater');
 			error = '';
 			await load();
-			if (t) onchange?.(t);
+			if (tx) onchange?.(tx);
 			onreload?.();
 		} catch (err) {
 			error = (err as Error).message;
@@ -213,21 +205,24 @@
 
 	// --- Formatting -----------------------------------------------------------
 	const iban = (v: string) => v.replace(/(.{4})/g, '$1 ').trim();
-	const dateTime = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
-	const longDay = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-	let counterpartLabel = $derived(t && Number(t.amount) > 0 ? 'Auftraggeber' : 'Empfänger');
+	let longDay = $derived(dateFormat({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+	let counterpartLabel = $derived(tx && Number(tx.amount) > 0 ? t('detail.payer') : t('detail.payee'));
 	let hasSepa = $derived(
-		!!t && !!(t.counterparty_iban || t.counterparty_bic || t.mandate_id || t.creditor_id || t.end_to_end_ref)
+		!!tx && !!(tx.counterparty_iban || tx.counterparty_bic || tx.mandate_id || tx.creditor_id || tx.end_to_end_ref)
 	);
 	let sourceName = $derived(
-		!t?.import_batch ? 'Unbekannt' : t.import_batch.source === 'fints' ? 'FinTS-Abruf' : 'CSV-Import'
+		!tx?.import_batch
+			? t('detail.sourceUnknown')
+			: tx.import_batch.source === 'fints'
+				? t('detail.sourceFints')
+				: t('detail.sourceCsv')
 	);
 </script>
 
 <svelte:window {onkeydown} />
 
 <div class="tx-layer">
-	<button class="backdrop" type="button" tabindex="-1" aria-label="Details schließen" onclick={onclose}></button>
+	<button class="backdrop" type="button" tabindex="-1" aria-label={t('detail.closeDetails')} onclick={onclose}></button>
 	<div
 		class="panel"
 		role="dialog"
@@ -238,18 +233,18 @@
 	>
 		<div class="grip" aria-hidden="true"></div>
 		<header>
-			{#if t}
-				<span class="avatar" style:background={avatarColor(t.payee || t.booking_text)}>
-					{initials(t.payee || t.booking_text)}
+			{#if tx}
+				<span class="avatar" style:background={avatarColor(tx.payee || tx.booking_text)}>
+					{initials(tx.payee || tx.booking_text)}
 				</span>
 				<div class="title">
-					<h2 id="tx-detail-title">{t.payee || t.booking_text || 'Buchung'}</h2>
-					<span class="sub">{longDay.format(new Date(t.booking_date + 'T12:00:00'))}</span>
+					<h2 id="tx-detail-title">{tx.payee || tx.booking_text || t('detail.transaction')}</h2>
+					<span class="sub">{longDay.format(new Date(tx.booking_date + 'T12:00:00'))}</span>
 				</div>
 			{:else}
-				<div class="title"><h2 id="tx-detail-title">Buchung</h2></div>
+				<div class="title"><h2 id="tx-detail-title">{t('detail.transaction')}</h2></div>
 			{/if}
-			<button class="ghost icon close" type="button" onclick={onclose} aria-label="Schließen" title="Schließen (Esc)">
+			<button class="ghost icon close" type="button" onclick={onclose} aria-label={t('common.close')} title={t('detail.closeEsc')}>
 				<X size={20} />
 			</button>
 		</header>
@@ -258,174 +253,173 @@
 			{#if error}<div class="error">{error}</div>{/if}
 			{#if notice}<div class="ok"><Sparkles size={18} /> {notice}</div>{/if}
 
-			{#if !t}
+			{#if !tx}
 				{#if !error}<div class="loading" aria-busy="true"><span></span><span></span><span></span></div>{/if}
 			{:else}
 				<div class="hero">
-					<span class="big amount" class:pos={Number(t.amount) > 0}>{money(t.amount)}</span>
-					{#if t.booking_text}<span class="chip">{t.booking_text}</span>{/if}
+					<span class="big amount" class:pos={Number(tx.amount) > 0}>{money(tx.amount)}</span>
+					{#if tx.booking_text}<span class="chip">{tx.booking_text}</span>{/if}
 				</div>
 
 				<!-- Category -->
 				<section>
-					<h3>Kategorie</h3>
+					<h3>{t('common.category')}</h3>
 					<div class="cat-select">
-						<CategorySelect {categories} value={t.category_id} onchange={(v) => patch({ category_id: v })} />
+						<CategorySelect {categories} value={tx.category_id} onchange={(v) => patch({ category_id: v })} />
 					</div>
 					<div class="origin" class:ai={isAi}>
-						{#if t.category_source === 'manual'}
+						{#if tx.category_source === 'manual'}
 							<Hand size={16} />
-							<span>Manuell zugeordnet</span>
-						{:else if t.category_source === 'rule'}
+							<span>{t('detail.manual')}</span>
+						{:else if tx.category_source === 'rule'}
 							<WandSparkles size={16} />
 							<span>
-								Per Regel zugeordnet
-								{#if t.rule}
+								{t('detail.byRule')}
+								{#if tx.rule}
 									<span class="rule-text">
-										{fieldLabel[t.rule.field]} {matchLabel[t.rule.match_type]} „{t.rule.pattern}“
+										{fieldLabel(tx.rule.field)} {matchLabel(tx.rule.match_type)} {t('common.quoted', { text: tx.rule.pattern })}
 									</span>
 								{/if}
-								<a href="/rules">Regeln verwalten</a>
+								<a href="/rules">{t('detail.manageRules')}</a>
 							</span>
-						{:else if t.category_source === 'model'}
+						{:else if tx.category_source === 'model'}
 							<Sparkles size={16} />
 							<span class="grow">
-								Von der KI zugeordnet
-								{#if t.category_confidence !== null}
-									<span class="meter" title="Sicherheit der KI">
-										<span class="bar"><span style:width={pct(t.category_confidence).replace(' ', '')}></span></span>
-										{pct(t.category_confidence)} sicher
+								{t('detail.byAi')}
+								{#if tx.category_confidence !== null}
+									<span class="meter" title={t('detail.aiConfidence')}>
+										<span class="bar"><span style:width="{Math.round(tx.category_confidence * 100)}%"></span></span>
+										{t('detail.confident', { confidence: pct(tx.category_confidence) })}
 									</span>
 								{/if}
 							</span>
-						{:else if t.category_source === 'llm'}
+						{:else if tx.category_source === 'llm'}
 							<Bot size={16} />
-							<span class="grow">Vom lokalen Sprachmodell zugeordnet</span>
+							<span class="grow">{t('source.llmTitle')}</span>
 						{:else}
 							<Info size={16} />
-							<span>Noch keine Kategorie</span>
+							<span>{t('detail.noCategory')}</span>
 						{/if}
 						{#if isAi}
-							<button class="confirm" type="button" onclick={() => patch({ category_id: t!.category_id })}>
-								<Check size={15} /> Passt
+							<button class="confirm" type="button" onclick={() => patch({ category_id: tx!.category_id })}>
+								<Check size={15} /> {t('detail.looksRight')}
 							</button>
 						{/if}
 					</div>
-					{#if t.category_id === null && t.suggested_category_id !== null}
+					{#if tx.category_id === null && tx.suggested_category_id !== null}
 						<button
 							class="suggest"
 							type="button"
-							onclick={() => patch({ category_id: t!.suggested_category_id })}
+							onclick={() => patch({ category_id: tx!.suggested_category_id })}
 						>
 							<WandSparkles size={14} />
-							<span class="txt">Vorschlag: <strong>{labels.get(t.suggested_category_id)}</strong></span>
-							<span class="conf">{pct(t.suggestion_confidence)}</span>
-							<span class="take">Übernehmen</span>
+							<span class="txt">{t('transactions.suggestion')} <strong>{labels.get(tx.suggested_category_id)}</strong></span>
+							<span class="conf">{pct(tx.suggestion_confidence)}</span>
+							<span class="take">{t('transactions.accept')}</span>
 						</button>
 					{/if}
 				</section>
 
 				<!-- Budget month -->
 				<section>
-					<h3>Zählt im Monat</h3>
+					<h3>{t('budgetMenu.title')}</h3>
 					<RadioGroup
 						options={budgetOptions}
 						value={budgetValue}
-						label="Budgetmonat"
+						label={t('detail.budgetMonth')}
 						variant="list"
 						onchange={(v) => patch({ budget_shift: v })}
 					/>
 					<p class="hint">
-						{#if t.budget_shift === null}
-							Automatisch: zählt für {monthLabel(budgetMonth)}.
+						{#if tx.budget_shift === null}
+							{t('detail.autoCountsFor', { month: monthLabel(budgetMonth) })}
 						{/if}
-						Gehalt zum Monatsende kann automatisch dem Folgemonat zugerechnet werden.
+						{t('detail.budgetHint')}
 					</p>
 				</section>
 
 				<!-- Purpose -->
-				{#if t.purpose}
+				{#if tx.purpose}
 					<section>
-						<h3>Verwendungszweck</h3>
-						<p class="purpose">{t.purpose}</p>
+						<h3>{t('detail.purpose')}</h3>
+						<p class="purpose">{tx.purpose}</p>
 					</section>
 				{/if}
 
 				<!-- Details -->
 				<section>
-					<h3>Details</h3>
+					<h3>{t('detail.details')}</h3>
 					<dl>
-						<dt>Buchungstag</dt>
-						<dd>{day(t.booking_date)}</dd>
-						{#if t.value_date}
-							<dt>Wertstellung</dt>
-							<dd>{day(t.value_date)}</dd>
+						<dt>{t('detail.bookingDate')}</dt>
+						<dd>{day(tx.booking_date)}</dd>
+						{#if tx.value_date}
+							<dt>{t('detail.valueDate')}</dt>
+							<dd>{day(tx.value_date)}</dd>
 						{/if}
-						<dt>Budgetmonat</dt>
+						<dt>{t('detail.budgetMonth')}</dt>
 						<dd>{monthLabel(budgetMonth)}</dd>
-						{#if t.balance_after !== null}
-							<dt>Saldo danach</dt>
-							<dd>{money(t.balance_after)}</dd>
+						{#if tx.balance_after !== null}
+							<dt>{t('detail.balanceAfter')}</dt>
+							<dd>{money(tx.balance_after)}</dd>
 						{/if}
-						{#if t.booking_text}
-							<dt>Buchungstext</dt>
-							<dd>{t.booking_text}</dd>
+						{#if tx.booking_text}
+							<dt>{t('detail.bookingText')}</dt>
+							<dd>{tx.booking_text}</dd>
 						{/if}
-						{#if t.payee}
+						{#if tx.payee}
 							<dt>{counterpartLabel}</dt>
-							<dd>{t.payee}</dd>
+							<dd>{tx.payee}</dd>
 						{/if}
-						{#if t.counterparty_iban}
+						{#if tx.counterparty_iban}
 							<dt>IBAN</dt>
-							<dd class="mono">{iban(t.counterparty_iban)}</dd>
+							<dd class="mono">{iban(tx.counterparty_iban)}</dd>
 						{/if}
-						{#if t.counterparty_bic}
+						{#if tx.counterparty_bic}
 							<dt>BIC</dt>
-							<dd class="mono">{t.counterparty_bic}</dd>
+							<dd class="mono">{tx.counterparty_bic}</dd>
 						{/if}
-						{#if t.mandate_id}
-							<dt>Mandatsreferenz</dt>
-							<dd class="mono">{t.mandate_id}</dd>
+						{#if tx.mandate_id}
+							<dt>{t('detail.mandateId')}</dt>
+							<dd class="mono">{tx.mandate_id}</dd>
 						{/if}
-						{#if t.creditor_id}
-							<dt>Gläubiger-ID</dt>
-							<dd class="mono">{t.creditor_id}</dd>
+						{#if tx.creditor_id}
+							<dt>{t('detail.creditorId')}</dt>
+							<dd class="mono">{tx.creditor_id}</dd>
 						{/if}
-						{#if t.end_to_end_ref}
-							<dt>End-to-End-Referenz</dt>
-							<dd class="mono">{t.end_to_end_ref}</dd>
+						{#if tx.end_to_end_ref}
+							<dt>{t('detail.endToEnd')}</dt>
+							<dd class="mono">{tx.end_to_end_ref}</dd>
 						{/if}
-						<dt>Konto</dt>
+						<dt>{t('common.account')}</dt>
 						<dd>
-							{t.account.name}
-							{#if t.account.iban}<span class="mono faint">{iban(t.account.iban)}</span>{/if}
+							{tx.account.name}
+							{#if tx.account.iban}<span class="mono faint">{iban(tx.account.iban)}</span>{/if}
 						</dd>
-						<dt>Quelle</dt>
+						<dt>{t('detail.source')}</dt>
 						<dd class="source">
-							{#if t.import_batch?.source === 'fints'}<CloudDownload size={15} />{:else}<FileSpreadsheet size={15} />{/if}
+							{#if tx.import_batch?.source === 'fints'}<CloudDownload size={15} />{:else}<FileSpreadsheet size={15} />{/if}
 							<span>
 								{sourceName}
-								{#if t.import_batch?.filename}<span class="faint">{t.import_batch.filename}</span>{/if}
+								{#if tx.import_batch?.filename}<span class="faint">{tx.import_batch.filename}</span>{/if}
 							</span>
 						</dd>
-						<dt>Importiert am</dt>
-						<dd>{dateTime.format(new Date(t.import_batch?.created_at ?? t.created_at))}</dd>
+						<dt>{t('detail.importedAt')}</dt>
+						<dd>{dateTime(tx.import_batch?.created_at ?? tx.created_at)}</dd>
 					</dl>
-					{#if !hasSepa && t.import_batch?.source === 'ing_csv'}
+					{#if !hasSepa && tx.import_batch?.source === 'ing_csv'}
 						<p class="hint">
-							Der CSV-Export der ING enthält keine IBAN und keine SEPA-Referenzen. Per FinTS abgerufene Buchungen
-							zeigen sie hier an.
+							{t('detail.csvNoSepa')}
 						</p>
 					{/if}
 				</section>
 
 				<!-- Note -->
 				<section>
-					<h3><label for="tx-note">Notiz</label></h3>
+					<h3><label for="tx-note">{t('detail.note')}</label></h3>
 					<textarea
 						id="tx-note"
 						rows="2"
-						placeholder="Eigene Notiz zu dieser Buchung"
+						placeholder={t('detail.notePlaceholder')}
 						bind:value={note}
 						onblur={saveNote}
 					></textarea>
@@ -435,43 +429,43 @@
 				<section>
 					{#if !ruleOpen}
 						<button class="secondary wide" type="button" onclick={openRule}>
-							<Plus size={17} /> Regel aus dieser Buchung erstellen
+							<Plus size={17} /> {t('detail.createRule')}
 						</button>
 					{:else}
-						<h3>Neue Regel</h3>
+						<h3>{t('detail.newRule')}</h3>
 						<form class="rule" onsubmit={createRule}>
 							<div class="rule-row">
 								<div class="field">
-									Feld
+									{t('rules.fieldLabel')}
 									<Select
 										options={fieldOptions}
 										bind:value={rule.field}
-										label="Feld"
+										label={t('rules.fieldLabel')}
 										onchange={changeField}
 									/>
 								</div>
 								<div class="field">
-									Bedingung
-									<Select options={matchOptions} bind:value={rule.match_type} label="Bedingung" />
+									{t('rules.condition')}
+									<Select options={matchOptions} bind:value={rule.match_type} label={t('rules.condition')} />
 								</div>
 							</div>
 							<label>
-								Text
-								<input bind:value={rule.pattern} required maxlength="255" placeholder="z. B. REWE" />
+								{t('rules.text')}
+								<input bind:value={rule.pattern} required maxlength="255" placeholder={t('rules.textPlaceholder')} />
 							</label>
 							<span class="match" class:no={!ruleMatchesThis}>
-								{#if ruleMatchesThis}<Check size={14} /> Passt auf diese Buchung{:else}<Info size={14} /> Passt nicht auf diese Buchung{/if}
+								{#if ruleMatchesThis}<Check size={14} /> {t('detail.matchesThis')}{:else}<Info size={14} /> {t('detail.notMatchesThis')}{/if}
 							</span>
 							<div class="field">
-								Kategorie
-								<CategorySelect {categories} bind:value={rule.category_id} empty="Kategorie wählen" />
+								{t('common.category')}
+								<CategorySelect {categories} bind:value={rule.category_id} empty={t('categorySelect.choose')} />
 							</div>
-							<Switch bind:checked={rule.apply}>Gleich auf passende Buchungen anwenden</Switch>
-							<p class="hint">Manuell zugeordnete Buchungen werden nie überschrieben.</p>
+							<Switch bind:checked={rule.apply}>{t('detail.applyNow')}</Switch>
+							<p class="hint">{t('detail.manualNeverOverwritten')}</p>
 							<div class="actions">
-								<button class="ghost" type="button" onclick={() => (ruleOpen = false)}>Abbrechen</button>
+								<button class="ghost" type="button" onclick={() => (ruleOpen = false)}>{t('common.cancel')}</button>
 								<button type="submit" disabled={rule.category_id === null || !rule.pattern.trim()}>
-									Regel anlegen
+									{t('rules.create')}
 								</button>
 							</div>
 						</form>

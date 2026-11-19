@@ -8,11 +8,13 @@
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Popover from './Popover.svelte';
+	import { t } from '../i18n/index.svelte';
+	import { dateFormat } from '../format';
 
 	let {
 		value = $bindable(''),
-		placeholder = 'Datum wählen',
-		label = 'Datum',
+		placeholder,
+		label: labelProp,
 		clearable = true,
 		min,
 		max,
@@ -56,10 +58,16 @@
 	};
 	const outOfRange = (s: string) => (!!min && s < min) || (!!max && s > max);
 
-	const display = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-	const monthTitle = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
-	const longDay = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-	const weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+	let label = $derived(labelProp ?? t('ui.date.label'));
+	let placeholderText = $derived(placeholder ?? t('ui.date.placeholder'));
+	let display = $derived(dateFormat({ day: '2-digit', month: '2-digit', year: 'numeric' }));
+	let monthTitle = $derived(dateFormat({ month: 'long', year: 'numeric' }));
+	let longDay = $derived(dateFormat({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+	// Monday to Sunday (2024-01-01 was a Monday)
+	let weekdays = $derived.by(() => {
+		const f = dateFormat({ weekday: 'short' });
+		return Array.from({ length: 7 }, (_, i) => f.format(new Date(2024, 0, 1 + i, 12)).replace('.', '').slice(0, 2));
+	});
 
 	let open = $state(false);
 	let focused = $state(today());
@@ -137,7 +145,7 @@
 	{disabled}
 	aria-haspopup="dialog"
 	aria-expanded={open}
-	aria-label="{label}: {value ? longDay.format(parse(value)) : placeholder}"
+	aria-label="{label}: {value ? longDay.format(parse(value)) : placeholderText}"
 	onclick={() => (open ? hide() : show())}
 	onkeydown={(e) => {
 		if (e.key === 'ArrowDown') {
@@ -147,7 +155,7 @@
 	}}
 >
 	<span class="chev"><CalendarDays size={16} /></span>
-	<span class="value">{value ? display.format(parse(value)) : placeholder}</span>
+	<span class="value">{value ? display.format(parse(value)) : placeholderText}</span>
 </button>
 
 <Popover bind:open anchor={trigger} {label} matchWidth={false} minWidth={288}>
@@ -165,9 +173,9 @@
 		}}
 	>
 		<div class="head">
-			<button type="button" class="ghost icon" aria-label="Vormonat" onclick={() => go(addMonths(focused, -1))}><ChevronLeft size={18} /></button>
+			<button type="button" class="ghost icon" aria-label={t('ui.date.prevMonth')} onclick={() => go(addMonths(focused, -1))}><ChevronLeft size={18} /></button>
 			<strong aria-live="polite">{monthTitle.format(view)}</strong>
-			<button type="button" class="ghost icon" aria-label="Nächster Monat" onclick={() => go(addMonths(focused, 1))}><ChevronRight size={18} /></button>
+			<button type="button" class="ghost icon" aria-label={t('ui.date.nextMonth')} onclick={() => go(addMonths(focused, 1))}><ChevronRight size={18} /></button>
 		</div>
 		<div class="grid" role="grid" bind:this={grid} tabindex="-1" onkeydown={onGridKey}>
 			<div class="row" role="row">
@@ -195,8 +203,8 @@
 			{/each}
 		</div>
 		<div class="foot">
-			<button type="button" class="link" onclick={() => set(today())} disabled={outOfRange(today())}>Heute</button>
-			{#if clearable && value}<button type="button" class="link muted" onclick={() => set('')}>Leeren</button>{/if}
+			<button type="button" class="link" onclick={() => set(today())} disabled={outOfRange(today())}>{t('ui.date.today')}</button>
+			{#if clearable && value}<button type="button" class="link muted" onclick={() => set('')}>{t('ui.date.clear')}</button>{/if}
 		</div>
 	</div>
 </Popover>

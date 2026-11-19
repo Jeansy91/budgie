@@ -6,6 +6,8 @@ export interface Me {
 	display_name: string;
 	is_admin: boolean;
 	household_name: string;
+	/** UI language; null = follow the browser */
+	language: 'de' | 'en' | null;
 }
 
 export interface User {

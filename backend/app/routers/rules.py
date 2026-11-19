@@ -1,9 +1,10 @@
 import re
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from sqlalchemy import func, select
 
 from ..deps import DB, CurrentUser, visible_account_ids
+from ..i18n import http_error
 from ..models import Rule, Transaction, User
 from ..rules import apply_rules
 from ..schemas import ApplyRulesIn, ApplyRulesOut, RuleIn, RuleOut, RulePatch
@@ -18,13 +19,13 @@ def _validate(db: DB, user: User, rule: Rule) -> None:
         try:
             re.compile(rule.pattern)
         except re.error as exc:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Ungültiger regulärer Ausdruck: {exc}") from None
+            raise http_error(status.HTTP_400_BAD_REQUEST, "rules.invalid_regex", error=exc) from None
 
 
 def get_rule(db: DB, user: User, rule_id: int) -> Rule:
     rule = db.get(Rule, rule_id)
     if rule is None or rule.household_id != user.household_id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Regel nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "rules.not_found")
     return rule
 
 

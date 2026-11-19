@@ -7,6 +7,7 @@ from .. import crypto
 from ..config import get_settings
 from ..deps import DB, CurrentUser
 from ..fints import directory, jobs
+from ..i18n import http_error
 from ..models import Account, BankConnection
 from ..schemas import (
     BankConnectionIn,
@@ -36,9 +37,7 @@ def _missing() -> list[str]:
 def _require_enabled() -> None:
     missing = _missing()
     if missing:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, "FinTS ist nicht eingerichtet, es fehlt: " + ", ".join(missing)
-        )
+        raise http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "fints.not_configured", missing=", ".join(missing))
 
 
 def _hint(login: str) -> str:
@@ -49,7 +48,7 @@ def _own_connection(db: DB, user: CurrentUser, connection_id: int) -> BankConnec
     connection = db.get(BankConnection, connection_id)
     # Credentials belong to one person, even within the household
     if connection is None or connection.user_id != user.id:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bankverbindung nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "fints.connection_not_found")
     return connection
 
 
@@ -86,7 +85,7 @@ def search_banks(user: CurrentUser, q: Annotated[str, Query(max_length=100)] = "
 def get_bank(bank_code: str, user: CurrentUser):
     bank = directory.lookup(bank_code)
     if bank is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Bankleitzahl nicht im Verzeichnis")
+        raise http_error(status.HTTP_404_NOT_FOUND, "fints.bank_not_found")
     return bank.to_dict()
 
 
@@ -97,11 +96,7 @@ def _server_url(bank_code: str, server_url: str | None) -> str:
         return directory.ING_FINTS_URL
     bank = directory.lookup(bank_code)
     if bank is None or not bank.server_url:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            "Für diese Bankleitzahl ist keine FinTS-Adresse bekannt. Bitte die Adresse angeben "
-            "(steht meist in der Hilfe der Bank unter „FinTS“ oder „HBCI PIN/TAN“).",
-        )
+        raise http_error(status.HTTP_400_BAD_REQUEST, "fints.no_server_url")
     return bank.server_url
 
 
@@ -182,7 +177,7 @@ def start_sync(connection_id: int, data: SyncIn, db: DB, user: CurrentUser):
 def _job(job_id: str, user: CurrentUser) -> jobs.SyncJob:
     job = jobs.get_job(job_id, user.id)
     if job is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Abruf nicht gefunden")
+        raise http_error(status.HTTP_404_NOT_FOUND, "fints.job_not_found")
     return job
 
 
@@ -195,7 +190,7 @@ def get_job(job_id: str, user: CurrentUser):
 def send_tan(job_id: str, data: TanIn, user: CurrentUser):
     job = _job(job_id, user)
     if job.state != "need_tan" or job.decoupled:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Der Abruf wartet gerade auf keine TAN")
+        raise http_error(status.HTTP_409_CONFLICT, "fints.no_tan_expected")
     job.submit_tan(data.tan.strip())
     return _job_out(job)
 
@@ -204,9 +199,9 @@ def send_tan(job_id: str, data: TanIn, user: CurrentUser):
 def send_choice(job_id: str, data: ChoiceIn, user: CurrentUser):
     job = _job(job_id, user)
     if job.state != "need_choice":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Der Abruf wartet gerade auf keine Auswahl")
+        raise http_error(status.HTTP_409_CONFLICT, "fints.no_choice_expected")
     if data.option not in {o["id"] for o in job.options}:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Ungültige Auswahl")
+        raise http_error(status.HTTP_400_BAD_REQUEST, "fints.invalid_choice")
     job.submit_choice(data.option)
     return _job_out(job)
 
