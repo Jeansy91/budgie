@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     fints_product_id: str = ""
     # How long a sync waits for a TAN or the approval in the banking app (seconds)
     fints_tan_timeout: int = 300
+    # Optional path to the official FinTS institute list (fints_institute.csv) of the
+    # Deutsche Kreditwirtschaft. Without it, Budgie uses its bundled bank directory.
+    fints_institutes_file: str = ""
 
     # --- AI categorization (fully local) ---
     # Local classifier, learns from manual assignments and rules

@@ -233,6 +233,46 @@ class ImportOut(ORM):
     rows_duplicate: int
     rows_categorized: int
     account_created: bool = False
+    # Recognized file layout, e.g. "Sparkasse", or the name of a saved mapping
+    format_name: str | None = None
+
+
+class CsvFormatOut(BaseModel):
+    id: str
+    name: str
+    hint: str
+
+
+class CsvMappingIn(BaseModel):
+    delimiter: str = Field(max_length=1)
+    header_row: int = Field(ge=0)
+    columns: dict[str, int]
+    date_format: str = "dd.mm.yyyy"
+    decimal: Literal["comma", "point"] = "comma"
+
+
+class CsvSuggestion(BaseModel):
+    columns: dict[str, int]
+    date_format: str
+    decimal: str
+
+
+class CsvPreviewOut(BaseModel):
+    """Result of looking at a file before importing it."""
+
+    # Built-in layout or saved mapping that recognizes the file; null if unknown
+    format_name: str | None
+    delimiter: str
+    header_row: int
+    columns: list[str]
+    rows: list[list[str]]
+    suggestion: CsvSuggestion
+
+
+class CsvProfileOut(ORM):
+    id: int
+    name: str
+    created_at: datetime
 
 
 # --- AI -------------------------------------------------------------------
@@ -325,7 +365,6 @@ class BudgetSettingsOut(BudgetSettingsIn, ORM):
 # --- FinTS ----------------------------------------------------------------
 
 ING_BANK_CODE = "50010517"
-ING_FINTS_URL = "https://fints.ing.de/fints/"
 
 
 class FintsStatus(BaseModel):
@@ -333,17 +372,33 @@ class FintsStatus(BaseModel):
     missing: list[str]
 
 
+class BankOut(BaseModel):
+    """Entry of the bank directory."""
+
+    bank_code: str
+    name: str
+    location: str
+    bic: str
+    server_url: str | None
+
+
 class BankConnectionIn(BaseModel):
+    # Defaults to ING, which Budgie supported first
     name: str = Field("ING", min_length=1, max_length=100)
     login: str = Field(min_length=1, max_length=100)
     customer_id: str | None = Field(None, max_length=100)
     bank_code: str = Field(ING_BANK_CODE, pattern=r"^\d{8}$")
-    server_url: str = Field(ING_FINTS_URL, pattern=r"^https://", max_length=255)
+    # Without an address, it is taken from the bank directory
+    server_url: str | None = Field(None, pattern=r"^https://", max_length=255)
 
 
 class BankConnectionPatch(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
     login: str | None = Field(None, min_length=1, max_length=100)
+    customer_id: str | None = Field(None, max_length=100)
+    server_url: str | None = Field(None, pattern=r"^https://", max_length=255)
+    # Asks for the TAN mechanism (and TAN medium) again on the next sync
+    reset_tan_mechanism: bool = False
 
 
 class LinkedAccount(ORM):
@@ -373,6 +428,16 @@ class TanIn(BaseModel):
     tan: str = Field(min_length=1, max_length=100)
 
 
+class ChoiceIn(BaseModel):
+    option: str = Field(min_length=1, max_length=100)
+
+
+class ChoiceOption(BaseModel):
+    id: str
+    name: str
+    decoupled: bool = False
+
+
 class SyncResult(BaseModel):
     iban: str
     account_id: int | None = None
@@ -395,5 +460,8 @@ class SyncJobOut(BaseModel):
     decoupled: bool
     challenge: str | None
     challenge_image: str | None
+    challenge_hhduc: str | None = None
+    choice_kind: str | None = None
+    options: list[ChoiceOption] = []
     error: str | None
     results: list[SyncResult]

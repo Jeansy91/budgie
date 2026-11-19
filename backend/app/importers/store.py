@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from ..ai import service as ai
 from ..models import Account, ImportBatch, Transaction
 from ..rules import apply_rules
-from .ing_csv import ParsedTransaction
+from .common import ParsedTransaction
 
 
 def store_transactions(

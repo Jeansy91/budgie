@@ -20,53 +20,24 @@ not by their position.
 from __future__ import annotations
 
 import csv
-import hashlib
 import io
-from collections import Counter
-from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+# Re-exported for code that imported them from here before other banks were supported
+from .common import (  # noqa: F401
+    CsvError,
+    ParsedStatement,
+    ParsedTransaction,
+    assign_fingerprints,
+    decode,
+    fingerprint,
+    normalize_iban,
+)
 
-class IngCsvError(ValueError):
+
+class IngCsvError(CsvError):
     pass
-
-
-@dataclass
-class ParsedTransaction:
-    booking_date: date
-    value_date: date | None
-    payee: str
-    booking_text: str
-    purpose: str
-    amount: Decimal
-    currency: str
-    balance_after: Decimal | None
-    dedup_hash: str = ""
-    # SEPA details (only delivered by FinTS); not part of the fingerprint
-    counterparty_iban: str | None = None
-    counterparty_bic: str | None = None
-    mandate_id: str | None = None
-    creditor_id: str | None = None
-    end_to_end_ref: str | None = None
-
-
-@dataclass
-class ParsedStatement:
-    iban: str | None = None
-    account_name: str | None = None
-    bank: str | None = None
-    transactions: list[ParsedTransaction] = field(default_factory=list)
-
-
-def decode(raw: bytes) -> str:
-    """Depending on the version, ING exports UTF-8 (with BOM) or Windows-1252."""
-    for encoding in ("utf-8-sig", "cp1252"):
-        try:
-            return raw.decode(encoding)
-        except UnicodeDecodeError:
-            continue
-    return raw.decode("latin-1")
 
 
 def parse_amount(value: str) -> Decimal:
@@ -82,10 +53,6 @@ def parse_date(value: str) -> date:
         return datetime.strptime(value.strip(), "%d.%m.%Y").date()
     except ValueError as exc:
         raise IngCsvError(f"Ungültiges Datum: {value!r}") from exc
-
-
-def normalize_iban(value: str) -> str:
-    return value.replace(" ", "").upper()
 
 
 _HEADER_ALIASES = {
@@ -119,25 +86,6 @@ def _map_header(header: list[str]) -> dict[str, int]:
     if missing:
         raise IngCsvError("Spalten fehlen: " + ", ".join(sorted(missing)))
     return mapping
-
-
-def fingerprint(t: ParsedTransaction, occurrence: int) -> str:
-    """Fingerprint of a transaction.
-
-    The balance is deliberately left out so the same transaction is recognized
-    as a duplicate in a later export covering a different period. Identical
-    transactions on the same day (e.g. two times 2.50 € at the bakery) are told
-    apart by the `occurrence` counter.
-    """
-    parts = [
-        t.booking_date.isoformat(),
-        f"{t.amount:.2f}",
-        t.currency,
-        " ".join(t.payee.split()).lower(),
-        " ".join(t.purpose.split()).lower(),
-        str(occurrence),
-    ]
-    return hashlib.sha256("\x1f".join(parts).encode()).hexdigest()
 
 
 def parse(raw: bytes) -> ParsedStatement:
@@ -201,12 +149,3 @@ def parse(raw: bytes) -> ParsedStatement:
 
     assign_fingerprints(statement.transactions)
     return statement
-
-
-def assign_fingerprints(transactions: list[ParsedTransaction]) -> None:
-    """Sets `dedup_hash` for a chronologically sorted list of transactions."""
-    seen: Counter[str] = Counter()
-    for t in transactions:
-        base = fingerprint(t, 0)
-        t.dedup_hash = fingerprint(t, seen[base])
-        seen[base] += 1

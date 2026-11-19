@@ -15,7 +15,7 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 
-from ..importers.ing_csv import ParsedTransaction, assign_fingerprints
+from ..importers.common import ParsedTransaction, assign_fingerprints
 
 
 def _text(value) -> str:

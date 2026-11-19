@@ -1,0 +1,9 @@
+"Kontonummer:";"DE89370400440532013000 / Girokonto";
+
+"Von:";"01.10.2026";
+"Bis:";"16.11.2026";
+"Kontostand vom 16.11.2026:";"2.345,67 EUR";
+
+"Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Begünstigter";"Verwendungszweck";"Kontonummer";"BLZ";"Betrag (EUR)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz";
+"14.11.2026";"14.11.2026";"Lastschrift";"REWE Markt GmbH";"REWE SAGT DANKE 12345";"DE02120300000000202051";"BYLADEM1001";"-54,32";"DE12ZZZ00000012345";"M-9876";"";
+"30.10.2026";"30.10.2026";"Gutschrift";"Arbeitgeber AG";"Gehalt Oktober 2026";"DE75512108001245126199";"SOGEDEFFXXX";"3.200,00";"";"";"";
