@@ -43,6 +43,16 @@ New features and bug fixes should come with tests. FinTS code is tested against 
 - Fill in the pull request template, link related issues and add screenshots for UI changes (with fake data).
 - CI must be green before a pull request is merged.
 
+## Releasing
+
+Releases follow [Semantic Versioning](https://semver.org) and are cut from `main`:
+
+1. Move the entries under `## [Unreleased]` in `CHANGELOG.md` to a new `## [X.Y.Z] - YYYY-MM-DD` section and update the compare links at the bottom.
+2. Set the same version in `backend/app/main.py` and `frontend/package.json` (and `frontend/package-lock.json`).
+3. Merge these changes, then push a tag `vX.Y.Z` on that commit (or create it from the GitHub *Releases* page).
+
+The CI workflow then builds and publishes the images `X.Y.Z` and `X.Y` to GHCR and creates the GitHub release with the changelog section as release notes. A tag with a suffix such as `v1.0.0-rc.1` becomes a pre-release.
+
 ## License
 
 By contributing, you agree that your contributions are licensed under the [MIT License](LICENSE).
