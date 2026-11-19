@@ -6,11 +6,13 @@
 
 <p align="center">
   <a href="https://github.com/Jeansy91/budgie/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Jeansy91/budgie/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/Jeansy91/budgie/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Jeansy91/budgie?sort=semver"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green.svg"></a>
   <a href="https://github.com/Jeansy91/budgie/pkgs/container/budgie-api"><img alt="Docker images on GHCR" src="https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker&logoColor=white"></a>
   <img alt="Python 3.13" src="https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white">
   <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-FF3E00?logo=svelte&logoColor=white">
   <img alt="Self-hosted" src="https://img.shields.io/badge/self--hosted-yes-10b981">
+  <a href="https://ko-fi.com/jeansy91"><img alt="Support on Ko-fi" src="https://img.shields.io/badge/Ko--fi-support-FF5E5B?logo=ko-fi&logoColor=white"></a>
 </p>
 
 <p align="center">
@@ -88,7 +90,7 @@ Traefik routes `Host(BUDGIE_HOST) && PathPrefix(/api)` to `api` and everything e
 docker compose pull && docker compose up -d
 ```
 
-Images are rebuilt on every push to `main`, but only after all tests pass (`latest` tag). Pin a version with `BUDGIE_VERSION` in `.env`, e.g. `1.0.0` for the Git tag `v1.0.0`, or `sha-89f1785` for a specific commit.
+Images are rebuilt on every push to `main`, but only after all tests pass (`latest` tag). For a stable setup, pin a [release](https://github.com/Jeansy91/budgie/releases) with `BUDGIE_VERSION` in `.env`, e.g. `0.1.0` for the release `v0.1.0` (or `0.1` to follow its patch releases), or `sha-89f1785` for a specific commit. What changed between versions is listed in the [changelog](CHANGELOG.md).
 
 To build the images yourself instead: `docker compose up -d --build`.
 
@@ -230,6 +232,10 @@ CI runs the same steps on every pull request, plus a migration round trip (`alem
 ## Contributing
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first, and report security issues as described in [SECURITY.md](SECURITY.md).
+
+## Support
+
+Budgie is free and open source. If it saves you time, you can support its development on [Ko-fi](https://ko-fi.com/jeansy91).
 
 ## License
 

@@ -95,3 +95,36 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  # GitHub release for a version tag, published once the images are on GHCR.
+  # The release notes are the matching section of CHANGELOG.md.
+  release:
+    needs: [images]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version numbers
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          api="$(grep -oP 'version="\K[^"]+' backend/app/main.py)"
+          web="$(jq -r .version frontend/package.json)"
+          if [ "$api" != "$version" ] || [ "$web" != "$version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match backend ($api) or frontend ($web) version" >&2
+            exit 1
+          fi
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          .github/scripts/release-notes.sh "$version" > notes.md
+          prerelease=""
+          case "$version" in *-*) prerelease="--prerelease" ;; esac
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" --title "Budgie $version" --notes-file notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" --title "Budgie $version" --notes-file notes.md --verify-tag $prerelease
+          fi
