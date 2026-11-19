@@ -12,7 +12,6 @@
   <img alt="Python 3.13" src="https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white">
   <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-FF3E00?logo=svelte&logoColor=white">
   <img alt="Self-hosted" src="https://img.shields.io/badge/self--hosted-yes-10b981">
-  <a href="https://ko-fi.com/jeansy91"><img alt="Support on Ko-fi" src="https://img.shields.io/badge/Ko--fi-support-FF5E5B?logo=ko-fi&logoColor=white"></a>
 </p>
 
 <p align="center">
