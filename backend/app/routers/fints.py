@@ -1,16 +1,20 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from .. import crypto
 from ..config import get_settings
 from ..deps import DB, CurrentUser
-from ..fints import jobs
+from ..fints import directory, jobs
 from ..i18n import http_error
 from ..models import Account, BankConnection
 from ..schemas import (
     BankConnectionIn,
     BankConnectionOut,
     BankConnectionPatch,
+    BankOut,
+    ChoiceIn,
     FintsStatus,
     SyncIn,
     SyncJobOut,
@@ -57,6 +61,9 @@ def _job_out(job: jobs.SyncJob) -> SyncJobOut:
         decoupled=job.decoupled,
         challenge=job.challenge,
         challenge_image=job.challenge_image,
+        challenge_hhduc=job.challenge_hhduc,
+        choice_kind=job.choice_kind,
+        options=list(job.options),
         error=job.error,
         results=list(job.results),
     )
@@ -66,6 +73,31 @@ def _job_out(job: jobs.SyncJob) -> SyncJobOut:
 def fints_status(user: CurrentUser):
     missing = _missing()
     return FintsStatus(enabled=not missing, missing=missing)
+
+
+@router.get("/banks", response_model=list[BankOut])
+def search_banks(user: CurrentUser, q: Annotated[str, Query(max_length=100)] = ""):
+    """Searches the bank directory by bank code (BLZ), BIC, name or location."""
+    return [b.to_dict() for b in directory.search(q)]
+
+
+@router.get("/banks/{bank_code}", response_model=BankOut)
+def get_bank(bank_code: str, user: CurrentUser):
+    bank = directory.lookup(bank_code)
+    if bank is None:
+        raise http_error(status.HTTP_404_NOT_FOUND, "fints.bank_not_found")
+    return bank.to_dict()
+
+
+def _server_url(bank_code: str, server_url: str | None) -> str:
+    if server_url:
+        return server_url.strip()
+    if bank_code == directory.ING_BANK_CODE:
+        return directory.ING_FINTS_URL
+    bank = directory.lookup(bank_code)
+    if bank is None or not bank.server_url:
+        raise http_error(status.HTTP_400_BAD_REQUEST, "fints.no_server_url")
+    return bank.server_url
 
 
 @router.get("/connections", response_model=list[BankConnectionOut])
@@ -81,7 +113,7 @@ def create_connection(data: BankConnectionIn, db: DB, user: CurrentUser):
         user_id=user.id,
         name=data.name,
         bank_code=data.bank_code,
-        server_url=data.server_url,
+        server_url=_server_url(data.bank_code, data.server_url),
         login_enc=crypto.encrypt(data.login.strip()),
         customer_id_enc=crypto.encrypt(data.customer_id.strip()) if data.customer_id else None,
         login_hint=_hint(data.login),
@@ -102,6 +134,18 @@ def update_connection(connection_id: int, data: BankConnectionPatch, db: DB, use
         connection.login_hint = _hint(data.login)
         # Different login: cached bank data no longer applies
         connection.client_state_enc = None
+        connection.tan_mechanism = None
+        connection.tan_mechanism_name = None
+    if data.customer_id is not None:
+        _require_enabled()
+        customer_id = data.customer_id.strip()
+        connection.customer_id_enc = crypto.encrypt(customer_id) if customer_id else None
+        connection.client_state_enc = None
+        connection.tan_mechanism = None
+        connection.tan_mechanism_name = None
+    if data.server_url is not None:
+        connection.server_url = data.server_url.strip()
+    if data.reset_tan_mechanism:
         connection.tan_mechanism = None
         connection.tan_mechanism_name = None
     db.commit()
@@ -148,6 +192,17 @@ def send_tan(job_id: str, data: TanIn, user: CurrentUser):
     if job.state != "need_tan" or job.decoupled:
         raise http_error(status.HTTP_409_CONFLICT, "fints.no_tan_expected")
     job.submit_tan(data.tan.strip())
+    return _job_out(job)
+
+
+@router.post("/jobs/{job_id}/choice", response_model=SyncJobOut)
+def send_choice(job_id: str, data: ChoiceIn, user: CurrentUser):
+    job = _job(job_id, user)
+    if job.state != "need_choice":
+        raise http_error(status.HTTP_409_CONFLICT, "fints.no_choice_expected")
+    if data.option not in {o["id"] for o in job.options}:
+        raise http_error(status.HTTP_400_BAD_REQUEST, "fints.invalid_choice")
+    job.submit_choice(data.option)
     return _job_out(job)
 
 

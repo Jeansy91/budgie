@@ -2,8 +2,8 @@ from fastapi import APIRouter, status
 from sqlalchemy import func, select
 
 from ..deps import DB, CurrentUser, get_visible_account, visible_accounts_query
-from ..importers.ing_csv import normalize_iban
 from ..i18n import http_error
+from ..importers.common import normalize_iban
 from ..models import Account, Transaction, User
 from ..schemas import AccountIn, AccountOut, AccountPatch
 

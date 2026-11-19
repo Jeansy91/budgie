@@ -83,7 +83,12 @@ export interface TransactionDetail extends Transaction {
 	end_to_end_ref: string | null;
 	created_at: string;
 	account: { id: number; name: string; iban: string | null; bank: string };
-	import_batch: { id: number; source: string; filename: string | null; created_at: string } | null;
+	import_batch: {
+		id: number;
+		source: string;
+		filename: string | null;
+		created_at: string;
+	} | null;
 	/** The rule that assigned the category */
 	rule: Rule | null;
 }
@@ -153,6 +158,53 @@ export interface ImportResult {
 	rows_duplicate: number;
 	rows_categorized: number;
 	account_created: boolean;
+	format_name: string | null;
+}
+
+export interface CsvFormat {
+	id: string;
+	name: string;
+	hint: string;
+}
+
+export type CsvField =
+	| 'booking_date'
+	| 'value_date'
+	| 'payee'
+	| 'purpose'
+	| 'booking_text'
+	| 'amount'
+	| 'debit'
+	| 'credit'
+	| 'balance'
+	| 'currency'
+	| 'counterparty_iban';
+
+export interface CsvPreview {
+	format_name: string | null;
+	delimiter: string;
+	header_row: number;
+	columns: string[];
+	rows: string[][];
+	suggestion: {
+		columns: Partial<Record<CsvField, number>>;
+		date_format: string;
+		decimal: 'comma' | 'point';
+	};
+}
+
+export interface CsvProfile {
+	id: number;
+	name: string;
+	created_at: string;
+}
+
+export interface Bank {
+	bank_code: string;
+	name: string;
+	location: string;
+	bic: string;
+	server_url: string | null;
 }
 
 export interface FintsStatus {
@@ -188,11 +240,14 @@ export interface SyncResult {
 export interface SyncJob {
 	id: string;
 	connection_id: number;
-	state: 'running' | 'need_tan' | 'done' | 'error' | 'cancelled';
+	state: 'running' | 'need_choice' | 'need_tan' | 'done' | 'error' | 'cancelled';
 	message: string;
 	decoupled: boolean;
 	challenge: string | null;
 	challenge_image: string | null;
+	challenge_hhduc: string | null;
+	choice_kind: 'tan_mechanism' | 'tan_medium' | null;
+	options: { id: string; name: string; decoupled: boolean }[];
 	error: string | null;
 	results: SyncResult[];
 }

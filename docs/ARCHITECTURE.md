@@ -59,11 +59,12 @@ Overview: monthly totals per category, history, budget month
 
 ## FinTS and banking
 
-- FinTS with PIN/TAN. With ING, the TAN step is "decoupled": the user approves access in the banking app and Budgie polls until the bank continues.
+- FinTS with PIN/TAN. Banks are found in a bundled directory (bank code → name, BIC, FinTS address), generated from the CC0 dataset `fints-institute-db` by `backend/scripts/build_bank_directory.py`; moved addresses are corrected at load time, and the official institute list can replace it (`BUDGIE_FINTS_INSTITUTES_FILE`).
+- TAN mechanisms: with app approval ("decoupled", e.g. ING, pushTAN 2.0) the user approves access in the banking app and Budgie polls until the bank continues. With chipTAN, photoTAN or smsTAN the user types the TAN. If a bank offers several mechanisms or TAN media, the sync job pauses in the state `need_choice` until the user picks one; the choice is part of the stored client state.
 - Production use requires a free **FinTS product registration** with the Deutsche Kreditwirtschaft. Each installation uses its own product ID.
 - Under PSD2, banks often only return the last 90 days without renewed strong customer authentication, and require it again periodically.
 - Besides date, amount, payee and purpose, Budgie stores the **SEPA details** of the counterparty when the bank delivers them (IBAN, BIC, mandate reference, creditor ID, end-to-end reference). With MT940, the counterparty IBAN arrives glued to the front of the name (subfields `?31` + `?32`); Budgie splits it off. The duplicate fingerprint still uses the name as delivered, so earlier syncs remain recognized.
-- **CSV import** from ING online banking is the second path, for older history and as a fallback.
+- **CSV import** is the second path, for older history, banks without FinTS and as a fallback. `backend/app/importers/bank_csv.py` describes each known bank layout by its header columns; unknown layouts are imported with a user-defined column mapping that can be saved per household (`csv_profiles`), recognized by a hash of the header row. ING keeps its dedicated parser.
 - The **PIN is never stored.** It is entered for every sync and only held in memory for its duration. The login name and the python-fints client state (system ID, bank parameters, chosen TAN mechanism) are stored encrypted with a key derived from `BUDGIE_SECRET_KEY` (see `backend/app/crypto.py`).
 
 ### Duplicate detection

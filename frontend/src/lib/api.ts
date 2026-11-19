@@ -4,7 +4,9 @@ import { getLocale, t } from './i18n/index.svelte';
 export class ApiError extends Error {
 	constructor(
 		public status: number,
-		message: string
+		message: string,
+		/** Machine-readable reason, when the API sends one (detail.code) */
+		public code?: string
 	) {
 		super(message);
 	}
@@ -38,13 +40,19 @@ function validationMessage(issue: ValidationIssue): string {
 function errorMessage(body: unknown, status: number): string {
 	const detail = (body as { detail?: unknown })?.detail;
 	if (typeof detail === 'string') return detail;
+	if (detail && typeof detail === 'object' && 'message' in detail) return String(detail.message);
 	if (Array.isArray(detail) && detail[0]?.msg) return (detail as ValidationIssue[]).map(validationMessage).join(', ');
 	return t('errors.http', { status: String(status) });
 }
 
 export async function api<T = unknown>(
 	path: string,
-	options: { method?: string; body?: unknown; form?: FormData; params?: Record<string, unknown> } = {}
+	options: {
+		method?: string;
+		body?: unknown;
+		form?: FormData;
+		params?: Record<string, unknown>;
+	} = {}
 ): Promise<T> {
 	let url = `/api${path}`;
 	if (options.params) {
@@ -69,6 +77,9 @@ export async function api<T = unknown>(
 	}
 	if (res.status === 204) return undefined as T;
 	const body = await res.json().catch(() => null);
-	if (!res.ok) throw new ApiError(res.status, errorMessage(body, res.status));
+	if (!res.ok) {
+		const code = (body as { detail?: { code?: string } })?.detail?.code;
+		throw new ApiError(res.status, errorMessage(body, res.status), typeof code === 'string' ? code : undefined);
+	}
 	return body as T;
 }

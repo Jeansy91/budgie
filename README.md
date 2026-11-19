@@ -16,12 +16,12 @@
 Budgie (budgerigar + budget) pulls your transactions straight from your bank via FinTS/HBCI or from a CSV export, sorts them into categories with a classifier that learns from your corrections, and shows where your money goes each month. Everything runs in your own Docker stack: no cloud service ever sees your banking data.
 
 > [!NOTE]
-> The user interface is available in **German** and **English**; each user picks a language in the settings (by default Budgie follows the browser language). Bank support is focused on **ING Germany** (FinTS and CSV), but the FinTS client is generic and other German banks with PIN/TAN access may work.
+> The user interface is available in **German** and **English**; each user picks a language in the settings (by default Budgie follows the browser language). FinTS sync works with German banks that offer PIN/TAN access; it was built for ING first, and other banks are supported through a bank directory and TAN mechanism selection (see [Supported banks](#supported-banks)).
 
 ## Features
 
-- **Bank sync via FinTS** – fetch transactions for all accounts of a login, including decoupled TAN approval in the banking app (e.g. ING) or classic TAN entry such as photoTAN. The PIN is never stored.
-- **CSV import** – import the "Umsatzanzeige" CSV export from ING online banking, e.g. for older history. Duplicates are detected across both sources.
+- **Bank sync via FinTS** – pick your bank from a built-in directory and fetch transactions for all accounts of a login, with app approval (ING, pushTAN 2.0, …) or classic TAN entry such as chipTAN or photoTAN. The PIN is never stored.
+- **CSV import** – CSV exports of ING, Sparkasse, Volksbank/Raiffeisenbank, DKB, comdirect, Commerzbank, Deutsche Bank and N26 are recognized automatically; for any other bank you assign the columns once and save the mapping as a template. Duplicates are detected across both sources.
 - **Learning categorization** – a local scikit-learn classifier assigns categories and suggests them when unsure. Every correction becomes a training example and the model retrains in the background.
 - **Optional local LLM** – uncertain cases can be handed to a language model running in [Ollama](https://ollama.com) on your own CPU.
 - **Rules** – deterministic rules (contains, equals, starts with, regex) always take precedence over the AI. Manual assignments are never overwritten.
@@ -103,6 +103,7 @@ All settings are read from `.env` (see [`.env.example`](.env.example)). Credenti
 | `BUDGIE_COOKIE_SECURE` | `true` | Send the session cookie over HTTPS only. |
 | `BUDGIE_SECRET_KEY` | – | Key for encrypting stored bank logins. Required for FinTS. |
 | `BUDGIE_FINTS_PRODUCT_ID` | – | FinTS product ID. Required for FinTS. |
+| `BUDGIE_FINTS_INSTITUTES_FILE` | – | Path to the official FinTS institute list (`fints_institute.csv`) inside the api container. Replaces the bundled bank directory. |
 | `BUDGIE_AI_ENABLED` | `true` | Enable the local classifier. |
 | `BUDGIE_AI_AUTO_THRESHOLD` | `0.6` | Confidence at which the AI assigns a category itself; below it only suggests one. |
 | `BUDGIE_OLLAMA_URL` | – | Ollama base URL, e.g. `http://ollama:11434`. Empty disables the LLM. |
@@ -114,23 +115,40 @@ One-time setup:
 
 1. **Register a FinTS product** with the Deutsche Kreditwirtschaft. Registration is free and also open to individuals: [hbci-zka.de/register](https://www.hbci-zka.de/register/prod_register.htm). Put the assigned product ID into `.env` as `BUDGIE_FINTS_PRODUCT_ID`.
 2. **Generate an encryption key** with `openssl rand -base64 32` and set it as `BUDGIE_SECRET_KEY`. It encrypts the stored login name. Keep it safe: without it, stored bank connections cannot be decrypted.
-3. Restart with `docker compose up -d`, then add your bank login under **Import → Direkt von der Bank abrufen**. Bank code and FinTS server for ING (`50010517`, `https://fints.ing.de/fints/`) are prefilled.
+3. Restart with `docker compose up -d`, then add your bank login under **Import → Direkt von der Bank abrufen**: search your bank by name, city, bank code (BLZ) or BIC, and enter the login name you use for online banking. The FinTS server address comes from the bank directory and can be changed under **Erweitert**, where you can also enter a separate customer ID if your bank requires one.
 
 Syncing:
 
 1. Click **Umsätze abrufen** and enter your online banking PIN. The PIN is **never stored**, not even encrypted; it only lives in the API process memory for the duration of the sync.
-2. If the bank asks for approval, Budgie waits until you confirm in your banking app and then continues automatically. For TAN mechanisms that require input (e.g. photoTAN), an input field with the challenge image is shown.
-3. All accounts of the login are fetched and matched by IBAN; missing accounts are created. The first sync fetches the last 90 days, later syncs continue from the last one with a 14-day overlap. You can choose an earlier start date, but because of PSD2 banks often require an extra approval for older transactions.
+2. On the first sync, Budgie selects the TAN mechanism: if the bank offers exactly one app approval mechanism, it is used; otherwise you choose from the list the bank reports. If the bank knows several TAN devices (e.g. two phones), you pick one as well. The choice is remembered and can be reset with **TAN-Verfahren ändern**.
+3. If the bank asks for approval, Budgie waits until you confirm in your banking app and then continues automatically. For TAN mechanisms that require input (chipTAN, photoTAN, smsTAN), an input field with the challenge text or image is shown.
+4. All accounts of the login are fetched and matched by IBAN; missing accounts are created. The first sync fetches the last 90 days, later syncs continue from the last one with a 14-day overlap. You can choose an earlier start date, but because of PSD2 banks often require an extra approval for older transactions.
 
 FinTS and CSV can be mixed: transactions already imported from a CSV file are recognized during a FinTS sync (same day and amount) and vice versa. A common approach is to import the older history once via CSV and use FinTS from then on.
 
 A bank login always belongs to one user. Other household members see the synced accounts, but not the login itself.
 
+### Supported banks
+
+The bank directory (`backend/app/fints/directory.py`) is generated from the public domain dataset [fints-institute-db](https://github.com/jhermsmeier/fints-institute-db) and covers about 2,000 bank codes with a FinTS address, including Sparkassen, Volksbanken/Raiffeisenbanken (Atruvia), DKB, comdirect, Commerzbank, Deutsche Bank, Postbank, Consorsbank, HypoVereinsbank and Targobank. Server addresses that moved since the dataset was collected are corrected (e.g. the cooperative banks now use `fints1.atruvia.de` / `fints2.atruvia.de`). The dataset is a few years old, so an address can still be outdated; if a sync cannot connect, check your bank's FinTS/HBCI help page and edit the address. With a FinTS product registration you also receive the official institute list from the Deutsche Kreditwirtschaft; mount it and set `BUDGIE_FINTS_INSTITUTES_FILE` to use it instead.
+
+Notes:
+
+- **ING** is the bank Budgie was built for first. Like ING, all other banks have so far only been tested against a simulated FinTS client in the test suite, not against their real servers. Reports are welcome.
+- **chipTAN optical (flicker code)** cannot be shown as an animation. Budgie shows the start code for manual entry; chipTAN QR and photoTAN images are displayed.
+- **N26, Revolut and other banks without FinTS** can only be imported via CSV.
+
+![Adding a bank connection](docs/screenshots/banks/bank-form.png)
+
 ## CSV import
 
-1. In ING online banking, open the account, choose a period under **Umsätze** and export it as **CSV**.
-2. Upload the file in Budgie under **Import**. The account is detected by its IBAN and created on first import.
-3. Transactions that were already imported are skipped, so overlapping periods are fine.
+1. Export the transactions of an account as CSV in your online banking.
+2. Upload the file in Budgie under **Import**. The bank's layout is recognized from the header row; the account is detected by its IBAN and created on first import. Files without an IBAN (comdirect, N26) need a target account selected under **Importieren in**.
+3. Transactions that were already imported are skipped, so overlapping periods are fine. Pending transactions in the export are left out.
+
+Recognized layouts: ING ("Umsatzanzeige"), Sparkasse (CSV-CAMT and CSV-MT940), Volksbank/Raiffeisenbank (Atruvia), DKB (current and pre-2023), comdirect (first account section of the file), Commerzbank, Deutsche Bank and N26 (current and old). These were written from the banks' export layouts and are tested against made-up sample files in `backend/tests/data/csv`; real exports may differ in details. If a layout is not recognized, Budgie shows the first rows of the file and lets you assign the columns (date, amount or debit/credit, payee, purpose, …). Saved as a template, the mapping is applied automatically to files with the same header row.
+
+![Column mapping for an unknown CSV layout](docs/screenshots/banks/csv-mapping.png)
 
 ## Categorization
 

@@ -1,16 +1,20 @@
 <script lang="ts">
-	import { DatePicker, PasswordInput } from '$lib/ui';
+	import { DatePicker, PasswordInput, RadioGroup } from '$lib/ui';
+	import BankPicker from '$lib/BankPicker.svelte';
 	import { onDestroy } from 'svelte';
 	import { api } from '$lib/api';
 	import { dateTime, day } from '$lib/format';
 	import { t } from '$lib/i18n/index.svelte';
-	import type { BankConnection, FintsStatus, SyncJob } from '$lib/types';
+	import type { Bank, BankConnection, FintsStatus, SyncJob } from '$lib/types';
 	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 	import Smartphone from '@lucide/svelte/icons/smartphone';
 	import KeyRound from '@lucide/svelte/icons/key-round';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
 	import Check from '@lucide/svelte/icons/check';
+	import ListChecks from '@lucide/svelte/icons/list-checks';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 
 	let { onsynced }: { onsynced?: () => void } = $props();
 
@@ -20,8 +24,21 @@
 
 	// New connection
 	let adding = $state(false);
-	let form = $state({ name: 'ING', login: '' });
+	const emptyForm = () => ({ name: '', login: '', customer_id: '', server_url: '' });
+	let bank = $state<Bank | null>(null);
+	let form = $state(emptyForm());
+	let advanced = $state(false);
 
+	// Suggest name and server address when a bank is picked
+	$effect(() => {
+		if (!bank) return;
+		form.name = bank.name.replace(/\s+(eG|AG|GmbH)$/i, '').slice(0, 100);
+		form.server_url = bank.server_url ?? '';
+		advanced = !bank.server_url;
+	});
+
+	// Choice of TAN mechanism or device
+	let choice = $state('');
 	// Sync
 	let syncFor = $state<BankConnection | null>(null);
 	let pin = $state('');
@@ -31,7 +48,9 @@
 	let job = $state<SyncJob | null>(null);
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
-	const active = $derived(job !== null && (job.state === 'running' || job.state === 'need_tan'));
+	const active = $derived(
+		job !== null && (job.state === 'running' || job.state === 'need_tan' || job.state === 'need_choice')
+	);
 
 	async function load() {
 		status = await api<FintsStatus>('/fints/status');
@@ -43,9 +62,24 @@
 	async function addConnection(e: SubmitEvent) {
 		e.preventDefault();
 		error = '';
+		if (!bank) {
+			error = t('bank.chooseBankFirst');
+			return;
+		}
 		try {
-			await api('/fints/connections', { method: 'POST', body: form });
-			form = { name: 'ING', login: '' };
+			await api('/fints/connections', {
+				method: 'POST',
+				body: {
+					name: form.name,
+					login: form.login,
+					bank_code: bank.bank_code,
+					server_url: form.server_url.trim() || null,
+					customer_id: form.customer_id.trim() || null
+				}
+			});
+			form = emptyForm();
+			bank = null;
+			advanced = false;
 			await load();
 		} catch (err) {
 			error = (err as Error).message;
@@ -56,6 +90,27 @@
 		if (!confirm(t('bank.confirmRemove', { name: c.name }))) return;
 		await api(`/fints/connections/${c.id}`, { method: 'DELETE' });
 		await load();
+	}
+
+	async function resetTanMechanism(c: BankConnection) {
+		error = '';
+		try {
+			await api(`/fints/connections/${c.id}`, { method: 'PATCH', body: { reset_tan_mechanism: true } });
+			await load();
+		} catch (err) {
+			error = (err as Error).message;
+		}
+	}
+
+	async function sendChoice(e: SubmitEvent) {
+		e.preventDefault();
+		if (!job || !choice) return;
+		try {
+			job = await api<SyncJob>(`/fints/jobs/${job.id}/choice`, { method: 'POST', body: { option: choice } });
+			choice = '';
+		} catch (err) {
+			error = (err as Error).message;
+		}
 	}
 
 	function openSync(c: BankConnection) {
@@ -93,7 +148,10 @@
 			error = (err as Error).message;
 			return;
 		}
-		if (job.state === 'running' || job.state === 'need_tan') {
+		if (job.state === 'need_choice' && !job.options.some((o) => o.id === choice)) {
+			choice = (job.options.find((o) => o.decoupled) ?? job.options[0])?.id ?? '';
+		}
+		if (job.state === 'running' || job.state === 'need_tan' || job.state === 'need_choice') {
 			timer = setTimeout(poll, 1500);
 		} else {
 			await load();
@@ -160,6 +218,11 @@
 			{#if syncFor?.id !== c.id}
 				<div class="actions">
 					<button onclick={() => openSync(c)} disabled={!status?.enabled}>{t('bank.sync')}</button>
+					{#if c.tan_mechanism_name}
+						<button class="ghost small" onclick={() => resetTanMechanism(c)} title={t('bank.changeTanTitle')}
+							>{t('bank.changeTan')}</button
+						>
+					{/if}
 					<button class="ghost small" onclick={() => removeConnection(c)}>{t('bank.remove')}</button>
 				</div>
 			{/if}
@@ -183,6 +246,29 @@
 					<p class="muted small">
 						{t('bank.sinceHint')}
 					</p>
+				{:else if job.state === 'need_choice'}
+					<div class="tan">
+						<span class="pulse"><ListChecks size={24} /></span>
+						<form onsubmit={sendChoice}>
+							<strong>{job.choice_kind === 'tan_medium' ? t('bank.chooseMedium') : t('bank.chooseMechanism')}</strong>
+							<p class="muted small">
+								{job.choice_kind === 'tan_medium' ? t('bank.chooseMediumHint') : t('bank.chooseMechanismHint')}
+							</p>
+							<RadioGroup
+								variant="list"
+								label={job.choice_kind === 'tan_medium' ? t('bank.tanMedium') : t('bank.tanMechanism')}
+								options={job.options.map((o) => ({
+									value: o.id,
+									label: o.decoupled ? `${o.name} (${t('bank.appApproval')})` : o.name
+								}))}
+								bind:value={choice}
+							/>
+							<div class="row choice-actions">
+								<button disabled={!choice}>{t('bank.continue')}</button>
+								<button type="button" class="ghost" onclick={cancel}>{t('common.cancel')}</button>
+							</div>
+						</form>
+					</div>
 				{:else if job.state === 'need_tan' && job.decoupled}
 					<div class="tan">
 						<span class="pulse"><Smartphone size={26} /></span>
@@ -200,6 +286,11 @@
 							<strong>{t('bank.enterTan')}</strong>
 							{#if job.challenge}<p class="muted small">{job.challenge}</p>{/if}
 							{#if job.challenge_image}<img src={job.challenge_image} alt={t('bank.tanImage')} />{/if}
+							{#if job.challenge_hhduc && !job.challenge_image}
+								<p class="muted small">
+									{t('bank.flickerCode')} <code class="break-anywhere">{job.challenge_hhduc}</code>
+								</p>
+							{/if}
 							<form class="row" onsubmit={sendTan}>
 								<input bind:value={tan} required autocomplete="one-time-code" inputmode="numeric" />
 								<button>{t('bank.send')}</button>
@@ -249,18 +340,59 @@
 
 	{#if status?.enabled}
 		{#if adding}
-			<form class="row add" onsubmit={addConnection}>
-				<label>{t('common.name')} <input bind:value={form.name} required /></label>
-				<label
-					>{t('bank.loginNumber')}
-					<input bind:value={form.login} required autocomplete="off" placeholder={t('bank.loginPlaceholder')} />
-				</label>
-				<button>{t('bank.saveLogin')}</button>
-				{#if connections.length}<button type="button" class="ghost" onclick={() => (adding = false)}>{t('common.cancel')}</button>{/if}
+			<form class="add" onsubmit={addConnection}>
+				<div class="field">
+					<span>{t('bank.bank')}</span>
+					<BankPicker bind:value={bank} />
+				</div>
+				{#if bank}
+					<div class="row">
+						<label>{t('common.name')} <input bind:value={form.name} required maxlength="100" /></label>
+						<label
+							>{t('bank.loginName')}
+							<input
+								bind:value={form.login}
+								required
+								autocomplete="off"
+								placeholder={t('bank.loginNamePlaceholder')}
+								title={t('bank.loginNameTitle')}
+							/>
+						</label>
+					</div>
+					<button type="button" class="link small toggle" onclick={() => (advanced = !advanced)} aria-expanded={advanced}>
+						{t('bank.advanced')}
+						{#if advanced}<ChevronDown size={16} />{:else}<ChevronRight size={16} />{/if}
+					</button>
+					{#if advanced}
+						<div class="row">
+							<label class="grow"
+								>{t('bank.serverUrl')}
+								<input bind:value={form.server_url} type="url" placeholder="https://…" required={!bank.server_url} />
+							</label>
+							<label
+								>{t('bank.customerId')}
+								<input
+									bind:value={form.customer_id}
+									autocomplete="off"
+									placeholder={t('common.optional')}
+								/>
+							</label>
+						</div>
+						{#if !bank.server_url}
+							<p class="muted small">
+								{t('bank.noServerUrl')}
+							</p>
+						{/if}
+					{/if}
+					<div class="row">
+						<button>{t('bank.saveLogin')}</button>
+						{#if connections.length}<button type="button" class="ghost" onclick={() => (adding = false)}>{t('common.cancel')}</button>{/if}
+					</div>
+					<p class="muted small">{t('bank.encryptedHint')}</p>
+				{:else if connections.length}
+					<button type="button" class="ghost" onclick={() => (adding = false)}>{t('common.cancel')}</button>
+				{/if}
 			</form>
-			<p class="muted small">
-				{t('bank.ingHint')}
-			</p>
 		{:else}
 			<button class="link small" onclick={() => (adding = true)}>+ {t('bank.addAnother')}</button>
 		{/if}
@@ -426,7 +558,37 @@
 		padding-top: 0.85rem;
 		border-top: 1px solid var(--border);
 	}
-	.add + p {
-		margin-bottom: 0;
+	.add {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+	.add p {
+		margin: 0;
+	}
+	.add .grow {
+		flex: 1 1 18rem;
+	}
+	.add .grow input {
+		width: 100%;
+	}
+	.toggle {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+	.toggle :global(svg) {
+		flex: none;
+	}
+	.add > button.ghost {
+		align-self: flex-start;
+	}
+	.tan form {
+		flex: 1;
+		min-width: min(13rem, 100%);
+	}
+	.choice-actions {
+		margin-top: 0.75rem;
 	}
 </style>

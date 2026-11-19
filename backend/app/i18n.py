@@ -76,6 +76,53 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "Not an ING transaction export (header line “Buchung;…” is missing).",
     },
     "csv.line": {"de": "Zeile {line}: {error}", "en": "Line {line}: {error}"},
+    "csv.invalid_mapping": {"de": "Ungültige Spaltenzuordnung", "en": "Invalid column mapping"},
+    "csv.unknown_format": {
+        "de": "Dieses CSV-Format kennt Budgie noch nicht. Bitte die Spalten zuordnen.",
+        "en": "Budgie does not know this CSV layout yet. Please map the columns.",
+    },
+    "csv.profile_not_found": {"de": "Vorlage nicht gefunden", "en": "Template not found"},
+    "csv.invalid_delimiter": {"de": "Ungültiges Trennzeichen", "en": "Invalid delimiter"},
+    "csv.unknown_date_format": {"de": "Unbekanntes Datumsformat", "en": "Unknown date format"},
+    "csv.unknown_number_format": {"de": "Unbekanntes Zahlenformat", "en": "Unknown number format"},
+    "csv.unknown_fields": {"de": "Unbekannte Felder: {fields}", "en": "Unknown fields: {fields}"},
+    "csv.need_date_column": {
+        "de": "Bitte die Spalte mit dem Buchungsdatum zuordnen",
+        "en": "Please map the column with the booking date",
+    },
+    "csv.need_amount_column": {
+        "de": "Bitte die Spalte mit dem Betrag zuordnen",
+        "en": "Please map the column with the amount",
+    },
+    "csv.wrong_format": {
+        "de": "Die Datei sieht nicht wie ein {name}-Export aus",
+        "en": "The file does not look like a {name} export",
+    },
+    "csv.header_outside": {"de": "Die Kopfzeile liegt außerhalb der Datei", "en": "The header row is outside the file"},
+    "csv.column_missing": {
+        "de": "Eine zugeordnete Spalte gibt es in der Datei nicht",
+        "en": "A mapped column does not exist in the file",
+    },
+    "csv.no_transactions": {"de": "Die Datei enthält keine Buchungen", "en": "The file contains no transactions"},
+    # Where to find the CSV export in each bank's online banking (menu names stay German, as in the bank's UI)
+    "csv.hint.ing": {
+        "de": "Konto öffnen → Umsätze → Zeitraum wählen → als CSV exportieren.",
+        "en": "Open the account → “Umsätze” → choose a period → export as CSV.",
+    },
+    "csv.hint.sparkasse": {
+        "de": "Umsätze → Export → „CSV-CAMT-Format“.",
+        "en": "“Umsätze” → Export → “CSV-CAMT-Format”.",
+    },
+    "csv.hint.vr": {"de": "Umsätze → Export → CSV.", "en": "“Umsätze” → Export → CSV."},
+    "csv.hint.dkb": {
+        "de": "Konto → Umsätze → Download-Symbol → CSV.",
+        "en": "Account → “Umsätze” → download icon → CSV.",
+    },
+    "csv.hint.comdirect": {
+        "de": "Umsätze → Zeitraum wählen → Export als CSV. Nur das erste Konto der Datei wird importiert.",
+        "en": "“Umsätze” → choose a period → export as CSV. Only the first account in the file is imported.",
+    },
+    "csv.hint.n26": {"de": "Web-App → Umsätze → Download → CSV.", "en": "Web app → transactions → download → CSV."},
     # AI
     "ai.disabled": {
         "de": "Die KI-Kategorisierung ist ausgeschaltet (BUDGIE_AI_ENABLED)",
@@ -87,6 +134,24 @@ MESSAGES: dict[str, dict[str, str]] = {
     },
     "ai.ollama_unreachable": {"de": "Ollama nicht erreichbar: {error}", "en": "Cannot reach Ollama: {error}"},
     # FinTS
+    "fints.bank_not_found": {"de": "Bankleitzahl nicht im Verzeichnis", "en": "Bank code not found in the directory"},
+    "fints.no_server_url": {
+        "de": (
+            "Für diese Bankleitzahl ist keine FinTS-Adresse bekannt. Bitte die Adresse angeben "
+            "(steht meist in der Hilfe der Bank unter „FinTS“ oder „HBCI PIN/TAN“)."
+        ),
+        "en": (
+            "No FinTS address is known for this bank code. Please enter the address "
+            "(usually found in the bank's help pages under “FinTS” or “HBCI PIN/TAN”)."
+        ),
+    },
+    "fints.no_choice_expected": {
+        "de": "Der Abruf wartet gerade auf keine Auswahl",
+        "en": "The sync is not waiting for a choice",
+    },
+    "fints.invalid_choice": {"de": "Ungültige Auswahl", "en": "Invalid choice"},
+    "fints.choose_mechanism": {"de": "Bitte wähle ein TAN-Verfahren.", "en": "Please choose a TAN method."},
+    "fints.choose_medium": {"de": "Bitte wähle das Gerät für die TAN.", "en": "Please choose the device for the TAN."},
     "fints.not_configured": {
         "de": "FinTS ist nicht eingerichtet, es fehlt: {missing}",
         "en": "FinTS is not set up, missing: {missing}",

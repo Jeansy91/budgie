@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { api } from '$lib/api';
+	import { api, ApiError } from '$lib/api';
+	import CsvMapping from '$lib/CsvMapping.svelte';
 	import { MiddleTruncate, Select, type SelectOption } from '$lib/ui';
 	import BankSync from '$lib/BankSync.svelte';
 	import { iban, money } from '$lib/format';
 	import { t } from '$lib/i18n/index.svelte';
-	import type { Account, ImportResult } from '$lib/types';
+	import type { Account, CsvFormat, CsvPreview, CsvProfile, ImportResult } from '$lib/types';
 	import Upload from '@lucide/svelte/icons/upload';
 	import Landmark from '@lucide/svelte/icons/landmark';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
@@ -20,28 +21,73 @@
 	let busy = $state(false);
 	let dragging = $state(false);
 	let input: HTMLInputElement;
+	let formats = $state<CsvFormat[]>([]);
+	let profiles = $state<CsvProfile[]>([]);
+	// Files in an unknown layout, waiting for a column assignment
+	let pending = $state<{ file: File; preview: CsvPreview }[]>([]);
 
 	const loadAccounts = () => api<Account[]>('/accounts').then((a) => (accounts = a));
+	const loadProfiles = () => api<CsvProfile[]>('/imports/csv/profiles').then((p) => (profiles = p));
 	loadAccounts();
+	loadProfiles();
+	api<CsvFormat[]>('/imports/csv/formats').then((f) => (formats = f));
+
+	async function send(file: File, mapping?: object, saveAs?: string) {
+		const form = new FormData();
+		form.append('file', file);
+		if (accountId) form.append('account_id', accountId);
+		if (mapping) form.append('mapping', JSON.stringify(mapping));
+		if (saveAs) form.append('save_as', saveAs);
+		return api<ImportResult>('/imports/csv', { method: 'POST', form });
+	}
+
+	async function importFile(file: File, mapping?: object, saveAs?: string) {
+		try {
+			results.push({ name: file.name, result: await send(file, mapping, saveAs) });
+		} catch (err) {
+			if (err instanceof ApiError && err.code === 'unknown_format') {
+				const form = new FormData();
+				form.append('file', file);
+				try {
+					pending.push({ file, preview: await api<CsvPreview>('/imports/csv/preview', { method: 'POST', form }) });
+				} catch (e) {
+					results.push({ name: file.name, error: (e as Error).message });
+				}
+			} else {
+				results.push({ name: file.name, error: (err as Error).message });
+			}
+		}
+	}
 
 	async function upload(files: FileList | File[]) {
 		if (!files.length) return;
 		busy = true;
 		results = [];
-		for (const file of files) {
-			const form = new FormData();
-			form.append('file', file);
-			if (accountId) form.append('account_id', accountId);
-			try {
-				results.push({ name: file.name, result: await api<ImportResult>('/imports/ing-csv', { method: 'POST', form }) });
-			} catch (err) {
-				results.push({ name: file.name, error: (err as Error).message });
-			}
-		}
+		pending = [];
+		for (const file of files) await importFile(file);
 		busy = false;
 		input.value = '';
 		await loadAccounts();
 	}
+
+	async function importMapped(mapping: object, saveAs: string) {
+		const [first, ...rest] = pending;
+		busy = true;
+		pending = [];
+		await importFile(first.file, mapping, saveAs);
+		// A saved template may already recognize the remaining files
+		for (const p of rest) await importFile(p.file);
+		busy = false;
+		await Promise.all([loadAccounts(), loadProfiles()]);
+	}
+
+	async function removeProfile(p: CsvProfile) {
+		if (!confirm(t('import.confirmDeleteProfile', { name: p.name }))) return;
+		await api(`/imports/csv/profiles/${p.id}`, { method: 'DELETE' });
+		await loadProfiles();
+	}
+
+	const bankNames = $derived(formats.map((f) => f.name.replace(/ \(.*\)$/, '')).filter((n, i, a) => a.indexOf(n) === i));
 </script>
 
 <div class="page-head">
@@ -55,7 +101,9 @@
 <BankSync onsynced={loadAccounts} />
 
 <h2 class="section first">{t('import.csvTitle')}</h2>
-<p class="muted small hint">{t('import.csvHint')}</p>
+<p class="muted small hint">
+	{t('import.csvHint', { banks: bankNames.join(', ') })}
+</p>
 
 <label
 	class="drop"
@@ -90,7 +138,19 @@
 	<Select options={accountOptions} bind:value={accountId} label={t('common.account')} />
 </div>
 
-{#each results as r (r.name)}
+{#if pending.length}
+	{#key pending[0].file}
+	<CsvMapping
+		filename={pending[0].file.name}
+		preview={pending[0].preview}
+		{busy}
+		onsubmit={importMapped}
+		oncancel={() => (pending = pending.slice(1))}
+	/>
+	{/key}
+{/if}
+
+{#each results as r, i (i)}
 	{#if r.error}
 		<div class="error"><CircleAlert size={18} /> <span><strong class="break-anywhere">{r.name}:</strong> {r.error}</span></div>
 	{:else if r.result}
@@ -98,6 +158,7 @@
 			<span class="ok-icon"><Check size={18} /></span>
 			<div class="info">
 				<strong class="file"><MiddleTruncate text={r.name} /></strong>
+				{#if r.result.format_name}<span class="badge">{r.result.format_name}</span>{/if}
 				{#if r.result.account_created}<span class="badge accent">{t('import.newAccount')}</span>{/if}
 				<div class="stats">
 					<span><b>{r.result.rows_imported}</b> {t('import.new')}</span>
@@ -109,6 +170,18 @@
 		</div>
 	{/if}
 {/each}
+
+{#if profiles.length}
+	<h2 class="section">{t('import.profiles')}</h2>
+	<div class="profiles">
+		{#each profiles as p (p.id)}
+			<span class="profile">
+				<span class="break-anywhere">{p.name}</span>
+				<button class="ghost small" onclick={() => removeProfile(p)} aria-label={t('import.deleteProfile', { name: p.name })}>{t('common.delete')}</button>
+			</span>
+		{/each}
+	</div>
+{/if}
 
 {#if accounts.length}
 	<h2 class="section">{t('import.accounts')}</h2>
@@ -224,6 +297,22 @@
 	}
 	.section {
 		margin-top: 2rem;
+	}
+	.profiles {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.profile {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.25rem 0.3rem 0.25rem 0.8rem;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		background: var(--surface);
+		font-size: 0.9rem;
+		max-width: 100%;
 	}
 	.section.first {
 		margin-top: 0;

@@ -1,0 +1,8 @@
+﻿"Konto";"Girokonto DE89370400440532013000"
+""
+"Kontostand vom 16.11.2026:";"2.345,67 €"
+""
+"Buchungsdatum";"Wertstellung";"Status";"Zahlungspflichtige*r";"Zahlungsempfänger*in";"Verwendungszweck";"Umsatztyp";"IBAN";"Betrag (€)";"Gläubiger-ID";"Mandatsreferenz";"Kundenreferenz"
+"17.11.26";"17.11.26";"Vorgemerkt";"Max Mustermann";"Tankstelle Nord";"Kartenzahlung";"Ausgang";"";"-60,00";"";"";""
+"14.11.26";"14.11.26";"Gebucht";"Max Mustermann";"REWE Markt GmbH";"REWE SAGT DANKE 12345";"Ausgang";"DE02120300000000202051";"-54,32";"DE12ZZZ00000012345";"M-9876";"E2E-REWE-1"
+"30.10.26";"30.10.26";"Gebucht";"Arbeitgeber AG";"Max Mustermann";"Gehalt Oktober 2026";"Eingang";"DE75512108001245126199";"3.200,00";"";"";""
