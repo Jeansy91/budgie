@@ -7,6 +7,10 @@
 <p align="center">
   <a href="https://github.com/Jeansy91/budgie/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Jeansy91/budgie/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green.svg"></a>
+  <a href="https://github.com/Jeansy91/budgie/pkgs/container/budgie-api"><img alt="Docker images on GHCR" src="https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker&logoColor=white"></a>
+  <img alt="Python 3.13" src="https://img.shields.io/badge/python-3.13-3776AB?logo=python&logoColor=white">
+  <img alt="SvelteKit" src="https://img.shields.io/badge/SvelteKit-FF3E00?logo=svelte&logoColor=white">
+  <img alt="Self-hosted" src="https://img.shields.io/badge/self--hosted-yes-10b981">
 </p>
 
 <p align="center">
