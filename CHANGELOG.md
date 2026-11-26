@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Dependabot now keeps GitHub Actions, Python and npm dependencies and Docker base images up to date.
+- CI uses the latest major versions of all GitHub Actions.
+- The license copyright holder is now Jeansy91.
+
 ## [0.1.0] - 2026-11-19
 
 First public release.
