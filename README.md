@@ -198,7 +198,7 @@ Requirements: Python 3.13, Node.js 26 and a PostgreSQL 16 database.
 # Backend
 cd backend
 python -m venv .venv && . .venv/bin/activate
-pip install -r requirements-dev.txt
+pip install --require-hashes -r requirements-dev.txt
 export BUDGIE_DATABASE_URL=postgresql+psycopg://budgie:budgie@localhost:5432/budgie BUDGIE_COOKIE_SECURE=false
 alembic upgrade head
 uvicorn app.main:app --reload          # API docs: http://localhost:8000/api/docs

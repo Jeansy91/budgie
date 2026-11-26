@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.13-slim@sha256:7249d5587b78209a006dc4a3b5340678f84ea729239193aa559962cd8c1fce50
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
@@ -11,7 +11,7 @@ RUN apt-get update \
 # Install the dependencies, then drop pip, setuptools and wheel: the runtime
 # does not need them, and the copies bundled in the base image carry CVEs
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
+RUN pip install --no-cache-dir --require-hashes -r requirements.txt \
     && pip uninstall -y pip setuptools wheel \
     && rm -rf /usr/local/lib/python3.13/site-packages/pip* \
         /usr/local/lib/python3.13/site-packages/setuptools* \
