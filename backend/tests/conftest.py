@@ -6,14 +6,14 @@ os.environ["BUDGIE_COOKIE_SECURE"] = "false"
 os.environ.setdefault("BUDGIE_SECRET_KEY", "nur-fuer-tests-0123456789")
 os.environ.setdefault("BUDGIE_FINTS_PRODUCT_ID", "TESTPRODUKT")
 
-import pytest  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import text  # noqa: E402
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import text
 
-from app import models  # noqa: E402,F401
-from app.ai import service as ai_service  # noqa: E402
-from app.db import Base, engine  # noqa: E402
-from app.main import app  # noqa: E402
+from app import models  # noqa: F401
+from app.ai import service as ai_service
+from app.db import Base, engine
+from app.main import app
 
 DATA = Path(__file__).parent / "data"
 

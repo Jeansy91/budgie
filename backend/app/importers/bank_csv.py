@@ -445,10 +445,7 @@ def parse_amount(value: str, decimal: str = "comma") -> Decimal:
     cleaned = value.strip().replace("\xa0", "").replace(" ", "").replace("€", "").replace("EUR", "")
     negative = cleaned.endswith("-")
     cleaned = cleaned.rstrip("-").lstrip("+")
-    if decimal == "comma":
-        cleaned = cleaned.replace(".", "").replace(",", ".")
-    else:
-        cleaned = cleaned.replace(",", "")
+    cleaned = cleaned.replace(".", "").replace(",", ".") if decimal == "comma" else cleaned.replace(",", "")
     try:
         amount = Decimal(cleaned)
     except InvalidOperation as exc:

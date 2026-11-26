@@ -40,8 +40,8 @@ class Classifier:
         self.text_vec = TfidfVectorizer(
             analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True, min_df=1, max_features=60000
         )
-        self.word_vec = TfidfVectorizer(analyzer="word", token_pattern=r"[^\s|]{2,}", sublinear_tf=True)
-        self.meta_vec = TfidfVectorizer(analyzer="word", token_pattern=r"\S+", use_idf=False, norm="l2")
+        self.word_vec = TfidfVectorizer(analyzer="word", token_pattern=r"[^\s|]{2,}", sublinear_tf=True)  # noqa: S106  # regex, not a password
+        self.meta_vec = TfidfVectorizer(analyzer="word", token_pattern=r"\S+", use_idf=False, norm="l2")  # noqa: S106  # regex, not a password
         # saga is much faster than lbfgs with many features, with the same result
         self.clf = LogisticRegression(C=20.0, solver="saga", max_iter=200, tol=1e-3)
         self.classes: list[int] = []
@@ -119,7 +119,7 @@ def cross_validate(samples: Sequence[Sample], folds: int = 5, max_eval: int = 20
     manual = [i for i, s in enumerate(samples) if s.weight == WEIGHT_MANUAL]
     if len(manual) < 20:
         return None
-    rng = random.Random(42)
+    rng = random.Random(42)  # noqa: S311  # deterministic eval sample, not security-related
     rng.shuffle(manual)
     manual = manual[:max_eval]
     hits = total = 0

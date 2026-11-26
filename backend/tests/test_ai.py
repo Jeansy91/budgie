@@ -96,7 +96,9 @@ def test_rules_beat_ai_and_manual_beats_everything(admin, sample_csv):
 
 
 def test_debits_never_get_income_categories(admin):
-    income = {c["id"] for main in admin.get("/api/categories").json() if main["kind"] == "income" for c in main["children"]}
+    income = {
+        c["id"] for main in admin.get("/api/categories").json() if main["kind"] == "income" for c in main["children"]
+    }
     upload(admin, csv(("02.10.2026", "Arbeitgeber AG", "Lastschrift", "Rueckforderung Gehalt", "-120,00")))
     t = transactions(admin)[0]
     assert t["category_id"] not in income
@@ -147,9 +149,7 @@ def fake_ollama(monkeypatch):
         return httpx.Response(200, json={"message": {"content": content}}, request=httpx.Request("POST", url))
 
     def get(url, timeout=None):
-        return httpx.Response(
-            200, json={"models": [{"name": "qwen2.5:7b"}]}, request=httpx.Request("GET", url)
-        )
+        return httpx.Response(200, json={"models": [{"name": "qwen2.5:7b"}]}, request=httpx.Request("GET", url))
 
     monkeypatch.setattr(llm.httpx, "post", post)
     monkeypatch.setattr(llm.httpx, "get", get)

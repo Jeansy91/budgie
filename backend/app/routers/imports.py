@@ -7,10 +7,10 @@ from sqlalchemy import select
 
 from ..config import get_settings
 from ..deps import DB, CurrentUser, get_visible_account, visible_accounts_query
+from ..i18n import http_error, t
 from ..importers import bank_csv, ing_csv
 from ..importers.common import CsvError, ParsedStatement
 from ..importers.store import store_transactions
-from ..i18n import http_error, t
 from ..models import Account, CsvProfile, ImportBatch, User
 from ..schemas import CsvFormatOut, CsvMappingIn, CsvPreviewOut, CsvProfileOut, ImportOut
 
@@ -45,11 +45,11 @@ def _target_account(db: DB, user: User, statement: ParsedStatement, account_id: 
         return account, False
     if not statement.iban:
         raise http_error(status.HTTP_400_BAD_REQUEST, "import.no_iban")
-    account = db.scalar(
+    existing = db.scalar(
         select(Account).where(Account.household_id == user.household_id, Account.iban == statement.iban)
     )
-    if account is not None:
-        return get_visible_account(db, user, account.id), False
+    if existing is not None:
+        return get_visible_account(db, user, existing.id), False
     account = Account(
         household_id=user.household_id,
         name=statement.account_name or f"{bank} {statement.iban[-4:]}",
@@ -89,9 +89,11 @@ def _saved_profile(db: DB, user: User, raw: bytes) -> tuple[CsvProfile, bank_csv
         table = tables.get(mapping.delimiter) or tables.setdefault(
             mapping.delimiter, bank_csv.read_table(raw, mapping.delimiter)
         )
-        if mapping.header_row < len(table.rows):
-            if bank_csv.header_signature(table.rows[mapping.header_row], mapping.delimiter) == profile.signature:
-                return profile, mapping
+        if (
+            mapping.header_row < len(table.rows)
+            and bank_csv.header_signature(table.rows[mapping.header_row], mapping.delimiter) == profile.signature
+        ):
+            return profile, mapping
     return None
 
 
@@ -143,7 +145,9 @@ async def import_csv(
                 table = bank_csv.read_table(raw, custom.delimiter)
                 signature = bank_csv.header_signature(table.rows[custom.header_row], custom.delimiter)
                 profile = db.scalar(
-                    select(CsvProfile).where(CsvProfile.household_id == user.household_id, CsvProfile.signature == signature)
+                    select(CsvProfile).where(
+                        CsvProfile.household_id == user.household_id, CsvProfile.signature == signature
+                    )
                 )
                 if profile is None:
                     profile = CsvProfile(household_id=user.household_id, signature=signature)

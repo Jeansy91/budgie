@@ -22,6 +22,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 from fints.client import FinTS3PinTanClient, NeedTANResponse
 from fints.exceptions import (
@@ -34,9 +35,9 @@ from fints.exceptions import (
 from sqlalchemy import func, select
 
 from .. import crypto
-from ..i18n import date_text, get_locale, t, use_locale
 from ..config import get_settings
 from ..db import SessionLocal
+from ..i18n import date_text, get_locale, t, use_locale
 from ..importers.common import normalize_iban
 from ..importers.store import store_transactions
 from ..models import Account, BankConnection, ImportBatch, Transaction, User
@@ -59,7 +60,13 @@ client_factory: Callable[..., FinTS3PinTanClient] = FinTS3PinTanClient
 
 
 # Resets everything the UI shows while waiting for input
-_CLEARED = {"challenge": None, "challenge_image": None, "challenge_hhduc": None, "choice_kind": None, "options": []}
+_CLEARED: dict[str, Any] = {
+    "challenge": None,
+    "challenge_image": None,
+    "challenge_hhduc": None,
+    "choice_kind": None,
+    "options": [],
+}
 
 
 class JobCancelled(Exception):
@@ -172,7 +179,7 @@ def _run(job: SyncJob, pin: str, start_date: date | None) -> None:
         except JobCancelled:
             db.rollback()
             job.set(state="cancelled", message=t("fints.cancelled"), **_CLEARED)
-        except Exception as exc:  # noqa: BLE001  every error should reach the UI
+        except Exception as exc:
             db.rollback()
             text = _error_text(exc)
             if not isinstance(exc, (JobFailed, FinTSError)):
@@ -329,7 +336,7 @@ def _ask(job: SyncJob, kind: str, message: str, options: list[dict]) -> str:
         raise JobFailed("Keine Auswahl getroffen, der Abruf wurde abgebrochen")
     _check_cancel(job)
     choice, job._choice = job._choice, None
-    if choice not in {o["id"] for o in options}:
+    if choice is None or choice not in {o["id"] for o in options}:
         raise JobFailed(t("fints.invalid_choice"))
     job.set(state="running", message=t("fints.connecting"), **_CLEARED)
     return choice
@@ -425,7 +432,7 @@ def _update_balance(job: SyncJob, client, sepa, account: Account) -> None:
         balance = _resolve(job, client, client.get_balance(sepa))
     except (JobCancelled, JobFailed):
         raise
-    except Exception:  # noqa: BLE001
+    except Exception:
         log.warning("Kontostand für %s nicht abrufbar", account.iban, exc_info=True)
         return
     if balance is None or getattr(balance, "amount", None) is None:

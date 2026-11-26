@@ -73,7 +73,13 @@ def test_unknown_layout_preview_and_custom_mapping():
     p = bank_csv.preview(raw)
     assert p["delimiter"] == ";" and p["header_row"] == 1
     assert p["suggestion"]["columns"] == {
-        "booking_date": 0, "value_date": 1, "payee": 2, "purpose": 3, "debit": 4, "credit": 5, "balance": 6
+        "booking_date": 0,
+        "value_date": 1,
+        "payee": 2,
+        "purpose": 3,
+        "debit": 4,
+        "credit": 5,
+        "balance": 6,
     }
     mapping = bank_csv.CustomMapping(delimiter=";", header_row=1, columns=p["suggestion"]["columns"])
     s = bank_csv.parse_custom(raw, mapping)
@@ -83,8 +89,13 @@ def test_unknown_layout_preview_and_custom_mapping():
 
 @pytest.mark.parametrize(
     "value, decimal, expected",
-    [("-1.234,56", "comma", "-1234.56"), ("1.234,56-", "comma", "-1234.56"), ("12,00 €", "comma", "12.00"),
-     ("-1,234.56", "point", "-1234.56"), ("+3.50", "point", "3.50")],
+    [
+        ("-1.234,56", "comma", "-1234.56"),
+        ("1.234,56-", "comma", "-1234.56"),
+        ("12,00 €", "comma", "12.00"),
+        ("-1,234.56", "point", "-1234.56"),
+        ("+3.50", "point", "3.50"),
+    ],
 )
 def test_parse_amount(value, decimal, expected):
     assert bank_csv.parse_amount(value, decimal) == Decimal(expected)
@@ -99,7 +110,9 @@ def test_sniff_delimiter():
 
 
 def upload(client, filename, **form):
-    return client.post("/api/imports/csv", files={"file": (filename, (CSV / filename).read_bytes(), "text/csv")}, data=form)
+    return client.post(
+        "/api/imports/csv", files={"file": (filename, (CSV / filename).read_bytes(), "text/csv")}, data=form
+    )
 
 
 def test_import_detects_bank_and_creates_account(admin):

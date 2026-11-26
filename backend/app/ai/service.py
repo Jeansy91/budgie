@@ -115,7 +115,10 @@ def fit_household(db: Session, household_id: int, with_accuracy: bool = True) ->
         _cache[household_id] = (row.id, model)
     log.info(
         "KI-Modell für Haushalt %s trainiert: %s eigene Beispiele, %s Kategorien, %.1fs",
-        household_id, own, len(model.classes), time.monotonic() - started,
+        household_id,
+        own,
+        len(model.classes),
+        time.monotonic() - started,
     )
     return row
 
@@ -145,6 +148,8 @@ def load_model(db: Session, household_id: int, train_if_missing: bool = True) ->
             return cached[1]
     blob = db.scalar(select(ClassifierModel.blob).where(ClassifierModel.id == latest_id))
     try:
+        if blob is None:
+            raise ValueError("model blob missing")
         model = Classifier.loads(blob)
     except Exception:
         # E.g. after a scikit-learn upgrade: simply retrain
@@ -179,9 +184,7 @@ def categorize(
     if not settings.ai_enabled:
         return result
     todo = [
-        t
-        for t in transactions
-        if t.category_id is None or (redo_model and t.category_source == CategorySource.model)
+        t for t in transactions if t.category_id is None or (redo_model and t.category_source == CategorySource.model)
     ]
     if not todo:
         return result

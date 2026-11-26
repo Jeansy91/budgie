@@ -141,4 +141,6 @@ def update_transaction(transaction_id: int, data: TransactionPatch, db: DB, user
 
     db.commit()
     db.refresh(t)
-    return TransactionPatchOut(transaction=TransactionOut.model_validate(t), rule=rule_result, other_changed=other_changed)
+    return TransactionPatchOut(
+        transaction=TransactionOut.model_validate(t), rule=rule_result, other_changed=other_changed
+    )

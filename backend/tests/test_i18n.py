@@ -58,8 +58,12 @@ def test_overview_uncategorized_label(admin, sample_csv):
     tx = admin.get("/api/transactions").json()["items"][0]
     admin.patch(f"/api/transactions/{tx['id']}", json={"category_id": None})
     month = tx["budget_date"][:7]
-    names = {c["name"] for c in admin.get("/api/overview", params={"month": month}, headers=EN).json()["expense_categories"]}
-    names |= {c["name"] for c in admin.get("/api/overview", params={"month": month}, headers=EN).json()["income_categories"]}
+    names = {
+        c["name"] for c in admin.get("/api/overview", params={"month": month}, headers=EN).json()["expense_categories"]
+    }
+    names |= {
+        c["name"] for c in admin.get("/api/overview", params={"month": month}, headers=EN).json()["income_categories"]
+    }
     assert "Uncategorized" in names
 
 
