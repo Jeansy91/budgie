@@ -48,9 +48,7 @@
 	let job = $state<SyncJob | null>(null);
 	let timer: ReturnType<typeof setTimeout> | undefined;
 
-	const active = $derived(
-		job !== null && (job.state === 'running' || job.state === 'need_tan' || job.state === 'need_choice')
-	);
+	const active = $derived(job !== null && (job.state === 'running' || job.state === 'need_tan' || job.state === 'need_choice'));
 
 	async function load() {
 		status = await api<FintsStatus>('/fints/status');
@@ -211,7 +209,9 @@
 					{#if c.tan_mechanism_name}· {c.tan_mechanism_name}{/if}
 				</span>
 				{#if c.accounts.length}
-					<span class="muted small accounts" title={c.accounts.map((a) => a.name).join(', ')}>{c.accounts.map((a) => a.name).join(', ')}</span>
+					<span class="muted small accounts" title={c.accounts.map((a) => a.name).join(', ')}>
+						{c.accounts.map((a) => a.name).join(', ')}
+					</span>
 				{/if}
 				{#if c.last_error && syncFor?.id !== c.id}<span class="small err break-anywhere">{c.last_error}</span>{/if}
 			</div>
@@ -219,9 +219,7 @@
 				<div class="actions">
 					<button onclick={() => openSync(c)} disabled={!status?.enabled}>{t('bank.sync')}</button>
 					{#if c.tan_mechanism_name}
-						<button class="ghost small" onclick={() => resetTanMechanism(c)} title={t('bank.changeTanTitle')}
-							>{t('bank.changeTan')}</button
-						>
+						<button class="ghost small" onclick={() => resetTanMechanism(c)} title={t('bank.changeTanTitle')}>{t('bank.changeTan')}</button>
 					{/if}
 					<button class="ghost small" onclick={() => removeConnection(c)}>{t('bank.remove')}</button>
 				</div>
@@ -232,8 +230,8 @@
 			<div class="sync">
 				{#if !job}
 					<form class="row" onsubmit={startSync}>
-						<label
-							>{t('bank.pin')}
+						<label>
+							{t('bank.pin')}
 							<PasswordInput bind:value={pin} required autocomplete="off" inputmode="numeric" />
 						</label>
 						<div class="field">
@@ -348,8 +346,8 @@
 				{#if bank}
 					<div class="row">
 						<label>{t('common.name')} <input bind:value={form.name} required maxlength="100" /></label>
-						<label
-							>{t('bank.loginName')}
+						<label>
+							{t('bank.loginName')}
 							<input
 								bind:value={form.login}
 								required
@@ -365,17 +363,13 @@
 					</button>
 					{#if advanced}
 						<div class="row">
-							<label class="grow"
-								>{t('bank.serverUrl')}
+							<label class="grow">
+								{t('bank.serverUrl')}
 								<input bind:value={form.server_url} type="url" placeholder="https://…" required={!bank.server_url} />
 							</label>
-							<label
-								>{t('bank.customerId')}
-								<input
-									bind:value={form.customer_id}
-									autocomplete="off"
-									placeholder={t('common.optional')}
-								/>
+							<label>
+								{t('bank.customerId')}
+								<input bind:value={form.customer_id} autocomplete="off" placeholder={t('common.optional')} />
 							</label>
 						</div>
 						{#if !bank.server_url}

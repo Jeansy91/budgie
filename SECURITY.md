@@ -30,6 +30,17 @@ Only the latest release and the current `main` branch receive security fixes.
 - **Everything runs locally.** Categorization uses a local classifier and, optionally, a local LLM via Ollama. No transaction data is sent to third-party services.
 - The database and the optional Ollama service are attached to an internal Docker network without published ports.
 
+## Security tooling
+
+The repository is continuously checked with:
+
+- **CodeQL** code scanning for Python, JavaScript/TypeScript and the GitHub Actions workflows.
+- **Secret scanning with push protection**, plus gitleaks in the pre-commit hooks.
+- **Dependabot** updates for Python and npm packages, Docker base images and GitHub Actions (which are pinned to commit SHAs).
+- **Dependency review** on pull requests, which blocks newly introduced vulnerable dependencies.
+- **Trivy** scans of the container images; fixable critical and high findings fail the build.
+- **OpenSSF Scorecard** for overall supply-chain hygiene.
+
 ## Recommendations for operators
 
 - Do not expose Budgie directly to the internet. Access it on your local network or through a VPN, behind a reverse proxy with TLS.

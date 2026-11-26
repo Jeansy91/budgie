@@ -36,6 +36,7 @@
 	let accountNames = $derived(new Map(accounts.map((a) => [a.id, a.name])));
 	// Color per category: the color of its main category
 	let catColor = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, non-reactive value
 		const map = new Map<number, string>();
 		categories.forEach((main, i) => {
 			map.set(main.id, colorFor(i));
@@ -87,6 +88,7 @@
 
 	$effect(() => {
 		const f = filters();
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, non-reactive value
 		const qs = new URLSearchParams();
 		for (const [k, v] of Object.entries(f)) if (v) qs.set(k, v === true ? '1' : String(v));
 		goto(`?${qs}`, { replaceState: true, keepFocus: true, noScroll: true });
@@ -96,14 +98,12 @@
 
 	async function setCategory(tx: Transaction, category_id: number | null, allowRule = true) {
 		try {
-			const res = await api<{ transaction: Transaction; rule: unknown; other_changed: number }>(
-				`/transactions/${tx.id}`,
-				{ method: 'PATCH', body: { category_id, create_rule: allowRule && makeRule && category_id !== null } }
-			);
+			const res = await api<{ transaction: Transaction; rule: unknown; other_changed: number }>(`/transactions/${tx.id}`, {
+				method: 'PATCH',
+				body: { category_id, create_rule: allowRule && makeRule && category_id !== null }
+			});
 			Object.assign(tx, res.transaction);
-			notice = res.rule
-				? t('transactions.ruleCreated', { payee: tx.payee, count: res.other_changed })
-				: '';
+			notice = res.rule ? t('transactions.ruleCreated', { payee: tx.payee, count: res.other_changed }) : '';
 			if (res.other_changed) await load();
 		} catch (e) {
 			error = (e as Error).message;
@@ -131,8 +131,7 @@
 		history.back();
 	}
 	// Clicks on the controls inside a row (category, budget month, confirm) do not open the details
-	const fromControl = (e: Event) =>
-		(e.target as Element).closest('button, a, input, textarea, [role="menu"], .select-trigger') !== null;
+	const fromControl = (e: Event) => (e.target as Element).closest('button, a, input, textarea, [role="menu"], .select-trigger') !== null;
 	function rowClick(e: MouseEvent, tx: Transaction) {
 		if (!fromControl(e) && !window.getSelection()?.toString()) openDetail(tx);
 	}
@@ -168,26 +167,25 @@
 		{/if}
 		<div class="field">
 			{t('common.category')}
-			<Select options={categoryOptions} bind:value={categoryId} label={t('common.category')} searchable searchPlaceholder={t('categorySelect.search')} />
+			<Select
+				options={categoryOptions}
+				bind:value={categoryId}
+				label={t('common.category')}
+				searchable
+				searchPlaceholder={t('categorySelect.search')}
+			/>
 		</div>
 		<button class="pill" class:on={uncategorized} onclick={() => (uncategorized = !uncategorized)}>
-			{#if uncategorized}<Check size={15} />{/if} {t('transactions.onlyUncategorized')}
+			{#if uncategorized}<Check size={15} />{/if}
+			{t('transactions.onlyUncategorized')}
 		</button>
-		<button
-			class="pill"
-			class:on={aiReview}
-			onclick={() => (aiReview = !aiReview)}
-			title={t('transactions.aiReviewTitle')}
-		>
-			{#if aiReview}<Check size={15} />{:else}<Wand size={15} />{/if} {t('transactions.aiReview')}
+		<button class="pill" class:on={aiReview} onclick={() => (aiReview = !aiReview)} title={t('transactions.aiReviewTitle')}>
+			{#if aiReview}<Check size={15} />{:else}<Wand size={15} />{/if}
+			{t('transactions.aiReview')}
 		</button>
-		<button
-			class="pill"
-			class:on={makeRule}
-			onclick={() => (makeRule = !makeRule)}
-			title={t('transactions.learnRulesTitle')}
-		>
-			<Sparkles size={15} /> {t('transactions.learnRules')}
+		<button class="pill" class:on={makeRule} onclick={() => (makeRule = !makeRule)} title={t('transactions.learnRulesTitle')}>
+			<Sparkles size={15} />
+			{t('transactions.learnRules')}
 		</button>
 	</div>
 </div>
@@ -223,7 +221,9 @@
 							<BudgetMonthMenu {tx} onchange={(n) => Object.assign(tx, n)} onerror={(m) => (error = m)} />
 						</div>
 						<div class="purpose" title={tx.purpose || tx.booking_text}>
+							<!-- eslint-disable-next-line svelte/no-useless-mustaches -- explicit separator string keeps its surrounding spaces -->
 							{tx.booking_text}{#if tx.purpose}{' · '}{tx.purpose}{/if}
+							<!-- eslint-disable-next-line svelte/no-useless-mustaches -- explicit separator string keeps its surrounding spaces -->
 							{#if accounts.length > 1}{' · '}{accountNames.get(tx.account_id)}{/if}
 						</div>
 					</div>
@@ -233,12 +233,17 @@
 							onclick={() => setCategory(tx, tx.suggested_category_id, false)}
 							title={t('transactions.suggestionTitle', { category: labels.get(tx.suggested_category_id) ?? '' })}
 						>
-							<Wand size={13} /> <span class="lbl">{t('transactions.suggestion')}</span> <strong>{labels.get(tx.suggested_category_id)?.split(' › ').pop()}</strong>
+							<Wand size={13} /> <span class="lbl">{t('transactions.suggestion')}</span>
+							<strong>{labels.get(tx.suggested_category_id)?.split(' › ').pop()}</strong>
 							<span class="conf">{pct(tx.suggestion_confidence)}</span>
 							<span class="take">{t('transactions.accept')}</span>
 						</button>
 					{/if}
-					<div class="cat" style:--c={tx.category_id ? catColor.get(tx.category_id) : 'var(--faint)'} title={tx.category_id ? labels.get(tx.category_id) : ''}>
+					<div
+						class="cat"
+						style:--c={tx.category_id ? catColor.get(tx.category_id) : 'var(--faint)'}
+						title={tx.category_id ? labels.get(tx.category_id) : ''}
+					>
 						<CategorySelect {categories} value={tx.category_id} onchange={(v) => setCategory(tx, v)} />
 						{#if tx.category_source}<span class="src" class:ai={isAi(tx)} title={sourceTitle(tx)}>{sourceLabel(tx)}</span>{/if}
 						{#if isAi(tx)}
@@ -266,13 +271,7 @@
 {/if}
 
 {#if detailId !== null}
-	<TransactionDetail
-		id={detailId}
-		{categories}
-		onclose={closeDetail}
-		onchange={detailChanged}
-		onreload={() => load()}
-	/>
+	<TransactionDetail id={detailId} {categories} onclose={closeDetail} onchange={detailChanged} onreload={() => load()} />
 {/if}
 
 <style>

@@ -118,7 +118,6 @@
 </button>
 
 <Popover bind:open anchor={trigger} {label} matchWidth={false} minWidth={272}>
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="pick"
 		role="dialog"
@@ -132,9 +131,13 @@
 		}}
 	>
 		<div class="head">
-			<button type="button" class="ghost icon" aria-label={t('ui.month.prevYear')} onclick={() => go(shift(focused, -12))}><ChevronLeft size={18} /></button>
+			<button type="button" class="ghost icon" aria-label={t('ui.month.prevYear')} onclick={() => go(shift(focused, -12))}>
+				<ChevronLeft size={18} />
+			</button>
 			<strong aria-live="polite">{year}</strong>
-			<button type="button" class="ghost icon" aria-label={t('ui.month.nextYear')} onclick={() => go(shift(focused, 12))}><ChevronRight size={18} /></button>
+			<button type="button" class="ghost icon" aria-label={t('ui.month.nextYear')} onclick={() => go(shift(focused, 12))}>
+				<ChevronRight size={18} />
+			</button>
 		</div>
 		<!-- svelte-ignore a11y_interactive_supports_focus -->
 		<div class="grid" role="grid" bind:this={grid} onkeydown={onGridKey}>
@@ -149,8 +152,10 @@
 					aria-pressed={ym === value}
 					aria-label={labelOf(ym)}
 					onclick={() => set(ym)}
-					onfocus={() => (focused = ym)}>{mo.name}</button
+					onfocus={() => (focused = ym)}
 				>
+					{mo.name}
+				</button>
 			{/each}
 		</div>
 		<div class="foot">

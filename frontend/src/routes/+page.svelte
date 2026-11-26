@@ -43,10 +43,8 @@
 
 	const go = (m: string) => goto(`/?month=${m}`, { keepFocus: true, noScroll: true });
 	const color = (c: CategorySum) => colorFor(c.category_id === null ? undefined : categoryIndex.get(c.category_id));
-	const pct = (part: string | number, total: string | number) =>
-		Number(total) > 0 ? Math.round((Number(part) / Number(total)) * 100) : 0;
-	const share = (part: string | number, total: string | number) =>
-		percent(Number(total) > 0 ? Number(part) / Number(total) : 0);
+	const pct = (part: string | number, total: string | number) => (Number(total) > 0 ? Math.round((Number(part) / Number(total)) * 100) : 0);
+	const share = (part: string | number, total: string | number) => percent(Number(total) > 0 ? Number(part) / Number(total) : 0);
 
 	// Donut chart: segments as fractions of the circumference
 	const R = 52;
@@ -65,9 +63,7 @@
 			});
 	});
 
-	let historyMax = $derived(
-		data ? Math.max(1, ...data.history.flatMap((h) => [Number(h.income), Number(h.expenses)])) : 1
-	);
+	let historyMax = $derived(data ? Math.max(1, ...data.history.flatMap((h) => [Number(h.income), Number(h.expenses)])) : 1);
 	let savingsRate = $derived(data && Number(data.income) > 0 ? share(data.net, data.income) : null);
 </script>
 
@@ -81,9 +77,13 @@
 			<Select options={accountOptions} bind:value={accountId} label={t('common.account')} />
 		{/if}
 		<div class="switch">
-			<button class="ghost icon" onclick={() => go(shiftMonth(month, -1))} aria-label={t('ui.date.prevMonth')}><ChevronLeft size={18} /></button>
+			<button class="ghost icon" onclick={() => go(shiftMonth(month, -1))} aria-label={t('ui.date.prevMonth')}>
+				<ChevronLeft size={18} />
+			</button>
 			<button class="ghost today" onclick={() => go(currentMonth())} disabled={month === currentMonth()}>{t('ui.date.today')}</button>
-			<button class="ghost icon" onclick={() => go(shiftMonth(month, 1))} aria-label={t('ui.date.nextMonth')}><ChevronRight size={18} /></button>
+			<button class="ghost icon" onclick={() => go(shiftMonth(month, 1))} aria-label={t('ui.date.nextMonth')}>
+				<ChevronRight size={18} />
+			</button>
 		</div>
 	</div>
 </div>
@@ -116,12 +116,9 @@
 				<span class="label">{t('overview.income')}</span>
 				<strong class="pos">{money(data.income)}</strong>
 				{#if Number(data.income_from_previous_month) > 0}
-					<a
-						class="carry small"
-						href={`/transactions?month=${month}`}
-						title={t('overview.carryTitle')}
-						>{t('overview.carry', { amount: money(data.income_from_previous_month) })}</a
-					>
+					<a class="carry small" href={`/transactions?month=${month}`} title={t('overview.carryTitle')}>
+						{t('overview.carry', { amount: money(data.income_from_previous_month) })}
+					</a>
 				{/if}
 			</div>
 		</div>
@@ -137,7 +134,10 @@
 	{#if data.uncategorized_count > 0}
 		<a class="warn nudge" href={`/transactions?month=${month}&uncategorized=1`}>
 			<Sparkles size={18} />
-			<span><strong>{t('transactions.count', { count: data.uncategorized_count })}</strong> {t('overview.uncategorized', { count: data.uncategorized_count })}</span>
+			<span>
+				<strong>{t('transactions.count', { count: data.uncategorized_count })}</strong>
+				{t('overview.uncategorized', { count: data.uncategorized_count })}
+			</span>
 			<span class="go">{t('overview.categorizeNow')} <ChevronRight size={16} /></span>
 		</a>
 	{/if}
@@ -215,7 +215,8 @@
 			{/each}
 			{#if Number(data.transfers) !== 0}
 				<div class="transfer small muted">
-					<ArrowLeftRight size={15} /> {t('overview.transfers', { amount: money(data.transfers) })}
+					<ArrowLeftRight size={15} />
+					{t('overview.transfers', { amount: money(data.transfers) })}
 				</div>
 			{/if}
 		</section>

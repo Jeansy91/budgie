@@ -1,9 +1,8 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
-from typing import Literal
 
 from .i18n import category_name
 from .models import BudgetShift, Category, CategoryKind, CategorySource, RuleField, RuleMatch
@@ -14,6 +13,7 @@ class ORM(BaseModel):
 
 
 # --- Users ----------------------------------------------------------------
+
 
 class SetupIn(BaseModel):
     household_name: str = Field("Unser Haushalt", min_length=1, max_length=100)
@@ -62,6 +62,7 @@ class SetupStatus(BaseModel):
 
 # --- Accounts -------------------------------------------------------------
 
+
 class AccountIn(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     iban: str | None = Field(None, max_length=42)
@@ -90,6 +91,7 @@ class AccountOut(ORM):
 
 
 # --- Categories -----------------------------------------------------------
+
 
 class CategoryIn(BaseModel):
     name: str = Field(min_length=1, max_length=100)
@@ -129,6 +131,7 @@ class CategoryOut(ORM):
 
 # --- Rules ----------------------------------------------------------------
 
+
 class RuleIn(BaseModel):
     category_id: int
     field: RuleField = RuleField.payee
@@ -167,6 +170,7 @@ class ApplyRulesOut(BaseModel):
 
 
 # --- Transactions ---------------------------------------------------------
+
 
 class TransactionOut(ORM):
     id: int
@@ -246,6 +250,7 @@ class TransactionPatchOut(BaseModel):
 
 # --- Import ---------------------------------------------------------------
 
+
 class ImportOut(ORM):
     id: int
     account_id: int
@@ -299,6 +304,7 @@ class CsvProfileOut(ORM):
 
 # --- AI -------------------------------------------------------------------
 
+
 class AiModelInfo(BaseModel):
     trained_at: datetime
     samples: int
@@ -341,6 +347,7 @@ class RecategorizeOut(BaseModel):
 
 # --- Overview -------------------------------------------------------------
 
+
 class CategorySum(BaseModel):
     category_id: int | None
     name: str
@@ -370,6 +377,7 @@ class OverviewOut(BaseModel):
 
 
 # --- Budget month ---------------------------------------------------------
+
 
 class BudgetSettingsIn(BaseModel):
     salary_shift_enabled: bool = True

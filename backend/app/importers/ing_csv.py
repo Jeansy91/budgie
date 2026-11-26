@@ -25,6 +25,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 from ..i18n import t
+
 # Re-exported for code that imported them from here before other banks were supported
 from .common import (  # noqa: F401
     CsvError,

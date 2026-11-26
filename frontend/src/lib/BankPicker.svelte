@@ -95,7 +95,8 @@
 						<button type="button" class:active={i === active} onclick={() => pick(b)} onmouseenter={() => (active = i)}>
 							<span class="name break-anywhere">{b.name}</span>
 							<span class="muted small">
-								{b.location} · {t('bank.bankCode')} {b.bank_code}
+								{b.location} · {t('bank.bankCode')}
+								{b.bank_code}
 								{#if !b.server_url}· {t('bank.noServerUrlShort')}{/if}
 							</span>
 						</button>

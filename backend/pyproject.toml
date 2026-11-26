@@ -1,0 +1,46 @@
+# Tool configuration only (no packaging).
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "S", "C4", "RUF"]
+ignore = [
+    "B008",    # FastAPI uses Depends()/Query() calls in argument defaults
+    "UP042",   # str+Enum -> StrEnum would change str()/format() output of the enums
+    "RUF001",  # German/i18n text contains legitimate non-ASCII characters
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]  # asserts and dummy credentials are fine in tests
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.mypy]
+python_version = "3.13"
+files = ["app"]
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["fints.*", "sklearn.*", "joblib.*", "scipy.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 85

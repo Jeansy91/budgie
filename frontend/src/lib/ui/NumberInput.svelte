@@ -44,7 +44,15 @@
 </script>
 
 <div class="num {cls}" class:disabled>
-	<button type="button" tabindex="-1" aria-label={t('ui.number.less')} onclick={() => set(value - step)} disabled={disabled || (min !== undefined && value <= min)}><Minus size={14} /></button>
+	<button
+		type="button"
+		tabindex="-1"
+		aria-label={t('ui.number.less')}
+		onclick={() => set(value - step)}
+		disabled={disabled || (min !== undefined && value <= min)}
+	>
+		<Minus size={14} />
+	</button>
 	<input
 		{id}
 		type="text"
@@ -68,7 +76,15 @@
 			else set(n);
 		}}
 	/>
-	<button type="button" tabindex="-1" aria-label={t('ui.number.more')} onclick={() => set(value + step)} disabled={disabled || (max !== undefined && value >= max)}><Plus size={14} /></button>
+	<button
+		type="button"
+		tabindex="-1"
+		aria-label={t('ui.number.more')}
+		onclick={() => set(value + step)}
+		disabled={disabled || (max !== undefined && value >= max)}
+	>
+		<Plus size={14} />
+	</button>
 </div>
 
 <style>

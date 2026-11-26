@@ -46,8 +46,7 @@
 	const setKind = (c: Category, kind: Kind) => run(() => api(`/categories/${c.id}`, { method: 'PATCH', body: { kind } }));
 	const remove = (c: Category) => {
 		const key = c.children?.length ? 'categories.confirmDeleteMain' : 'categories.confirmDelete';
-		if (confirm(t(key, { name: c.name })))
-			run(() => api(`/categories/${c.id}`, { method: 'DELETE' }));
+		if (confirm(t(key, { name: c.name }))) run(() => api(`/categories/${c.id}`, { method: 'DELETE' }));
 	};
 </script>
 
@@ -65,20 +64,37 @@
 		<section class="card" style:--c={colorFor(i)}>
 			<div class="head">
 				<h2><span class="dot" style:background="var(--c)"></span>{main.name}</h2>
-				<Select options={kindOptions} value={main.kind} onchange={(k) => setKind(main, k)} size="sm" label={t('categories.kindLabel')} title={t('categories.kindLabel')} />
+				<Select
+					options={kindOptions}
+					value={main.kind}
+					onchange={(k) => setKind(main, k)}
+					size="sm"
+					label={t('categories.kindLabel')}
+					title={t('categories.kindLabel')}
+				/>
 			</div>
 			<ul>
 				{#each main.children as sub (sub.id)}
 					<li>
 						<span>{sub.name}</span>
 						<span class="actions">
-							<button class="ghost icon sm" onclick={() => rename(sub)} title={t('categories.rename')} aria-label={t('categories.rename')}><Pencil size={14} /></button>
-							<button class="ghost icon sm" onclick={() => remove(sub)} title={t('common.delete')} aria-label={t('common.delete')}><Trash2 size={14} /></button>
+							<button class="ghost icon sm" onclick={() => rename(sub)} title={t('categories.rename')} aria-label={t('categories.rename')}>
+								<Pencil size={14} />
+							</button>
+							<button class="ghost icon sm" onclick={() => remove(sub)} title={t('common.delete')} aria-label={t('common.delete')}>
+								<Trash2 size={14} />
+							</button>
 						</span>
 					</li>
 				{/each}
 			</ul>
-			<form class="add" onsubmit={(e) => { e.preventDefault(); addSub(main); }}>
+			<form
+				class="add"
+				onsubmit={(e) => {
+					e.preventDefault();
+					addSub(main);
+				}}
+			>
 				<input placeholder={t('categories.newSub')} bind:value={newSub[main.id]} required />
 				<button class="secondary icon" aria-label={t('common.add')}><Plus size={18} /></button>
 			</form>
@@ -90,7 +106,13 @@
 	{/each}
 	<section class="card new">
 		<h2><Plus size={18} /> {t('categories.newMain')}</h2>
-		<form class="add col" onsubmit={(e) => { e.preventDefault(); addMain(); }}>
+		<form
+			class="add col"
+			onsubmit={(e) => {
+				e.preventDefault();
+				addMain();
+			}}
+		>
 			<input placeholder={t('common.name')} bind:value={newMain} required />
 			<RadioGroup options={kindOptions} bind:value={newMainKind} label={t('categories.kindLabel')} class="kind" />
 			<button>{t('common.create')}</button>

@@ -55,7 +55,9 @@ def first_match(rules: Iterable[Rule], t: Transaction) -> Rule | None:
     return next((r for r in rules if matches(r, t)), None)
 
 
-def apply_rules(db: Session, household_id: int, transactions: Iterable[Transaction], overwrite_rule_results: bool = False) -> int:
+def apply_rules(
+    db: Session, household_id: int, transactions: Iterable[Transaction], overwrite_rule_results: bool = False
+) -> int:
     """Applies rules. Manual assignments are never overwritten, AI assignments are.
 
     Without `overwrite_rule_results`, only uncategorized transactions are
@@ -69,8 +71,10 @@ def apply_rules(db: Session, household_id: int, transactions: Iterable[Transacti
             continue
         # Rules take precedence over the AI; earlier rule results are only recomputed with the flag
         ai = t.category_source in (CategorySource.model, CategorySource.llm)
-        if t.category_id is not None and not ai and not (
-            overwrite_rule_results and t.category_source == CategorySource.rule
+        if (
+            t.category_id is not None
+            and not ai
+            and not (overwrite_rule_results and t.category_source == CategorySource.rule)
         ):
             continue
         rule = first_match(rules, t)

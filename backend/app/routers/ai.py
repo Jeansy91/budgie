@@ -47,9 +47,7 @@ def ai_status(db: DB, user: CurrentUser):
             total=progress.total,
             failed=progress.failed,
         ),
-        ai_categorized=_count(
-            db, hh, Transaction.category_source.in_([CategorySource.model, CategorySource.llm])
-        ),
+        ai_categorized=_count(db, hh, Transaction.category_source.in_([CategorySource.model, CategorySource.llm])),
         suggestions=_count(db, hh, Transaction.suggested_category_id.is_not(None)),
         uncategorized=_count(db, hh, Transaction.category_id.is_(None)),
     )

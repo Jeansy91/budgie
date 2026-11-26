@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
+from typing import ClassVar
 
 import pytest
 from fints.client import NeedTANResponse
@@ -46,7 +47,7 @@ class FakeBank:
     decoupled = True
     polls_until_approved = 2
     wrong_pin = False
-    instances: list["FakeBank"] = []
+    instances: ClassVar[list["FakeBank"]] = []
 
     def __init__(self, bank_code, login, pin, server, customer_id=None, product_id=None, from_data=None):
         self.bank_code, self.login, self.pin, self.server = bank_code, login, pin, server
@@ -65,8 +66,11 @@ class FakeBank:
     def fetch_tan_mechanisms(self):
         self.mechanism = "900"
 
-    mechanisms = {"900": Mechanism("photoTAN"), "902": Mechanism("ING App", decoupled_max_poll_number=60)}
-    media: list = []
+    mechanisms: ClassVar[dict] = {
+        "900": Mechanism("photoTAN"),
+        "902": Mechanism("ING App", decoupled_max_poll_number=60),
+    }
+    media: ClassVar[list] = []
 
     def get_tan_mechanisms(self):
         return self.mechanisms
@@ -295,9 +299,7 @@ def test_cancel_while_waiting_for_app(admin, monkeypatch):
 
 def test_connections_are_private(admin, client):
     conn = connect(admin)
-    admin.post(
-        "/api/users", json={"username": "partnerin", "display_name": "Partnerin", "password": "geheim123"}
-    )
+    admin.post("/api/users", json={"username": "partnerin", "display_name": "Partnerin", "password": "geheim123"})
     from fastapi.testclient import TestClient
 
     from app.main import app
@@ -350,7 +352,7 @@ def test_official_institute_list(monkeypatch, tmp_path):
 
     csv = (
         "Nr.;BLZ;BIC;Institut;Ort;RZ;Organisation;HBCI-Zugang DNS;PIN/TAN-Zugang URL;Version\n"
-        "1;12345678;TESTDEFFXXX;Testbank eG;Musterstadt;;BVR;;https://hbci-pintan.gad.de/cgi-bin/hbciservlet;FinTS V3.0\n"
+        "1;12345678;TESTDEFFXXX;Testbank eG;Musterstadt;;BVR;;https://hbci-pintan.gad.de/cgi-bin/hbciservlet;FinTS V3.0\n"  # noqa: E501
     ).encode("cp1252")
     path = tmp_path / "fints_institute.csv"
     path.write_bytes(csv)

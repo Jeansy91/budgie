@@ -19,7 +19,9 @@ def account_out(db: DB, account: Account) -> AccountOut:
     ).first()
     last_balance = last[0] if last else None
     # The FinTS balance wins unless it is older than the one from the last CSV import
-    if account.bank_balance is not None and (last is None or account.bank_balance_date >= last[1]):
+    if account.bank_balance is not None and (
+        last is None or account.bank_balance_date is None or account.bank_balance_date >= last[1]
+    ):
         last_balance = account.bank_balance
     count = db.scalar(select(func.count(Transaction.id)).where(Transaction.account_id == account.id)) or 0
     out = AccountOut.model_validate(account)

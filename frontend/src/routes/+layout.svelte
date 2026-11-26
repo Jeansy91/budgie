@@ -24,8 +24,7 @@
 		{ href: '/rules', key: 'nav.rules', icon: WandSparkles }
 	];
 
-	const active = (href: string) =>
-		href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
+	const active = (href: string) => (href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href));
 
 	async function logout() {
 		await api('/auth/logout', { method: 'POST' });
@@ -48,7 +47,8 @@
 			</nav>
 			<div class="spacer"></div>
 			<a href="/settings" class="navlink" class:active={active('/settings')}>
-				<Settings size={19} /> {t('nav.settings')}
+				<Settings size={19} />
+				{t('nav.settings')}
 			</a>
 			<div class="me">
 				<span class="avatar">{initials(data.me.display_name)}</span>

@@ -28,18 +28,18 @@
 </script>
 
 <div class="auth-wrap">
-<div class="auth card">
-	<LanguageSwitch />
-	<div class="logo"><Logo size={52} /></div>
-	<h1>{t('auth.welcomeBack')}</h1>
-	<p class="muted">{t('auth.loginIntro')}</p>
-	{#if error}<div class="error">{error}</div>{/if}
-	<form onsubmit={submit}>
-		<label>{t('auth.username')} <input bind:value={username} autocomplete="username" required /></label>
-		<label>{t('auth.password')} <PasswordInput bind:value={password} autocomplete="current-password" required /></label>
-		<button disabled={busy}>{t('auth.login')}</button>
-	</form>
-</div>
+	<div class="auth card">
+		<LanguageSwitch />
+		<div class="logo"><Logo size={52} /></div>
+		<h1>{t('auth.welcomeBack')}</h1>
+		<p class="muted">{t('auth.loginIntro')}</p>
+		{#if error}<div class="error">{error}</div>{/if}
+		<form onsubmit={submit}>
+			<label>{t('auth.username')} <input bind:value={username} autocomplete="username" required /></label>
+			<label>{t('auth.password')} <PasswordInput bind:value={password} autocomplete="current-password" required /></label>
+			<button disabled={busy}>{t('auth.login')}</button>
+		</form>
+	</div>
 </div>
 
 <style>
@@ -50,8 +50,7 @@
 		padding: 1.5rem;
 		background:
 			radial-gradient(circle at 15% 10%, rgb(16 185 129 / 0.25), transparent 45%),
-			radial-gradient(circle at 85% 90%, rgb(14 165 233 / 0.22), transparent 45%),
-			var(--bg);
+			radial-gradient(circle at 85% 90%, rgb(14 165 233 / 0.22), transparent 45%), var(--bg);
 	}
 	.auth {
 		width: 100%;

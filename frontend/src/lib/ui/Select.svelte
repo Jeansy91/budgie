@@ -55,11 +55,7 @@
 	let withSearch = $derived(searchable === 'auto' ? options.length >= 10 : searchable);
 	let selected = $derived(options.find((o) => o.value === value));
 
-	const norm = (s: string) =>
-		s
-			.normalize('NFD')
-			.replace(/[̀-ͯ]/g, '')
-			.toLowerCase();
+	const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 	let filtered = $derived.by(() => {
 		const q = norm(query.trim());
@@ -184,7 +180,7 @@
 
 	// Jump to the first match after filtering
 	$effect(() => {
-		query;
+		void query;
 		if (open && query) active = Math.max(0, firstEnabled(0, 1));
 	});
 </script>
@@ -260,7 +256,9 @@
 					{#if o.color}<span class="dot" style:background={o.color}></span>{/if}
 					<span class="label" title={o.label}>{o.label}</span>
 					{#if o.hint}<span class="hint">{o.hint}</span>{/if}
-					<span class="tick">{#if o.value === value}<Check size={16} />{/if}</span>
+					<span class="tick">
+						{#if o.value === value}<Check size={16} />{/if}
+					</span>
 				</div>
 			{:else}
 				<div class="empty">{t('ui.select.noResults')}</div>

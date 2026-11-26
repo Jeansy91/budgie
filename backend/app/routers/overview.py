@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Query
-from sqlalchemy import func, literal_column, select
+from sqlalchemy import ColumnElement, func, literal_column, select
 from sqlalchemy.orm import aliased
 
 from ..deps import DB, CurrentUser, visible_account_ids
@@ -34,7 +34,7 @@ def overview(
     month = month or date.today().strftime("%Y-%m")
     start, end = month_bounds(month)
 
-    base = [Transaction.account_id.in_(visible_account_ids(user))]
+    base: list[ColumnElement[bool]] = [Transaction.account_id.in_(visible_account_ids(user))]
     if account_id is not None:
         base.append(Transaction.account_id == account_id)
 
@@ -44,9 +44,7 @@ def overview(
         .group_by(Transaction.category_id)
     ).all()
 
-    categories = {
-        c.id: c for c in db.scalars(select(Category).where(Category.household_id == user.household_id))
-    }
+    categories = {c.id: c for c in db.scalars(select(Category).where(Category.household_id == user.household_id))}
 
     income = expenses = transfers = ZERO
     uncategorized_count = 0
@@ -68,7 +66,7 @@ def overview(
 
     for category_id, amount, count in rows:
         amount = Decimal(amount)
-        category = categories.get(category_id)
+        category = categories.get(category_id) if category_id is not None else None
         if category is None:
             uncategorized_count += count
             kind = CategoryKind.income if amount > 0 else CategoryKind.expense
@@ -113,14 +111,14 @@ def overview(
         first_month += 12
         first_year -= 1
     hist_start = date(first_year, first_month, 1)
-    main = aliased(Category)
+    parent = aliased(Category)
     month_col = func.to_char(Transaction.budget_date, "YYYY-MM")
-    kind_col = func.coalesce(main.kind, Category.kind)
+    kind_col = func.coalesce(parent.kind, Category.kind)
     positive_col = Transaction.amount > literal_column("0")
     hist_rows = db.execute(
         select(month_col, kind_col, positive_col, func.sum(Transaction.amount))
         .outerjoin(Category, Transaction.category_id == Category.id)
-        .outerjoin(main, Category.parent_id == main.id)
+        .outerjoin(parent, Category.parent_id == parent.id)
         .where(*base, Transaction.budget_date >= hist_start, Transaction.budget_date < end)
         .group_by(month_col, kind_col, positive_col)
     ).all()

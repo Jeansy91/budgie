@@ -15,7 +15,7 @@ const en: Messages = {
 		create: 'Create',
 		optional: 'optional',
 		save: 'Save',
-		saving: 'Saving …',
+		saving: 'Saving …'
 	},
 	nav: {
 		transactions: 'Transactions',
@@ -24,7 +24,7 @@ const en: Messages = {
 		overview: 'Overview',
 		import: 'Import',
 		settings: 'Settings',
-		logout: 'Sign out',
+		logout: 'Sign out'
 	},
 	auth: {
 		username: 'Username',
@@ -34,11 +34,12 @@ const en: Messages = {
 		login: 'Sign in',
 		defaultHousehold: 'Our household',
 		welcome: 'Welcome to Budgie',
-		setupIntro: 'Create your household and the first user account. The default categories are set up automatically. You can add more users in the settings afterwards.',
+		setupIntro:
+			'Create your household and the first user account. The default categories are set up automatically. You can add more users in the settings afterwards.',
 		householdName: 'Household name',
 		yourName: 'Your name',
 		passwordMin: 'Password (at least 8 characters)',
-		setup: 'Set up',
+		setup: 'Set up'
 	},
 	overview: {
 		eyebrow: 'Monthly overview',
@@ -59,13 +60,16 @@ const en: Messages = {
 		total: 'Total',
 		noIncome: 'No income this month.',
 		transfers: 'Transfers between own accounts: {amount} (not counted)',
-		history: 'Last 12 months',
+		history: 'Last 12 months'
 	},
 	transactions: {
 		allAccounts: 'All accounts',
 		allCategories: 'All categories',
 		allOfMain: 'all',
-		ruleCreated: { one: 'Rule for “{payee}” created, {count} more transaction categorized.', other: 'Rule for “{payee}” created, {count} more transactions categorized.' },
+		ruleCreated: {
+			one: 'Rule for “{payee}” created, {count} more transaction categorized.',
+			other: 'Rule for “{payee}” created, {count} more transactions categorized.'
+		},
 		count: { one: '{count} transaction', other: '{count} transactions' },
 		searchPlaceholder: 'Search payee or reference',
 		onlyUncategorized: 'Uncategorized only',
@@ -80,7 +84,7 @@ const en: Messages = {
 		accept: 'Accept',
 		confirmTitle: 'Looks right – confirm the category. The AI learns from it.',
 		confirm: 'Confirm category',
-		loadMore: 'Load more',
+		loadMore: 'Load more'
 	},
 	detail: {
 		bookingMonthNote: 'booking month',
@@ -124,7 +128,7 @@ const en: Messages = {
 		matchesThis: 'Matches this transaction',
 		notMatchesThis: 'Does not match this transaction',
 		applyNow: 'Apply to matching transactions now',
-		manualNeverOverwritten: 'Manually categorized transactions are never overwritten.',
+		manualNeverOverwritten: 'Manually categorized transactions are never overwritten.'
 	},
 	source: {
 		ai: 'AI',
@@ -133,7 +137,7 @@ const en: Messages = {
 		llm: 'AI',
 		model: 'AI',
 		modelTitle: 'Assigned by the AI, {confidence} confident',
-		llmTitle: 'Assigned by the local language model',
+		llmTitle: 'Assigned by the local language model'
 	},
 	budgetMenu: {
 		auto: 'Automatic',
@@ -144,12 +148,12 @@ const en: Messages = {
 		countsForShort: 'counts for {month}',
 		set: 'Set budget month',
 		title: 'Counts towards',
-		now: 'currently {month}',
+		now: 'currently {month}'
 	},
 	categorySelect: {
 		search: 'Search categories …',
 		choose: 'Choose a category',
-		none: '– no category –',
+		none: '– no category –'
 	},
 	import: {
 		new: 'new',
@@ -171,7 +175,7 @@ const en: Messages = {
 		noIban: 'no IBAN',
 		confirmDeleteProfile: 'Delete the template “{name}”?',
 		profiles: 'Your CSV templates',
-		deleteProfile: 'Delete template {name}',
+		deleteProfile: 'Delete template {name}'
 	},
 	bank: {
 		confirmRemove: 'Remove the login “{name}”? Accounts and transactions are kept.',
@@ -219,14 +223,15 @@ const en: Messages = {
 		advanced: 'Advanced',
 		serverUrl: 'FinTS address',
 		customerId: 'Customer ID',
-		noServerUrl: 'Budgie does not know a FinTS address for this bank. You usually find it in your bank\'s help pages under “FinTS” or “HBCI PIN/TAN”.',
+		noServerUrl:
+			"Budgie does not know a FinTS address for this bank. You usually find it in your bank's help pages under “FinTS” or “HBCI PIN/TAN”.",
 		encryptedHint: 'The login name is stored encrypted; the PIN never is.',
 		bankCode: 'Bank code',
 		changeBank: 'Change',
 		searchPlaceholder: 'Bank, city, bank code or BIC',
 		search: 'Search bank',
 		noServerUrlShort: 'no FinTS address known',
-		notFound: 'No bank found. Tip: the bank code is in your IBAN at positions 5 to 12.',
+		notFound: 'No bank found. Tip: the bank code is in your IBAN at positions 5 to 12.'
 	},
 	csv: {
 		notPresent: '– not present –',
@@ -238,7 +243,7 @@ const en: Messages = {
 		numberFormat: 'Number format',
 		needAmount: 'Please map the amount, either as one signed column or split into debit and credit.',
 		saveAs: 'Save as template',
-		saveAsPlaceholder: 'optional, e.g. the bank\'s name',
+		saveAsPlaceholder: "optional, e.g. the bank's name",
 		saveAsHint: 'With a template, Budgie recognizes files with the same columns on its own from now on.',
 		import: 'Import',
 		field: {
@@ -252,14 +257,14 @@ const en: Messages = {
 			credit: 'Credit / incoming',
 			balance: 'Balance after',
 			counterparty_iban: 'Counterparty IBAN',
-			currency: 'Currency',
-		},
+			currency: 'Currency'
+		}
 	},
 	categories: {
 		kind: {
 			expense: 'Expense',
 			income: 'Income',
-			transfer: 'Transfer',
+			transfer: 'Transfer'
 		},
 		newName: 'New name',
 		confirmDeleteMain: 'Delete “{name}” with all its subcategories? Its transactions become uncategorized and matching rules are deleted.',
@@ -269,19 +274,19 @@ const en: Messages = {
 		kindLabel: 'Kind',
 		rename: 'Rename',
 		newSub: 'New subcategory',
-		newMain: 'New main category',
+		newMain: 'New main category'
 	},
 	rules: {
 		field: {
 			payee: 'Payee',
 			purpose: 'Reference',
-			any: 'Payee or reference',
+			any: 'Payee or reference'
 		},
 		match: {
 			contains: 'contains',
 			equals: 'equals',
 			starts_with: 'starts with',
-			regex: 'matches regex',
+			regex: 'matches regex'
 		},
 		created: { one: 'Rule created, {count} transaction categorized.', other: 'Rule created, {count} transactions categorized.' },
 		fieldLabel: 'Field',
@@ -304,14 +309,17 @@ const en: Messages = {
 		active: 'Active',
 		inactive: 'Inactive',
 		activeLabel: 'Rule active',
-		empty: 'No rules yet. Create one, or categorize under “Transactions” with “Learn rules” switched on.',
+		empty: 'No rules yet. Create one, or categorize under “Transactions” with “Learn rules” switched on.'
 	},
 	settings: {
 		languageAuto: 'Automatic',
 		language: 'Language',
 		languageHint: '“Automatic” follows your browser language (currently {browser}). The choice applies to your account on all devices.',
 		accountSaved: 'Account saved.',
-		confirmDeleteAccount: { one: 'Delete the account “{name}” with its {count} transaction?', other: 'Delete the account “{name}” with all {count} transactions?' },
+		confirmDeleteAccount: {
+			one: 'Delete the account “{name}” with its {count} transaction?',
+			other: 'Delete the account “{name}” with all {count} transactions?'
+		},
 		accountDeleted: 'Account deleted.',
 		userCreated: 'User created.',
 		confirmDeleteUser: 'Delete the user “{name}”?',
@@ -327,11 +335,15 @@ const en: Messages = {
 		changePassword: 'Change password',
 		currentPassword: 'Current password',
 		newPassword: 'New password',
-		change: 'Change',
+		change: 'Change'
 	},
 	budget: {
-		saved: { one: 'Saved. {count} transaction now counts towards the following month.', other: 'Saved. {count} transactions now count towards the following month.' },
-		intro: 'Salary arrives at the end of the month but pays for the next one. Salary received in the last days of a month therefore counts towards the following month in the overview and monthly totals. The booking date stays unchanged.',
+		saved: {
+			one: 'Saved. {count} transaction now counts towards the following month.',
+			other: 'Saved. {count} transactions now count towards the following month.'
+		},
+		intro:
+			'Salary arrives at the end of the month but pays for the next one. Salary received in the last days of a month therefore counts towards the following month in the overview and monthly totals. The booking date stays unchanged.',
 		shift: 'Assign salary to the following month',
 		shiftedCount: { one: '{count} transaction currently moved', other: '{count} transactions currently moved' },
 		window: 'End-of-month window',
@@ -347,8 +359,9 @@ const en: Messages = {
 		payerPlaceholder: 'e.g. Employer Ltd',
 		addPayer: 'Add payer',
 		autoDetect: 'Detect automatically',
-		autoDetectHint: 'For transactions without a category: booking text “Gehalt/Rente” (salary/pension) or a payer who transfers a similar amount at the end of other months too.',
-		perTransaction: 'Set individual transactions in the transaction list via the calendar icon.',
+		autoDetectHint:
+			'For transactions without a category: booking text “Gehalt/Rente” (salary/pension) or a payer who transfers a similar amount at the end of other months too.',
+		perTransaction: 'Set individual transactions in the transaction list via the calendar icon.'
 	},
 	ai: {
 		trained: 'AI retrained and open transactions recategorized.',
@@ -356,7 +369,8 @@ const en: Messages = {
 		recategorized: '{assigned} categorized, {suggested} suggestions.',
 		title: 'AI categorization',
 		disabled: 'Switched off',
-		intro: 'Runs entirely on your server. Every category you change or confirm with the tick is a training example. From {threshold} confidence the AI assigns the category itself; below that it makes a suggestion.',
+		intro:
+			'Runs entirely on your server. Every category you change or confirm with the tick is a training example. From {threshold} confidence the AI assigns the category itself; below that it makes a suggestion.',
 		learnedFrom: 'Learned from',
 		ownTransactions: 'of your transactions',
 		manualShare: ', {count} of them by hand',
@@ -374,16 +388,16 @@ const en: Messages = {
 		llmReady: '{model} is ready.',
 		llmRunning: 'Working: {done} of {total} transactions categorized …',
 		train: 'Retrain now',
-		recategorize: 'Recategorize open transactions',
+		recategorize: 'Recategorize open transactions'
 	},
 	errors: {
 		validation: {
 			missing: 'Required field missing: {field}',
 			tooShort: '{field}: at least {min} characters',
 			tooLong: '{field}: at most {max} characters',
-			pattern: '{field}: invalid characters',
+			pattern: '{field}: invalid characters'
 		},
-		http: 'Error {status}',
+		http: 'Error {status}'
 	},
 	ui: {
 		date: {
@@ -392,7 +406,7 @@ const en: Messages = {
 			prevMonth: 'Previous month',
 			nextMonth: 'Next month',
 			today: 'Today',
-			clear: 'Clear',
+			clear: 'Clear'
 		},
 		month: {
 			label: 'Month',
@@ -400,23 +414,23 @@ const en: Messages = {
 			all: 'All months',
 			prevYear: 'Previous year',
 			nextYear: 'Next year',
-			thisMonth: 'This month',
+			thisMonth: 'This month'
 		},
 		number: {
 			less: 'Decrease',
-			more: 'Increase',
+			more: 'Increase'
 		},
 		password: {
 			show: 'Show password',
-			hide: 'Hide password',
+			hide: 'Hide password'
 		},
 		select: {
 			placeholder: 'Please choose',
 			search: 'Search',
 			searchPlaceholder: 'Search …',
-			noResults: 'No matches',
-		},
-	},
+			noResults: 'No matches'
+		}
+	}
 };
 
 export default en;

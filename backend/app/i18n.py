@@ -34,7 +34,10 @@ MESSAGES: dict[str, dict[str, str]] = {
     # Accounts
     "accounts.not_found": {"de": "Konto nicht gefunden", "en": "Account not found"},
     "accounts.unknown_user": {"de": "Unbekannter Nutzer", "en": "Unknown user"},
-    "accounts.iban_exists": {"de": "Ein Konto mit dieser IBAN gibt es schon", "en": "An account with this IBAN already exists"},
+    "accounts.iban_exists": {
+        "de": "Ein Konto mit dieser IBAN gibt es schon",
+        "en": "An account with this IBAN already exists",
+    },
     "accounts.default_name": {"de": "Konto {suffix}", "en": "Account {suffix}"},
     # Categories
     "categories.not_found": {"de": "Kategorie nicht gefunden", "en": "Category not found"},
@@ -51,7 +54,10 @@ MESSAGES: dict[str, dict[str, str]] = {
     "categories.none": {"de": "Ohne Kategorie", "en": "Uncategorized"},
     # Rules and transactions
     "rules.not_found": {"de": "Regel nicht gefunden", "en": "Rule not found"},
-    "rules.invalid_regex": {"de": "Ungültiger regulärer Ausdruck: {error}", "en": "Invalid regular expression: {error}"},
+    "rules.invalid_regex": {
+        "de": "Ungültiger regulärer Ausdruck: {error}",
+        "en": "Invalid regular expression: {error}",
+    },
     "transactions.not_found": {"de": "Buchung nicht gefunden", "en": "Transaction not found"},
     "transactions.bad_month": {"de": "Monat im Format JJJJ-MM angeben", "en": "Give the month as YYYY-MM"},
     "transactions.no_payee_for_rule": {

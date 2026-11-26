@@ -11,9 +11,7 @@ def upload(client, data: bytes, **form):
 
 def test_setup_only_once(admin):
     assert admin.get("/api/auth/setup").json() == {"needs_setup": False}
-    r = admin.post(
-        "/api/auth/setup", json={"username": "zwei", "display_name": "Zwei", "password": "geheim123"}
-    )
+    r = admin.post("/api/auth/setup", json={"username": "zwei", "display_name": "Zwei", "password": "geheim123"})
     assert r.status_code == 409
 
 
@@ -156,14 +154,18 @@ def test_overview(admin, sample_csv, no_ai):
 def test_private_account_hidden_from_other_user(admin, sample_csv):
     upload(admin, sample_csv)
     acc = admin.get("/api/accounts").json()[0]
-    assert admin.post(
-        "/api/users", json={"username": "anna", "display_name": "Anna", "password": "geheim456"}
-    ).status_code == 201
+    assert (
+        admin.post("/api/users", json={"username": "anna", "display_name": "Anna", "password": "geheim456"}).status_code
+        == 201
+    )
 
     anna = TestClient(app)
     anna.post("/api/auth/login", json={"username": "anna", "password": "geheim456"})
     assert len(anna.get("/api/accounts").json()) == 1
-    assert anna.post("/api/users", json={"username": "x1", "display_name": "X", "password": "geheim789"}).status_code == 403
+    assert (
+        anna.post("/api/users", json={"username": "x1", "display_name": "X", "password": "geheim789"}).status_code
+        == 403
+    )
 
     admin.patch(f"/api/accounts/{acc['id']}", json={"shared": False})
     assert anna.get("/api/accounts").json() == []

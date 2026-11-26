@@ -51,7 +51,7 @@ function writeStored(value: Locale | null) {
 
 /** First supported language from the browser settings, German otherwise. */
 export function browserLocale(): Locale {
-	const langs = typeof navigator === 'undefined' ? [] : navigator.languages ?? [navigator.language];
+	const langs = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
 	for (const lang of langs) {
 		const base = lang.toLowerCase().split('-')[0];
 		if (isLocale(base)) return base;
@@ -92,7 +92,7 @@ export function setLocale(locale: Locale) {
  */
 export function intlLocale(): string {
 	if (current === 'de') return 'de-DE';
-	const langs = typeof navigator === 'undefined' ? [] : navigator.languages ?? [navigator.language];
+	const langs = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
 	return langs.find((l) => /^en-[a-z]{2}$/i.test(l)) ?? 'en-GB';
 }
 
@@ -102,9 +102,7 @@ function lookup(catalog: Messages, key: string): string | Plural | undefined {
 		if (node === null || typeof node !== 'object') return undefined;
 		node = (node as Record<string, unknown>)[part];
 	}
-	return typeof node === 'string' || (node && typeof node === 'object' && 'other' in node)
-		? (node as string | Plural)
-		: undefined;
+	return typeof node === 'string' || (node && typeof node === 'object' && 'other' in node) ? (node as string | Plural) : undefined;
 }
 
 const pluralRules = new Map<string, Intl.PluralRules>();
@@ -124,9 +122,7 @@ export function t(key: MessageKey, params: Params = {}): string {
 	if (typeof msg !== 'string') {
 		const count = Number(params.count ?? 0);
 		const form =
-			count === 0 && msg.zero !== undefined
-				? 'zero'
-				: cached(pluralRules, locale, () => new Intl.PluralRules(locale)).select(count);
+			count === 0 && msg.zero !== undefined ? 'zero' : cached(pluralRules, locale, () => new Intl.PluralRules(locale)).select(count);
 		msg = (form === 'zero' ? msg.zero : form === 'one' ? msg.one : msg.other) ?? msg.other;
 	}
 	const nf = cached(numberFormats, intlLocale(), () => new Intl.NumberFormat(intlLocale()));

@@ -6,6 +6,8 @@
 
 <p align="center">
   <a href="https://github.com/Jeansy91/budgie/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Jeansy91/budgie/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/Jeansy91/budgie/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/Jeansy91/budgie/actions/workflows/codeql.yml/badge.svg"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/Jeansy91/budgie"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/Jeansy91/budgie/badge"></a>
   <a href="https://github.com/Jeansy91/budgie/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Jeansy91/budgie?sort=semver"></a>
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green.svg"></a>
   <a href="https://github.com/Jeansy91/budgie/pkgs/container/budgie-api"><img alt="Docker images on GHCR" src="https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker&logoColor=white"></a>

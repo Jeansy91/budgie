@@ -5,8 +5,8 @@ from sqlalchemy import delete, func, select
 
 from ..config import get_settings
 from ..deps import DB, SESSION_COOKIE, CurrentUser
-from ..models import Household, User, UserSession
 from ..i18n import http_error
+from ..models import Household, User, UserSession
 from ..schemas import LoginIn, MeOut, MePatch, PasswordIn, SetupIn, SetupStatus
 from ..security import hash_password, hash_token, new_session_token, verify_password
 from ..seed import seed_categories
@@ -56,7 +56,7 @@ def setup(data: SetupIn, db: DB, response: Response):
     """Initial setup: creates the household, the first user (admin) and the default categories."""
     # The lock prevents two concurrent calls from creating two households
     db.execute(select(func.pg_advisory_xact_lock(4711)))
-    if db.scalar(select(func.count(User.id))) > 0:
+    if (db.scalar(select(func.count(User.id))) or 0) > 0:
         raise http_error(status.HTTP_409_CONFLICT, "auth.already_set_up")
     household = Household(name=data.household_name)
     db.add(household)

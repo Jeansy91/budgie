@@ -12,15 +12,15 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     Date,
     DateTime,
     Enum,
-    ForeignKey,
     Float,
+    ForeignKey,
     Integer,
-    JSON,
     LargeBinary,
     Numeric,
     String,

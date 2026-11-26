@@ -70,10 +70,10 @@
 	loadAi();
 	onDestroy(() => clearTimeout(poll));
 
-	async function aiAction(path: string, ok: (r: any) => string) {
+	async function aiAction<R = unknown>(path: string, ok: (r: R) => string) {
 		aiBusy = true;
 		try {
-			const r = await api(path, { method: 'POST', body: path.endsWith('recategorize') ? { use_llm: true } : undefined });
+			const r = await api<R>(path, { method: 'POST', body: path.endsWith('recategorize') ? { use_llm: true } : undefined });
 			notice = ok(r);
 			error = '';
 		} catch (e) {
@@ -92,7 +92,10 @@
 		);
 
 	const saveAccount = (a: Account) =>
-		run(() => api(`/accounts/${a.id}`, { method: 'PATCH', body: { name: a.name, shared: a.shared, member_ids: a.member_ids } }), t('settings.accountSaved'));
+		run(
+			() => api(`/accounts/${a.id}`, { method: 'PATCH', body: { name: a.name, shared: a.shared, member_ids: a.member_ids } }),
+			t('settings.accountSaved')
+		);
 	const deleteAccount = (a: Account) => {
 		if (confirm(t('settings.confirmDeleteAccount', { name: a.name, count: a.transaction_count })))
 			run(() => api(`/accounts/${a.id}`, { method: 'DELETE' }), t('settings.accountDeleted'));
@@ -141,7 +144,9 @@
 		<div class="account">
 			<div class="row">
 				<label>{t('common.name')} <input bind:value={a.name} /></label>
-				<span class="small muted">{a.iban ? iban(a.iban) : t('import.noIban')} · {t('transactions.count', { count: a.transaction_count })}</span>
+				<span class="small muted">
+					{a.iban ? iban(a.iban) : t('import.noIban')} · {t('transactions.count', { count: a.transaction_count })}
+				</span>
 			</div>
 			<Switch bind:checked={a.shared}>{t('settings.shared')}</Switch>
 			{#if !a.shared}
@@ -179,7 +184,9 @@
 				<div>
 					<span class="label">{t('ai.learnedFrom')}</span>
 					<strong>{ai.model ? ai.model.samples : 0}</strong>
-					<span class="small muted">{t('ai.ownTransactions')}{#if ai.model}{t('ai.manualShare', { count: ai.model.corrections })}{/if}</span>
+					<span class="small muted">
+						{t('ai.ownTransactions')}{#if ai.model}{t('ai.manualShare', { count: ai.model.corrections })}{/if}
+					</span>
 				</div>
 				<div>
 					<span class="label">{t('ai.accuracy')}</span>
@@ -202,7 +209,8 @@
 			</p>
 
 			<div class="llm">
-				<span class="dot" class:on={ai.llm.configured && ai.llm.model_available} class:off={ai.llm.configured && !ai.llm.model_available}></span>
+				<span class="dot" class:on={ai.llm.configured && ai.llm.model_available} class:off={ai.llm.configured && !ai.llm.model_available}
+				></span>
 				<div>
 					<strong>{t('ai.llmTitle')}</strong>
 					{#if !ai.llm.configured}
@@ -235,17 +243,19 @@
 			{#each users as u (u.id)}
 				<tr>
 					<td>
-						<span class="user"
-							><span class="av">{initials(u.display_name)}</span>
-							<span class="who"
-								><strong class="truncate" title={u.display_name}>{u.display_name}</strong>
-								<span class="muted small truncate" title="@{u.username}">@{u.username}</span></span
-							>
-							{#if u.is_admin}<span class="badge accent">Admin</span>{/if}</span
-						>
+						<span class="user">
+							<span class="av">{initials(u.display_name)}</span>
+							<span class="who">
+								<strong class="truncate" title={u.display_name}>{u.display_name}</strong>
+								<span class="muted small truncate" title="@{u.username}">@{u.username}</span>
+							</span>
+							{#if u.is_admin}<span class="badge accent">Admin</span>{/if}
+						</span>
 					</td>
 					<td class="amount">
-						{#if data.me?.is_admin && u.id !== data.me.id}<button class="link small" onclick={() => deleteUser(u)}>{t('settings.deleteUser')}</button>{/if}
+						{#if data.me?.is_admin && u.id !== data.me.id}<button class="link small" onclick={() => deleteUser(u)}>
+								{t('settings.deleteUser')}
+							</button>{/if}
 					</td>
 				</tr>
 			{/each}
@@ -265,8 +275,14 @@
 <section class="card">
 	<h2>{t('settings.changePassword')}</h2>
 	<form class="row" onsubmit={changePassword}>
-		<label>{t('settings.currentPassword')} <PasswordInput bind:value={pw.current_password} required autocomplete="current-password" /></label>
-		<label>{t('settings.newPassword')} <PasswordInput bind:value={pw.new_password} minlength={8} required autocomplete="new-password" /></label>
+		<label>
+			{t('settings.currentPassword')}
+			<PasswordInput bind:value={pw.current_password} required autocomplete="current-password" />
+		</label>
+		<label>
+			{t('settings.newPassword')}
+			<PasswordInput bind:value={pw.new_password} minlength={8} required autocomplete="new-password" />
+		</label>
 		<button>{t('settings.change')}</button>
 	</form>
 </section>

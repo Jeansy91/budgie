@@ -20,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.fints.directory import BUNDLED, Bank, _dedupe, parse_institute_csv  # noqa: E402
+from app.fints.directory import BUNDLED, Bank, _dedupe, parse_institute_csv
 
 
 def load(path: Path) -> list[Bank]:

@@ -6,7 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- CI runs linters (ruff, mypy, prettier, eslint) and tests with coverage reports, and scans the container images with Trivy on every pull request and push.
+- CodeQL, dependency review and OpenSSF Scorecard workflows, a CODEOWNERS file and pre-commit hooks.
+- CI, CodeQL and OpenSSF Scorecard badges in the README and a "Security tooling" section in the security policy.
+
 ### Changed
+
+- All GitHub Actions are pinned to commit SHAs, and workflows run with least-privilege permissions.
+- Contributing guide and pull request template list the new lint and test commands.
 
 - Dependabot now keeps GitHub Actions, Python and npm dependencies and Docker base images up to date.
 - CI uses the latest major versions of all GitHub Actions.
