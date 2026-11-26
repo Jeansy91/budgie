@@ -28,7 +28,7 @@ const de = {
 		create: 'Anlegen',
 		optional: 'optional',
 		save: 'Speichern',
-		saving: 'Speichert …',
+		saving: 'Speichert …'
 	},
 	nav: {
 		transactions: 'Buchungen',
@@ -37,7 +37,7 @@ const de = {
 		overview: 'Übersicht',
 		import: 'Import',
 		settings: 'Einstellungen',
-		logout: 'Abmelden',
+		logout: 'Abmelden'
 	},
 	auth: {
 		username: 'Nutzername',
@@ -47,11 +47,12 @@ const de = {
 		login: 'Anmelden',
 		defaultHousehold: 'Unser Haushalt',
 		welcome: 'Willkommen bei Budgie',
-		setupIntro: 'Lege deinen Haushalt und das erste Konto an. Die Startkategorien werden automatisch eingerichtet. Weitere Nutzer kannst du danach in den Einstellungen anlegen.',
+		setupIntro:
+			'Lege deinen Haushalt und das erste Konto an. Die Startkategorien werden automatisch eingerichtet. Weitere Nutzer kannst du danach in den Einstellungen anlegen.',
 		householdName: 'Name des Haushalts',
 		yourName: 'Dein Name',
 		passwordMin: 'Passwort (mindestens 8 Zeichen)',
-		setup: 'Einrichten',
+		setup: 'Einrichten'
 	},
 	overview: {
 		eyebrow: 'Monatsübersicht',
@@ -72,13 +73,16 @@ const de = {
 		total: 'Gesamt',
 		noIncome: 'Keine Einnahmen in diesem Monat.',
 		transfers: 'Umbuchungen zwischen eigenen Konten: {amount} (nicht mitgezählt)',
-		history: 'Verlauf der letzten 12 Monate',
+		history: 'Verlauf der letzten 12 Monate'
 	},
 	transactions: {
 		allAccounts: 'Alle Konten',
 		allCategories: 'Alle Kategorien',
 		allOfMain: 'alle',
-		ruleCreated: { one: 'Regel für „{payee}“ angelegt, {count} weitere Buchung zugeordnet.', other: 'Regel für „{payee}“ angelegt, {count} weitere Buchungen zugeordnet.' },
+		ruleCreated: {
+			one: 'Regel für „{payee}“ angelegt, {count} weitere Buchung zugeordnet.',
+			other: 'Regel für „{payee}“ angelegt, {count} weitere Buchungen zugeordnet.'
+		},
 		count: { one: '{count} Buchung', other: '{count} Buchungen' },
 		searchPlaceholder: 'Empfänger oder Verwendungszweck suchen',
 		onlyUncategorized: 'Nur ohne Kategorie',
@@ -93,7 +97,7 @@ const de = {
 		accept: 'Übernehmen',
 		confirmTitle: 'Passt – Zuordnung bestätigen. Die KI lernt daraus.',
 		confirm: 'Zuordnung bestätigen',
-		loadMore: 'Weitere laden',
+		loadMore: 'Weitere laden'
 	},
 	detail: {
 		bookingMonthNote: 'Buchungsmonat',
@@ -137,7 +141,7 @@ const de = {
 		matchesThis: 'Passt auf diese Buchung',
 		notMatchesThis: 'Passt nicht auf diese Buchung',
 		applyNow: 'Gleich auf passende Buchungen anwenden',
-		manualNeverOverwritten: 'Manuell zugeordnete Buchungen werden nie überschrieben.',
+		manualNeverOverwritten: 'Manuell zugeordnete Buchungen werden nie überschrieben.'
 	},
 	source: {
 		ai: 'KI',
@@ -146,7 +150,7 @@ const de = {
 		llm: 'KI',
 		model: 'KI',
 		modelTitle: 'Von der KI zugeordnet, {confidence} sicher',
-		llmTitle: 'Vom lokalen Sprachmodell zugeordnet',
+		llmTitle: 'Vom lokalen Sprachmodell zugeordnet'
 	},
 	budgetMenu: {
 		auto: 'Automatisch',
@@ -157,12 +161,12 @@ const de = {
 		countsForShort: 'zählt für {month}',
 		set: 'Budgetmonat festlegen',
 		title: 'Zählt im Monat',
-		now: 'jetzt {month}',
+		now: 'jetzt {month}'
 	},
 	categorySelect: {
 		search: 'Kategorie suchen …',
 		choose: 'Kategorie wählen',
-		none: '– ohne Kategorie –',
+		none: '– ohne Kategorie –'
 	},
 	import: {
 		new: 'neu',
@@ -184,7 +188,7 @@ const de = {
 		noIban: 'ohne IBAN',
 		confirmDeleteProfile: 'Vorlage „{name}“ löschen?',
 		profiles: 'Eigene CSV-Vorlagen',
-		deleteProfile: 'Vorlage {name} löschen',
+		deleteProfile: 'Vorlage {name} löschen'
 	},
 	bank: {
 		confirmRemove: 'Zugang „{name}“ entfernen? Konten und Buchungen bleiben erhalten.',
@@ -232,14 +236,15 @@ const de = {
 		advanced: 'Erweitert',
 		serverUrl: 'FinTS-Adresse',
 		customerId: 'Kunden-ID',
-		noServerUrl: 'Für diese Bank kennt Budgie keine FinTS-Adresse. Du findest sie meist in der Hilfe deiner Bank unter „FinTS“ oder „HBCI PIN/TAN“.',
+		noServerUrl:
+			'Für diese Bank kennt Budgie keine FinTS-Adresse. Du findest sie meist in der Hilfe deiner Bank unter „FinTS“ oder „HBCI PIN/TAN“.',
 		encryptedHint: 'Der Anmeldename wird verschlüsselt gespeichert, die PIN nie.',
 		bankCode: 'BLZ',
 		changeBank: 'Ändern',
 		searchPlaceholder: 'Bank, Ort, BLZ oder BIC',
 		search: 'Bank suchen',
 		noServerUrlShort: 'keine FinTS-Adresse bekannt',
-		notFound: 'Keine Bank gefunden. Tipp: Die Bankleitzahl steht in deiner IBAN an Stelle 5 bis 12.',
+		notFound: 'Keine Bank gefunden. Tipp: Die Bankleitzahl steht in deiner IBAN an Stelle 5 bis 12.'
 	},
 	csv: {
 		notPresent: '– nicht vorhanden –',
@@ -265,36 +270,37 @@ const de = {
 			credit: 'Haben / Eingang',
 			balance: 'Saldo danach',
 			counterparty_iban: 'IBAN Gegenkonto',
-			currency: 'Währung',
-		},
+			currency: 'Währung'
+		}
 	},
 	categories: {
 		kind: {
 			expense: 'Ausgabe',
 			income: 'Einnahme',
-			transfer: 'Umbuchung',
+			transfer: 'Umbuchung'
 		},
 		newName: 'Neuer Name',
-		confirmDeleteMain: '„{name}“ mit allen Unterkategorien löschen? Zugeordnete Buchungen werden wieder unkategorisiert, passende Regeln gelöscht.',
+		confirmDeleteMain:
+			'„{name}“ mit allen Unterkategorien löschen? Zugeordnete Buchungen werden wieder unkategorisiert, passende Regeln gelöscht.',
 		confirmDelete: '„{name}“ löschen? Zugeordnete Buchungen werden wieder unkategorisiert, passende Regeln gelöscht.',
 		eyebrow: 'Haushalt',
 		intro: 'Buchungen werden immer einer Unterkategorie zugeordnet. Die Art legt fest, ob sie als Ausgabe, Einnahme oder Umbuchung zählt.',
 		kindLabel: 'Art',
 		rename: 'Umbenennen',
 		newSub: 'Neue Unterkategorie',
-		newMain: 'Neue Hauptkategorie',
+		newMain: 'Neue Hauptkategorie'
 	},
 	rules: {
 		field: {
 			payee: 'Empfänger',
 			purpose: 'Verwendungszweck',
-			any: 'Empfänger oder Zweck',
+			any: 'Empfänger oder Zweck'
 		},
 		match: {
 			contains: 'enthält',
 			equals: 'ist genau',
 			starts_with: 'beginnt mit',
-			regex: 'passt zu Regex',
+			regex: 'passt zu Regex'
 		},
 		created: { one: 'Regel angelegt, {count} Buchung zugeordnet.', other: 'Regel angelegt, {count} Buchungen zugeordnet.' },
 		fieldLabel: 'Feld',
@@ -317,14 +323,17 @@ const de = {
 		active: 'Aktiv',
 		inactive: 'Inaktiv',
 		activeLabel: 'Regel aktiv',
-		empty: 'Noch keine Regeln. Lege eine an oder ordne unter „Buchungen“ zu und setze dort den Haken für Regeln.',
+		empty: 'Noch keine Regeln. Lege eine an oder ordne unter „Buchungen“ zu und setze dort den Haken für Regeln.'
 	},
 	settings: {
 		languageAuto: 'Automatisch',
 		language: 'Sprache',
 		languageHint: '„Automatisch“ folgt der Sprache deines Browsers (derzeit {browser}). Die Auswahl gilt für dein Konto auf allen Geräten.',
 		accountSaved: 'Konto gespeichert.',
-		confirmDeleteAccount: { one: 'Konto „{name}“ mit {count} Buchung löschen?', other: 'Konto „{name}“ mit allen {count} Buchungen löschen?' },
+		confirmDeleteAccount: {
+			one: 'Konto „{name}“ mit {count} Buchung löschen?',
+			other: 'Konto „{name}“ mit allen {count} Buchungen löschen?'
+		},
 		accountDeleted: 'Konto gelöscht.',
 		userCreated: 'Nutzer angelegt.',
 		confirmDeleteUser: 'Nutzer „{name}“ löschen?',
@@ -340,11 +349,15 @@ const de = {
 		changePassword: 'Passwort ändern',
 		currentPassword: 'Aktuelles Passwort',
 		newPassword: 'Neues Passwort',
-		change: 'Ändern',
+		change: 'Ändern'
 	},
 	budget: {
-		saved: { one: 'Gespeichert. {count} Buchung zählt jetzt für den Folgemonat.', other: 'Gespeichert. {count} Buchungen zählen jetzt für den Folgemonat.' },
-		intro: 'Das Gehalt kommt zum Monatsende, gelebt wird davon im Folgemonat. Gehaltseingänge aus den letzten Tagen eines Monats zählen deshalb in Übersicht und Monatssummen für den nächsten Monat. Der Buchungstag bleibt erhalten.',
+		saved: {
+			one: 'Gespeichert. {count} Buchung zählt jetzt für den Folgemonat.',
+			other: 'Gespeichert. {count} Buchungen zählen jetzt für den Folgemonat.'
+		},
+		intro:
+			'Das Gehalt kommt zum Monatsende, gelebt wird davon im Folgemonat. Gehaltseingänge aus den letzten Tagen eines Monats zählen deshalb in Übersicht und Monatssummen für den nächsten Monat. Der Buchungstag bleibt erhalten.',
 		shift: 'Gehalt dem Folgemonat zuordnen',
 		shiftedCount: { one: '{count} Buchung derzeit verschoben', other: '{count} Buchungen derzeit verschoben' },
 		window: 'Zeitraum zum Monatsende',
@@ -360,8 +373,9 @@ const de = {
 		payerPlaceholder: 'z. B. Arbeitgeber AG',
 		addPayer: 'Auftraggeber hinzufügen',
 		autoDetect: 'Automatisch erkennen',
-		autoDetectHint: 'Für Buchungen ohne Kategorie: Buchungstext „Gehalt/Rente“ oder ein Auftraggeber, der auch in anderen Monaten zum Monatsende einen ähnlichen Betrag überweist.',
-		perTransaction: 'Einzelne Buchungen legst du in der Buchungsliste über das Kalender-Symbol fest.',
+		autoDetectHint:
+			'Für Buchungen ohne Kategorie: Buchungstext „Gehalt/Rente“ oder ein Auftraggeber, der auch in anderen Monaten zum Monatsende einen ähnlichen Betrag überweist.',
+		perTransaction: 'Einzelne Buchungen legst du in der Buchungsliste über das Kalender-Symbol fest.'
 	},
 	ai: {
 		trained: 'KI neu trainiert und offene Buchungen neu eingeordnet.',
@@ -369,7 +383,8 @@ const de = {
 		recategorized: '{assigned} zugeordnet, {suggested} Vorschläge.',
 		title: 'KI-Kategorisierung',
 		disabled: 'Ausgeschaltet',
-		intro: 'Läuft komplett auf deinem Server. Jede Zuordnung, die du änderst oder mit dem Haken bestätigst, ist ein Lernbeispiel. Ab {threshold} Sicherheit ordnet die KI selbst zu, darunter macht sie einen Vorschlag.',
+		intro:
+			'Läuft komplett auf deinem Server. Jede Zuordnung, die du änderst oder mit dem Haken bestätigst, ist ein Lernbeispiel. Ab {threshold} Sicherheit ordnet die KI selbst zu, darunter macht sie einen Vorschlag.',
 		learnedFrom: 'Gelernt aus',
 		ownTransactions: 'eigenen Buchungen',
 		manualShare: ', davon {count} von Hand',
@@ -387,16 +402,16 @@ const de = {
 		llmReady: '{model} ist bereit.',
 		llmRunning: 'Arbeitet gerade: {done} von {total} Buchungen eingeordnet …',
 		train: 'Jetzt neu trainieren',
-		recategorize: 'Offene Buchungen neu einordnen',
+		recategorize: 'Offene Buchungen neu einordnen'
 	},
 	errors: {
 		validation: {
 			missing: 'Pflichtfeld fehlt: {field}',
 			tooShort: '{field}: mindestens {min} Zeichen',
 			tooLong: '{field}: höchstens {max} Zeichen',
-			pattern: '{field}: ungültige Zeichen',
+			pattern: '{field}: ungültige Zeichen'
 		},
-		http: 'Fehler {status}',
+		http: 'Fehler {status}'
 	},
 	ui: {
 		date: {
@@ -405,7 +420,7 @@ const de = {
 			prevMonth: 'Vormonat',
 			nextMonth: 'Nächster Monat',
 			today: 'Heute',
-			clear: 'Leeren',
+			clear: 'Leeren'
 		},
 		month: {
 			label: 'Monat',
@@ -413,23 +428,23 @@ const de = {
 			all: 'Alle Monate',
 			prevYear: 'Vorjahr',
 			nextYear: 'Nächstes Jahr',
-			thisMonth: 'Dieser Monat',
+			thisMonth: 'Dieser Monat'
 		},
 		number: {
 			less: 'Weniger',
-			more: 'Mehr',
+			more: 'Mehr'
 		},
 		password: {
 			show: 'Passwort anzeigen',
-			hide: 'Passwort verbergen',
+			hide: 'Passwort verbergen'
 		},
 		select: {
 			placeholder: 'Bitte wählen',
 			search: 'Suchen',
 			searchPlaceholder: 'Suchen …',
-			noResults: 'Nichts gefunden',
-		},
-	},
+			noResults: 'Nichts gefunden'
+		}
+	}
 };
 
 export type Messages = Widen<typeof de>;

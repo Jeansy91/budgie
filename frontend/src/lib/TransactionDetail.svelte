@@ -134,8 +134,7 @@
 	let matchOptions = $derived<SelectOption<Rule['match_type']>[]>(
 		(['contains', 'equals', 'starts_with', 'regex'] as const).map((value) => ({ value, label: matchLabel(value) }))
 	);
-	const defaultPattern = (field: Rule['field']) =>
-		!tx ? '' : field === 'purpose' ? tx.purpose : tx.payee || tx.purpose;
+	const defaultPattern = (field: Rule['field']) => (!tx ? '' : field === 'purpose' ? tx.purpose : tx.payee || tx.purpose);
 
 	function openRule() {
 		if (!tx) return;
@@ -191,9 +190,7 @@
 				params: { apply: apply ? undefined : 'false' }
 			});
 			ruleOpen = false;
-			notice = apply
-				? t('rules.created', { count: created.match_count })
-				: t('detail.ruleCreatedLater');
+			notice = apply ? t('rules.created', { count: created.match_count }) : t('detail.ruleCreatedLater');
 			error = '';
 			await load();
 			if (tx) onchange?.(tx);
@@ -207,15 +204,9 @@
 	const iban = (v: string) => v.replace(/(.{4})/g, '$1 ').trim();
 	let longDay = $derived(dateFormat({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
 	let counterpartLabel = $derived(tx && Number(tx.amount) > 0 ? t('detail.payer') : t('detail.payee'));
-	let hasSepa = $derived(
-		!!tx && !!(tx.counterparty_iban || tx.counterparty_bic || tx.mandate_id || tx.creditor_id || tx.end_to_end_ref)
-	);
+	let hasSepa = $derived(!!tx && !!(tx.counterparty_iban || tx.counterparty_bic || tx.mandate_id || tx.creditor_id || tx.end_to_end_ref));
 	let sourceName = $derived(
-		!tx?.import_batch
-			? t('detail.sourceUnknown')
-			: tx.import_batch.source === 'fints'
-				? t('detail.sourceFints')
-				: t('detail.sourceCsv')
+		!tx?.import_batch ? t('detail.sourceUnknown') : tx.import_batch.source === 'fints' ? t('detail.sourceFints') : t('detail.sourceCsv')
 	);
 </script>
 
@@ -223,14 +214,7 @@
 
 <div class="tx-layer">
 	<button class="backdrop" type="button" tabindex="-1" aria-label={t('detail.closeDetails')} onclick={onclose}></button>
-	<div
-		class="panel"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="tx-detail-title"
-		tabindex="-1"
-		bind:this={panel}
-	>
+	<div class="panel" role="dialog" aria-modal="true" aria-labelledby="tx-detail-title" tabindex="-1" bind:this={panel}>
 		<div class="grip" aria-hidden="true"></div>
 		<header>
 			{#if tx}
@@ -277,7 +261,9 @@
 								{t('detail.byRule')}
 								{#if tx.rule}
 									<span class="rule-text">
-										{fieldLabel(tx.rule.field)} {matchLabel(tx.rule.match_type)} {t('common.quoted', { text: tx.rule.pattern })}
+										{fieldLabel(tx.rule.field)}
+										{matchLabel(tx.rule.match_type)}
+										{t('common.quoted', { text: tx.rule.pattern })}
 									</span>
 								{/if}
 								<a href="/rules">{t('detail.manageRules')}</a>
@@ -302,16 +288,13 @@
 						{/if}
 						{#if isAi}
 							<button class="confirm" type="button" onclick={() => patch({ category_id: tx!.category_id })}>
-								<Check size={15} /> {t('detail.looksRight')}
+								<Check size={15} />
+								{t('detail.looksRight')}
 							</button>
 						{/if}
 					</div>
 					{#if tx.category_id === null && tx.suggested_category_id !== null}
-						<button
-							class="suggest"
-							type="button"
-							onclick={() => patch({ category_id: tx!.suggested_category_id })}
-						>
+						<button class="suggest" type="button" onclick={() => patch({ category_id: tx!.suggested_category_id })}>
 							<WandSparkles size={14} />
 							<span class="txt">{t('transactions.suggestion')} <strong>{labels.get(tx.suggested_category_id)}</strong></span>
 							<span class="conf">{pct(tx.suggestion_confidence)}</span>
@@ -416,20 +399,15 @@
 				<!-- Note -->
 				<section>
 					<h3><label for="tx-note">{t('detail.note')}</label></h3>
-					<textarea
-						id="tx-note"
-						rows="2"
-						placeholder={t('detail.notePlaceholder')}
-						bind:value={note}
-						onblur={saveNote}
-					></textarea>
+					<textarea id="tx-note" rows="2" placeholder={t('detail.notePlaceholder')} bind:value={note} onblur={saveNote}></textarea>
 				</section>
 
 				<!-- Rule -->
 				<section>
 					{#if !ruleOpen}
 						<button class="secondary wide" type="button" onclick={openRule}>
-							<Plus size={17} /> {t('detail.createRule')}
+							<Plus size={17} />
+							{t('detail.createRule')}
 						</button>
 					{:else}
 						<h3>{t('detail.newRule')}</h3>
@@ -437,12 +415,7 @@
 							<div class="rule-row">
 								<div class="field">
 									{t('rules.fieldLabel')}
-									<Select
-										options={fieldOptions}
-										bind:value={rule.field}
-										label={t('rules.fieldLabel')}
-										onchange={changeField}
-									/>
+									<Select options={fieldOptions} bind:value={rule.field} label={t('rules.fieldLabel')} onchange={changeField} />
 								</div>
 								<div class="field">
 									{t('rules.condition')}
@@ -454,7 +427,8 @@
 								<input bind:value={rule.pattern} required maxlength="255" placeholder={t('rules.textPlaceholder')} />
 							</label>
 							<span class="match" class:no={!ruleMatchesThis}>
-								{#if ruleMatchesThis}<Check size={14} /> {t('detail.matchesThis')}{:else}<Info size={14} /> {t('detail.notMatchesThis')}{/if}
+								{#if ruleMatchesThis}<Check size={14} /> {t('detail.matchesThis')}{:else}<Info size={14} />
+									{t('detail.notMatchesThis')}{/if}
 							</span>
 							<div class="field">
 								{t('common.category')}

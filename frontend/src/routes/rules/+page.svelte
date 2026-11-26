@@ -13,6 +13,7 @@
 	let categories = $state<Category[]>([]);
 	let labels = $derived(categoryLabels(categories));
 	let catColor = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, non-reactive value
 		const map = new Map<number, string>();
 		categories.forEach((main, i) => main.children.forEach((sub) => map.set(sub.id, colorFor(i))));
 		return map;
@@ -57,8 +58,7 @@
 	};
 	const toggle = (r: Rule) => run(() => api(`/rules/${r.id}`, { method: 'PATCH', body: { active: !r.active } }));
 	const remove = (r: Rule) => {
-		if (confirm(t('rules.confirmDelete', { pattern: r.pattern })))
-			run(() => api(`/rules/${r.id}`, { method: 'DELETE' }));
+		if (confirm(t('rules.confirmDelete', { pattern: r.pattern }))) run(() => api(`/rules/${r.id}`, { method: 'DELETE' }));
 	};
 	const applyAll = (overwrite: boolean) =>
 		run(async () => {
@@ -87,7 +87,10 @@
 	<div class="field">{t('rules.if')} <Select options={fieldOptions} bind:value={draft.field} label={t('rules.fieldLabel')} /></div>
 	<div class="field">&nbsp;<Select options={matchOptions} bind:value={draft.match_type} label={t('rules.condition')} /></div>
 	<label>{t('rules.text')} <input bind:value={draft.pattern} required placeholder={t('rules.textPlaceholder')} /></label>
-	<div class="field">{t('rules.then')} <CategorySelect {categories} bind:value={draft.category_id} empty={t('categorySelect.choose')} /></div>
+	<div class="field">
+		{t('rules.then')}
+		<CategorySelect {categories} bind:value={draft.category_id} empty={t('categorySelect.choose')} />
+	</div>
 	<div class="field">{t('rules.priority')} <NumberInput bind:value={draft.priority} label={t('rules.priority')} class="prio" /></div>
 	<button disabled={!draft.category_id}>{t('rules.create')}</button>
 </form>
@@ -95,22 +98,33 @@
 <div class="card">
 	<table class="rules">
 		<thead>
-			<tr><th>{t('rules.condition')}</th><th>{t('common.category')}</th><th class="amount">{t('rules.prio')}</th><th class="amount">{t('rules.hits')}</th><th></th></tr>
+			<tr>
+				<th>{t('rules.condition')}</th><th>{t('common.category')}</th><th class="amount">{t('rules.prio')}</th><th class="amount">
+					{t('rules.hits')}
+				</th><th></th>
+			</tr>
 		</thead>
 		<tbody>
 			{#each rules as r (r.id)}
 				<tr class:inactive={!r.active}>
 					<td class="cond"><span class="muted">{fieldLabel(r.field)} {matchLabel(r.match_type)}</span> <code>{r.pattern}</code></td>
 					<td class="cat">
-						<span class="catpill" style:--c={catColor.get(r.category_id)} title={labels.get(r.category_id)}
-							><span class="dot" style:background="var(--c)"></span><span class="truncate">{labels.get(r.category_id)}</span></span
-						>
+						<span class="catpill" style:--c={catColor.get(r.category_id)} title={labels.get(r.category_id)}>
+							<span class="dot" style:background="var(--c)"></span><span class="truncate">{labels.get(r.category_id)}</span>
+						</span>
 					</td>
 					<td class="amount" data-label={t('rules.prio')}>{r.priority}</td>
 					<td class="amount" data-label={t('rules.hits')}><span class="badge">{r.match_count}</span></td>
 					<td class="actions">
-						<Switch checked={r.active} onchange={() => toggle(r)} title={r.active ? t('rules.active') : t('rules.inactive')} label={t('rules.activeLabel')} />
-						<button class="ghost icon" onclick={() => remove(r)} title={t('common.delete')} aria-label={t('common.delete')}><Trash2 size={16} /></button>
+						<Switch
+							checked={r.active}
+							onchange={() => toggle(r)}
+							title={r.active ? t('rules.active') : t('rules.inactive')}
+							label={t('rules.activeLabel')}
+						/>
+						<button class="ghost icon" onclick={() => remove(r)} title={t('common.delete')} aria-label={t('common.delete')}>
+							<Trash2 size={16} />
+						</button>
 					</td>
 				</tr>
 			{:else}

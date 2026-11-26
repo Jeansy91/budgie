@@ -24,13 +24,7 @@
 </script>
 
 <label class="check {cls}" class:disabled {title}>
-	<input
-		type="checkbox"
-		class="sr-only"
-		bind:checked
-		{disabled}
-		onchange={(e) => onchange?.(e.currentTarget.checked)}
-	/>
+	<input type="checkbox" class="sr-only" bind:checked {disabled} onchange={(e) => onchange?.(e.currentTarget.checked)} />
 	<span class="box" aria-hidden="true"><Check size={14} strokeWidth={3} /></span>
 	{#if children}<span class="text">{@render children()}</span>{/if}
 </label>

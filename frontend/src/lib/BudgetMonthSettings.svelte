@@ -93,9 +93,23 @@
 					<span class="muted small">{t('budget.windowHint', { count: s.salary_shift_days })}</span>
 				</div>
 				<div class="stepper">
-					<button type="button" aria-label={t('budget.fewerDays')} onclick={() => setDays(s!.salary_shift_days - 1)} disabled={s.salary_shift_days <= 1}><Minus size={15} /></button>
+					<button
+						type="button"
+						aria-label={t('budget.fewerDays')}
+						onclick={() => setDays(s!.salary_shift_days - 1)}
+						disabled={s.salary_shift_days <= 1}
+					>
+						<Minus size={15} />
+					</button>
 					<span class="val"><strong>{s.salary_shift_days}</strong> {t('budget.days', { count: s.salary_shift_days })}</span>
-					<button type="button" aria-label={t('budget.moreDays')} onclick={() => setDays(s!.salary_shift_days + 1)} disabled={s.salary_shift_days >= 15}><Plus size={15} /></button>
+					<button
+						type="button"
+						aria-label={t('budget.moreDays')}
+						onclick={() => setDays(s!.salary_shift_days + 1)}
+						disabled={s.salary_shift_days >= 15}
+					>
+						<Plus size={15} />
+					</button>
 				</div>
 			</div>
 
@@ -123,11 +137,15 @@
 				</div>
 				<div class="chips">
 					{#each s.salary_payees as p (p)}
-						<span class="chip on tag"
-							>{p}<button type="button" aria-label={t('budget.removePayer', { name: p })} onclick={() => s && (s.salary_payees = s.salary_payees.filter((x) => x !== p))}
-								><X size={13} /></button
-							></span
-						>
+						<span class="chip on tag">
+							{p}<button
+								type="button"
+								aria-label={t('budget.removePayer', { name: p })}
+								onclick={() => s && (s.salary_payees = s.salary_payees.filter((x) => x !== p))}
+							>
+								<X size={13} />
+							</button>
+						</span>
 					{/each}
 					<form class="add" onsubmit={addPayee}>
 						<input bind:value={payee} placeholder={t('budget.payerPlaceholder')} aria-label={t('budget.addPayer')} />
@@ -139,9 +157,7 @@
 			<div class="opt">
 				<div>
 					<strong>{t('budget.autoDetect')}</strong>
-					<span class="muted small"
-						>{t('budget.autoDetectHint')}</span
-					>
+					<span class="muted small">{t('budget.autoDetectHint')}</span>
 				</div>
 				{@render toggle(s.salary_auto_detect, t('budget.autoDetect'), () => s && (s.salary_auto_detect = !s.salary_auto_detect))}
 			</div>

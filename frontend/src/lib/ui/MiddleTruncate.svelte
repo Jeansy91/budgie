@@ -24,9 +24,11 @@
 </script>
 
 <span class="mid-truncate {cls}" title={text}>
-	<span class="head" aria-hidden="true">{text.slice(0, cut)}</span><span class="tail" aria-hidden="true"
-		>{text.slice(cut)}</span
-	><span class="sr-only">{text}</span>
+	<span class="head" aria-hidden="true">{text.slice(0, cut)}</span><span class="tail" aria-hidden="true">{text.slice(cut)}</span><span
+		class="sr-only"
+	>
+		{text}
+	</span>
 </span>
 
 <style>

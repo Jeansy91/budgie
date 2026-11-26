@@ -66,7 +66,12 @@
 	// Monday to Sunday (2024-01-01 was a Monday)
 	let weekdays = $derived.by(() => {
 		const f = dateFormat({ weekday: 'short' });
-		return Array.from({ length: 7 }, (_, i) => f.format(new Date(2024, 0, 1 + i, 12)).replace('.', '').slice(0, 2));
+		return Array.from({ length: 7 }, (_, i) =>
+			f
+				.format(new Date(2024, 0, 1 + i, 12))
+				.replace('.', '')
+				.slice(0, 2)
+		);
 	});
 
 	let open = $state(false);
@@ -78,10 +83,12 @@
 	let days = $derived.by(() => {
 		const first = new Date(view.getFullYear(), view.getMonth(), 1, 12);
 		const offset = (first.getDay() + 6) % 7;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, non-reactive value
 		const start = new Date(first);
 		start.setDate(1 - offset);
 		const out: { iso: string; day: number; inMonth: boolean }[] = [];
 		for (let i = 0; i < 42; i++) {
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, non-reactive value
 			const d = new Date(start);
 			d.setDate(start.getDate() + i);
 			out.push({ iso: iso(d), day: d.getDate(), inMonth: d.getMonth() === view.getMonth() });
@@ -159,7 +166,6 @@
 </button>
 
 <Popover bind:open anchor={trigger} {label} matchWidth={false} minWidth={288}>
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="cal"
 		role="dialog"
@@ -173,9 +179,13 @@
 		}}
 	>
 		<div class="head">
-			<button type="button" class="ghost icon" aria-label={t('ui.date.prevMonth')} onclick={() => go(addMonths(focused, -1))}><ChevronLeft size={18} /></button>
+			<button type="button" class="ghost icon" aria-label={t('ui.date.prevMonth')} onclick={() => go(addMonths(focused, -1))}>
+				<ChevronLeft size={18} />
+			</button>
 			<strong aria-live="polite">{monthTitle.format(view)}</strong>
-			<button type="button" class="ghost icon" aria-label={t('ui.date.nextMonth')} onclick={() => go(addMonths(focused, 1))}><ChevronRight size={18} /></button>
+			<button type="button" class="ghost icon" aria-label={t('ui.date.nextMonth')} onclick={() => go(addMonths(focused, 1))}>
+				<ChevronRight size={18} />
+			</button>
 		</div>
 		<div class="grid" role="grid" bind:this={grid} tabindex="-1" onkeydown={onGridKey}>
 			<div class="row" role="row">
@@ -196,8 +206,10 @@
 							aria-selected={d.iso === value}
 							aria-label={longDay.format(parse(d.iso))}
 							onclick={() => set(d.iso)}
-							onfocus={() => (focused = d.iso)}>{d.day}</button
+							onfocus={() => (focused = d.iso)}
 						>
+							{d.day}
+						</button>
 					{/each}
 				</div>
 			{/each}

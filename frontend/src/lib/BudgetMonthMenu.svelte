@@ -8,11 +8,7 @@
 	import Check from '@lucide/svelte/icons/check';
 
 	/** Shows a transaction's budget month and lets the user override it. */
-	let {
-		tx,
-		onchange,
-		onerror
-	}: { tx: Transaction; onchange?: (tx: Transaction) => void; onerror?: (message: string) => void } = $props();
+	let { tx, onchange, onerror }: { tx: Transaction; onchange?: (tx: Transaction) => void; onerror?: (message: string) => void } = $props();
 
 	let open = $state(false);
 	let root = $state<HTMLElement>();
@@ -74,10 +70,15 @@
 			<div class="head">{t('budgetMenu.title')}</div>
 			{#each options as o (o.value)}
 				<button type="button" role="menuitemradio" aria-checked={current === o.value} onclick={() => choose(o.value)}>
-					<span class="check">{#if current === o.value}<Check size={15} />{/if}</span>
+					<span class="check">
+						{#if current === o.value}<Check size={15} />{/if}
+					</span>
 					<span class="txt">
 						<span class="lbl">{o.label}</span>
-						<span class="hint">{o.hint}{#if o.value === 'auto'}{' · '}{t('budgetMenu.now', { month: monthLabel(budgetMonth) })}{/if}</span>
+						<span class="hint">
+							<!-- eslint-disable-next-line svelte/no-useless-mustaches -- explicit separator string keeps its surrounding spaces -->
+							{o.hint}{#if o.value === 'auto'}{' · '}{t('budgetMenu.now', { month: monthLabel(budgetMonth) })}{/if}
+						</span>
 					</span>
 				</button>
 			{/each}

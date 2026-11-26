@@ -97,7 +97,9 @@
 		background: var(--surface);
 		color: var(--text);
 		font-weight: 600;
-		box-shadow: 0 1px 2px rgb(15 23 42 / 0.08), 0 2px 8px rgb(15 23 42 / 0.06);
+		box-shadow:
+			0 1px 2px rgb(15 23 42 / 0.08),
+			0 2px 8px rgb(15 23 42 / 0.06);
 	}
 	.segmented .opt:has(input:focus-visible) {
 		box-shadow: var(--ring);

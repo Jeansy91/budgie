@@ -30,25 +30,25 @@
 </script>
 
 <div class="auth-wrap">
-<div class="auth card">
-	<LanguageSwitch />
-	<div class="logo"><Logo size={52} /></div>
-	<h1>{t('auth.welcome')}</h1>
-	<p class="muted">
-		{t('auth.setupIntro')}
-	</p>
-	{#if error}<div class="error">{error}</div>{/if}
-	<form onsubmit={submit}>
-		<label>{t('auth.householdName')} <input bind:value={household_name} required /></label>
-		<label>{t('auth.yourName')} <input bind:value={display_name} required /></label>
-		<label>{t('auth.username')} <input bind:value={username} autocomplete="username" required pattern="[A-Za-z0-9._\-]+" /></label>
-		<label
-			>{t('auth.passwordMin')}
-			<PasswordInput bind:value={password} autocomplete="new-password" minlength={8} required /></label
-		>
-		<button disabled={busy}>{t('auth.setup')}</button>
-	</form>
-</div>
+	<div class="auth card">
+		<LanguageSwitch />
+		<div class="logo"><Logo size={52} /></div>
+		<h1>{t('auth.welcome')}</h1>
+		<p class="muted">
+			{t('auth.setupIntro')}
+		</p>
+		{#if error}<div class="error">{error}</div>{/if}
+		<form onsubmit={submit}>
+			<label>{t('auth.householdName')} <input bind:value={household_name} required /></label>
+			<label>{t('auth.yourName')} <input bind:value={display_name} required /></label>
+			<label>{t('auth.username')} <input bind:value={username} autocomplete="username" required pattern="[A-Za-z0-9._\-]+" /></label>
+			<label>
+				{t('auth.passwordMin')}
+				<PasswordInput bind:value={password} autocomplete="new-password" minlength={8} required />
+			</label>
+			<button disabled={busy}>{t('auth.setup')}</button>
+		</form>
+	</div>
 </div>
 
 <style>
@@ -59,8 +59,7 @@
 		padding: 1.5rem;
 		background:
 			radial-gradient(circle at 15% 10%, rgb(16 185 129 / 0.25), transparent 45%),
-			radial-gradient(circle at 85% 90%, rgb(14 165 233 / 0.22), transparent 45%),
-			var(--bg);
+			radial-gradient(circle at 85% 90%, rgb(14 165 233 / 0.22), transparent 45%), var(--bg);
 	}
 	.auth {
 		width: 100%;

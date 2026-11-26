@@ -46,9 +46,10 @@
 	// Select works with strings; '' = not mapped.
 	const initial = untrack(() => preview.suggestion);
 	let chosen = $state<Record<CsvField, string>>(
-		Object.fromEntries(
-			fields.map((f) => [f.key, initial.columns[f.key] !== undefined ? String(initial.columns[f.key]) : ''])
-		) as Record<CsvField, string>
+		Object.fromEntries(fields.map((f) => [f.key, initial.columns[f.key] !== undefined ? String(initial.columns[f.key]) : ''])) as Record<
+			CsvField,
+			string
+		>
 	);
 	let dateFormat = $state(initial.date_format);
 	let decimal = $state<'comma' | 'point'>(initial.decimal);
@@ -68,7 +69,13 @@
 
 	const hasAmount = $derived(chosen.amount !== '' || chosen.debit !== '' || chosen.credit !== '');
 	const valid = $derived(chosen.booking_date !== '' && hasAmount);
-	const mappedIndexes = $derived(new Set(Object.values(chosen).filter((v) => v !== '').map(Number)));
+	const mappedIndexes = $derived(
+		new Set(
+			Object.values(chosen)
+				.filter((v) => v !== '')
+				.map(Number)
+		)
+	);
 
 	function submit(e: SubmitEvent) {
 		e.preventDefault();
@@ -78,10 +85,7 @@
 				.filter(([, v]) => v !== '')
 				.map(([k, v]) => [k, Number(v)])
 		);
-		onsubmit(
-			{ delimiter: preview.delimiter, header_row: preview.header_row, columns, date_format: dateFormat, decimal },
-			saveAs.trim()
-		);
+		onsubmit({ delimiter: preview.delimiter, header_row: preview.header_row, columns, date_format: dateFormat, decimal }, saveAs.trim());
 	}
 </script>
 
@@ -91,7 +95,8 @@
 		<div>
 			<h2>{t('csv.title')}</h2>
 			<p class="muted small break-anywhere">
-				{t('csv.introBefore')} <strong>{filename}</strong> {t('csv.introAfter')}
+				{t('csv.introBefore')} <strong>{filename}</strong>
+				{t('csv.introAfter')}
 			</p>
 		</div>
 	</div>
@@ -106,7 +111,7 @@
 			<tbody>
 				{#each preview.rows as row, r (r)}
 					<tr>
-						{#each preview.columns as _, i (i)}<td class:unmapped={!mappedIndexes.has(i)}>{row[i] ?? ''}</td>{/each}
+						{#each preview.columns as _col, i (i)}<td class:unmapped={!mappedIndexes.has(i)}>{row[i] ?? ''}</td>{/each}
 					</tr>
 				{/each}
 			</tbody>
@@ -116,7 +121,9 @@
 	<div class="grid">
 		{#each fields as f (f.key)}
 			<div class="field">
-				<span>{fieldLabel(f.key)}{#if f.required}<span class="req"> *</span>{/if}</span>
+				<span>
+					{fieldLabel(f.key)}{#if f.required}<span class="req"> *</span>{/if}
+				</span>
 				<Select options={columnOptions} bind:value={chosen[f.key]} label={fieldLabel(f.key)} />
 			</div>
 		{/each}
@@ -134,8 +141,8 @@
 	{/if}
 
 	<div class="row save">
-		<label class="grow"
-			>{t('csv.saveAs')}
+		<label class="grow">
+			{t('csv.saveAs')}
 			<input bind:value={saveAs} maxlength="100" placeholder={t('csv.saveAsPlaceholder')} />
 		</label>
 	</div>

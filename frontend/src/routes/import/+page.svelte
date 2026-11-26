@@ -140,13 +140,13 @@
 
 {#if pending.length}
 	{#key pending[0].file}
-	<CsvMapping
-		filename={pending[0].file.name}
-		preview={pending[0].preview}
-		{busy}
-		onsubmit={importMapped}
-		oncancel={() => (pending = pending.slice(1))}
-	/>
+		<CsvMapping
+			filename={pending[0].file.name}
+			preview={pending[0].preview}
+			{busy}
+			onsubmit={importMapped}
+			oncancel={() => (pending = pending.slice(1))}
+		/>
 	{/key}
 {/if}
 
@@ -177,7 +177,9 @@
 		{#each profiles as p (p.id)}
 			<span class="profile">
 				<span class="break-anywhere">{p.name}</span>
-				<button class="ghost small" onclick={() => removeProfile(p)} aria-label={t('import.deleteProfile', { name: p.name })}>{t('common.delete')}</button>
+				<button class="ghost small" onclick={() => removeProfile(p)} aria-label={t('import.deleteProfile', { name: p.name })}>
+					{t('common.delete')}
+				</button>
 			</span>
 		{/each}
 	</div>
