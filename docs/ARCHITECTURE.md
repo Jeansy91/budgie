@@ -16,7 +16,7 @@ This document describes how Budgie is structured and why. For installation and u
 | Backend | Python, FastAPI | `python-fints` and the ML ecosystem are Python |
 | Bank access | `python-fints` | Most mature FinTS library, supports decoupled TAN (app approval) |
 | Database | PostgreSQL 16, SQLAlchemy 2, Alembic | Reliable, good for reporting queries |
-| Frontend | SvelteKit 2 + Svelte 5, `adapter-node`, client-side rendering | Lightweight, fast, works well on phones |
+| Frontend | SvelteKit 3 + Svelte 5, `adapter-node`, client-side rendering | Lightweight, fast, works well on phones |
 | Classifier | scikit-learn | Trains in seconds on a CPU |
 | LLM (optional) | Ollama, 7–8B quantized model (e.g. Qwen 2.5) | Fallback for uncertain cases, about 6–8 GB RAM |
 

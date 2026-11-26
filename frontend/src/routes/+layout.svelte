@@ -2,10 +2,10 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { api } from '$lib/api';
-	import { initials } from '$lib/colors';
-	import Logo from '$lib/Logo.svelte';
-	import { getLocale, t, type MessageKey } from '$lib/i18n/index.svelte';
+	import { api } from '#lib/api.ts';
+	import { initials } from '#lib/colors.ts';
+	import Logo from '#lib/Logo.svelte';
+	import { getLocale, t, type MessageKey } from '#lib/i18n/index.svelte.ts';
 	import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
 	import Receipt from '@lucide/svelte/icons/receipt';
 	import FileUp from '@lucide/svelte/icons/file-up';

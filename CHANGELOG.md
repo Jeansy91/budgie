@@ -20,6 +20,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Dependabot now keeps GitHub Actions, Python and npm dependencies and Docker base images up to date.
 - CI uses the latest major versions of all GitHub Actions.
 - The license copyright holder is now Jeansy91.
+- Runtime images no longer ship pip, setuptools and wheel (backend) or npm, npx and corepack (frontend), and apply pending OS package updates at build time. This clears the Trivy findings in the base images.
+- Frontend runs on Node.js 26 (Active LTS) in the container image and in CI.
+- Frontend upgraded to SvelteKit 3 with `@sveltejs/adapter-node` 6, `@sveltejs/vite-plugin-svelte` 7, Vite 8 and TypeScript 6. SvelteKit is configured in `vite.config.ts`, `$lib` imports became `#lib` imports, and the `cookie` dependency is updated (fixes the Dependabot security alerts).
+- Minor and patch updates of backend (FastAPI, SQLAlchemy, cryptography) and frontend dependencies.
+- Dependabot ignores major TypeScript updates until SvelteKit, svelte-check and typescript-eslint support TypeScript 7.
 
 ## [0.1.0] - 2026-11-19
 

@@ -13,7 +13,7 @@ Thanks for your interest in Budgie! Bug reports, ideas and pull requests are wel
 See [Development](README.md#development) in the README. In short:
 
 - Backend: Python 3.13, FastAPI, SQLAlchemy 2, Alembic, pytest against a real PostgreSQL 16 database.
-- Frontend: Node.js 22, SvelteKit 2 with Svelte 5.
+- Frontend: Node.js 26, SvelteKit 3 with Svelte 5.
 
 ## Guidelines
 

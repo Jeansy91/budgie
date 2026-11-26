@@ -3,11 +3,11 @@
 	Shows the first rows of the file and lets the user say which column is what.
 -->
 <script lang="ts">
-	import { RadioGroup, Select, type SelectOption } from '$lib/ui';
-	import type { CsvField, CsvPreview } from '$lib/types';
+	import { RadioGroup, Select, type SelectOption } from '#lib/ui/index.ts';
+	import type { CsvField, CsvPreview } from '#lib/types.ts';
 	import Columns3 from '@lucide/svelte/icons/columns-3';
 	import { untrack } from 'svelte';
-	import { t } from '$lib/i18n/index.svelte';
+	import { t } from '#lib/i18n/index.svelte.ts';
 
 	let {
 		filename,

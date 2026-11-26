@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { PasswordInput } from '$lib/ui';
+	import { PasswordInput } from '#lib/ui/index.ts';
 	import { goto, invalidateAll } from '$app/navigation';
-	import { api } from '$lib/api';
-	import Logo from '$lib/Logo.svelte';
-	import LanguageSwitch from '$lib/LanguageSwitch.svelte';
-	import { t } from '$lib/i18n/index.svelte';
+	import { api } from '#lib/api.ts';
+	import Logo from '#lib/Logo.svelte';
+	import LanguageSwitch from '#lib/LanguageSwitch.svelte';
+	import { t } from '#lib/i18n/index.svelte.ts';
 
 	let household_name = $state(t('auth.defaultHousehold'));
 	let display_name = $state('');

@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto, pushState } from '$app/navigation';
-	import { api } from '$lib/api';
-	import CategorySelect from '$lib/CategorySelect.svelte';
-	import BudgetMonthMenu from '$lib/BudgetMonthMenu.svelte';
-	import TransactionDetail from '$lib/TransactionDetail.svelte';
-	import { MonthPicker, Select, type SelectOption } from '$lib/ui';
-	import { categoryLabels, dateFormat, money, percent } from '$lib/format';
-	import { t } from '$lib/i18n/index.svelte';
-	import { avatarColor, colorFor, initials } from '$lib/colors';
+	import { api } from '#lib/api.ts';
+	import CategorySelect from '#lib/CategorySelect.svelte';
+	import BudgetMonthMenu from '#lib/BudgetMonthMenu.svelte';
+	import TransactionDetail from '#lib/TransactionDetail.svelte';
+	import { MonthPicker, Select, type SelectOption } from '#lib/ui/index.ts';
+	import { categoryLabels, dateFormat, money, percent } from '#lib/format.ts';
+	import { t } from '#lib/i18n/index.svelte.ts';
+	import { avatarColor, colorFor, initials } from '#lib/colors.ts';
 	import Search from '@lucide/svelte/icons/search';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Check from '@lucide/svelte/icons/check';
 	import Wand from '@lucide/svelte/icons/wand-sparkles';
-	import type { Account, Category, Transaction } from '$lib/types';
+	import type { Account, Category, Transaction } from '#lib/types.ts';
 
 	const PAGE = 100;
 	const params = page.url.searchParams;
@@ -91,7 +91,7 @@
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local, non-reactive value
 		const qs = new URLSearchParams();
 		for (const [k, v] of Object.entries(f)) if (v) qs.set(k, v === true ? '1' : String(v));
-		goto(`?${qs}`, { replaceState: true, keepFocus: true, noScroll: true });
+		goto(`?${qs}`, { replace: true, reset: false });
 		const tx = setTimeout(() => load(), 200);
 		return () => clearTimeout(tx);
 	});

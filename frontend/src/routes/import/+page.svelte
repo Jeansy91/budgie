@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { api, ApiError } from '$lib/api';
-	import CsvMapping from '$lib/CsvMapping.svelte';
-	import { MiddleTruncate, Select, type SelectOption } from '$lib/ui';
-	import BankSync from '$lib/BankSync.svelte';
-	import { iban, money } from '$lib/format';
-	import { t } from '$lib/i18n/index.svelte';
-	import type { Account, CsvFormat, CsvPreview, CsvProfile, ImportResult } from '$lib/types';
+	import { api, ApiError } from '#lib/api.ts';
+	import CsvMapping from '#lib/CsvMapping.svelte';
+	import { MiddleTruncate, Select, type SelectOption } from '#lib/ui/index.ts';
+	import BankSync from '#lib/BankSync.svelte';
+	import { iban, money } from '#lib/format.ts';
+	import { t } from '#lib/i18n/index.svelte.ts';
+	import type { Account, CsvFormat, CsvPreview, CsvProfile, ImportResult } from '#lib/types.ts';
 	import Upload from '@lucide/svelte/icons/upload';
 	import Landmark from '@lucide/svelte/icons/landmark';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
