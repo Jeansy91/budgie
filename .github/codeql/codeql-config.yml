@@ -1,0 +1,8 @@
+name: Budgie CodeQL configuration
+
+queries:
+  - uses: security-and-quality
+
+paths-ignore:
+  # Alembic reads revision, down_revision, branch_labels and depends_on by name
+  - backend/alembic/versions

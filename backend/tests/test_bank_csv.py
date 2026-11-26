@@ -161,7 +161,8 @@ def test_unknown_format_mapping_is_saved(admin):
     r = upload(admin, "unknown.csv", account_id=str(account["id"]))
     assert r.status_code == 201 and r.json()["format_name"] == "Musterbank" and r.json()["rows_duplicate"] == 2
     [profile] = admin.get("/api/imports/csv/profiles").json()
-    assert admin.delete(f"/api/imports/csv/profiles/{profile['id']}").status_code == 204
+    response = admin.delete(f"/api/imports/csv/profiles/{profile['id']}")
+    assert response.status_code == 204
     assert upload(admin, "unknown.csv").status_code == 422
 
 

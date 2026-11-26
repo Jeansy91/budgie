@@ -174,7 +174,7 @@ def test_split_iban_name():
 
 def test_fingerprint_ignores_iban_split():
     """Transactions synced before the IBAN was split off are still duplicates."""
-    from app.importers.ing_csv import fingerprint
+    from app.importers.common import fingerprint
 
     parsed = to_parsed(mt940_to_array((DATA / "ing_beispiel.mt940").read_text()))
     strom = parsed[0]
@@ -308,13 +308,15 @@ def test_connections_are_private(admin, client):
     assert other.post("/api/auth/login", json={"username": "partnerin", "password": "geheim123"}).status_code == 200
     assert other.get("/api/fints/connections").json() == []
     assert other.post(f"/api/fints/connections/{conn['id']}/sync", json={"pin": "1"}).status_code == 404
-    assert other.delete(f"/api/fints/connections/{conn['id']}").status_code == 404
+    response = other.delete(f"/api/fints/connections/{conn['id']}")
+    assert response.status_code == 404
 
 
 def test_delete_connection_keeps_account(admin):
     conn = connect(admin)
     wait(admin, admin.post(f"/api/fints/connections/{conn['id']}/sync", json={"pin": "12345"}).json()["id"])
-    assert admin.delete(f"/api/fints/connections/{conn['id']}").status_code == 204
+    response = admin.delete(f"/api/fints/connections/{conn['id']}")
+    assert response.status_code == 204
     accounts = admin.get("/api/accounts").json()
     assert accounts[0]["bank_connection_id"] is None and accounts[0]["transaction_count"] == 5
 

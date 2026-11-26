@@ -1,11 +1,11 @@
-FROM node:26-alpine AS build
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
-FROM node:26-alpine
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5
 WORKDIR /app
 # Apply pending security updates and drop npm, npx and corepack: the runtime
 # only runs `node build`, and the bundled npm carries CVEs

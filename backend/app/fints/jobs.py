@@ -433,7 +433,8 @@ def _update_balance(job: SyncJob, client, sepa, account: Account) -> None:
     except (JobCancelled, JobFailed):
         raise
     except Exception:
-        log.warning("Kontostand für %s nicht abrufbar", account.iban, exc_info=True)
+        # Log the internal account ID, never the IBAN
+        log.warning("Kontostand für Konto %s nicht abrufbar", account.id, exc_info=True)
         return
     if balance is None or getattr(balance, "amount", None) is None:
         return

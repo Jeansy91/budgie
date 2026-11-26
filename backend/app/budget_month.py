@@ -200,11 +200,11 @@ def _after_rollback(session: Session) -> None:
     session.info.pop(_DIRTY_KEY, None)
 
 
-def _register_events() -> None:
+def register_events() -> None:
     if not event.contains(Session, "after_flush", _after_flush):
         event.listen(Session, "after_flush", _after_flush)
         event.listen(Session, "before_commit", _before_commit)
         event.listen(Session, "after_soft_rollback", lambda s, _t: _after_rollback(s))
 
 
-_register_events()
+register_events()

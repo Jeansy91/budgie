@@ -31,7 +31,7 @@ See [Development](README.md#development) in the README. In short:
 Run the checks that CI runs before opening a pull request:
 
 ```bash
-# Backend (pip install -r requirements-dev.txt)
+# Backend (pip install --require-hashes -r requirements-dev.txt)
 cd backend
 ruff check .
 ruff format --check .
@@ -80,3 +80,16 @@ The CI workflow then builds and publishes the images `X.Y.Z` and `X.Y` to GHCR a
 ## License
 
 By contributing, you agree that your contributions are licensed under the [MIT License](LICENSE).
+
+## Python dependencies
+
+The backend dependencies are hash-locked. Top-level pins live in `backend/requirements.in` (runtime) and `backend/requirements-dev.in` (development tools, constrained to the runtime lock). Do not edit the generated `requirements.txt` and `requirements-dev.txt` by hand. After changing a `.in` file, regenerate both locks with Python 3.13 on Linux x86_64 (the platform of the image and CI), runtime first:
+
+```bash
+cd backend
+pip install pip-tools
+pip-compile --generate-hashes --allow-unsafe --strip-extras --output-file=requirements.txt requirements.in
+pip-compile --generate-hashes --allow-unsafe --strip-extras --output-file=requirements-dev.txt requirements-dev.in
+```
+
+Dependabot understands this layout and regenerates the hashes itself.

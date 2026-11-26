@@ -181,4 +181,5 @@ def test_category_crud(admin):
     assert sub["kind"] == "expense"
     assert admin.post("/api/categories", json={"name": "Tiefer", "parent_id": sub["id"]}).status_code == 400
     assert admin.post("/api/categories", json={"name": "Müllabfuhr", "parent_id": wohnen}).status_code == 409
-    assert admin.delete(f"/api/categories/{sub['id']}").status_code == 204
+    response = admin.delete(f"/api/categories/{sub['id']}")
+    assert response.status_code == 204
