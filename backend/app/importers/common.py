@@ -54,14 +54,6 @@ def normalize_iban(value: str) -> str:
     return value.replace(" ", "").upper()
 
 
-def mask_iban(value: str | None) -> str:
-    """IBAN for log output: country code and last four characters, the rest masked."""
-    iban = normalize_iban(value or "")
-    if len(iban) <= 6:
-        return "*" * len(iban)
-    return f"{iban[:2]}{'*' * (len(iban) - 6)}{iban[-4:]}"
-
-
 def fingerprint(t: ParsedTransaction, occurrence: int) -> str:
     """Fingerprint of a transaction.
 

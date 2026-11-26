@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Backend dependencies are hash-locked with pip-compile (`requirements.in` and `requirements-dev.in` are the sources) and installed with `--require-hashes` in the Dockerfile and CI. The workflow is documented in the contributing guide.
 - Docker base images are pinned by digest.
 - CodeQL configuration moved to `.github/codeql/codeql-config.yml` and ignores the Alembic revision files, whose module variables are read by Alembic.
-- IBANs are masked in log output.
+- Log output no longer contains IBANs.
 - Fixed CodeQL findings: side effects in test assertions, unused imports and an unused variable.
 - All GitHub Actions are pinned to commit SHAs, and workflows run with least-privilege permissions.
 - Contributing guide and pull request template list the new lint and test commands.
