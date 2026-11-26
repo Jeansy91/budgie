@@ -31,9 +31,33 @@ See [Development](README.md#development) in the README. In short:
 Run the checks that CI runs before opening a pull request:
 
 ```bash
-cd backend && pytest
-cd frontend && npm run check && npm run build
+# Backend (pip install -r requirements-dev.txt)
+cd backend
+ruff check .
+ruff format --check .
+mypy
+pytest --cov --cov-report=term
+
+# Frontend (npm ci)
+cd frontend
+npm run lint
+npm run check
+npm run test:coverage
+npm run build
 ```
+
+Use `ruff format .` and `npm run format` to fix formatting issues.
+
+### Pre-commit hooks
+
+[pre-commit](https://pre-commit.com) runs fast checks (whitespace, YAML/TOML syntax, private keys, secrets via gitleaks, ruff, prettier and eslint) before every commit:
+
+```bash
+pip install pre-commit && pre-commit install
+pre-commit run --all-files   # optional: check the whole repository once
+```
+
+The frontend hooks need `npm ci` in `frontend/` first.
 
 New features and bug fixes should come with tests. FinTS code is tested against a fake bank client (`backend/tests/test_fints.py`); tests must never talk to a real bank.
 

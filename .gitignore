@@ -5,3 +5,10 @@ __pycache__/
 node_modules/
 frontend/.svelte-kit/
 frontend/build/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+frontend/coverage/
+*.log
