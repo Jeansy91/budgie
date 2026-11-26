@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { api } from '$lib/api';
-	import CategorySelect from '$lib/CategorySelect.svelte';
-	import { NumberInput, Select, Switch } from '$lib/ui';
-	import { categoryLabels } from '$lib/format';
-	import type { Category, Rule } from '$lib/types';
-	import { colorFor } from '$lib/colors';
-	import { t } from '$lib/i18n/index.svelte';
+	import { api } from '#lib/api.ts';
+	import CategorySelect from '#lib/CategorySelect.svelte';
+	import { NumberInput, Select, Switch } from '#lib/ui/index.ts';
+	import { categoryLabels } from '#lib/format.ts';
+	import type { Category, Rule } from '#lib/types.ts';
+	import { colorFor } from '#lib/colors.ts';
+	import { t } from '#lib/i18n/index.svelte.ts';
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import WandSparkles from '@lucide/svelte/icons/wand-sparkles';
 

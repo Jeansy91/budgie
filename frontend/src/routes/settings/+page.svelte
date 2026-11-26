@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { api } from '$lib/api';
-	import { Checkbox, PasswordInput, RadioGroup, Switch } from '$lib/ui';
+	import { api } from '#lib/api.ts';
+	import { Checkbox, PasswordInput, RadioGroup, Switch } from '#lib/ui/index.ts';
 	import { invalidateAll } from '$app/navigation';
-	import { LOCALES, browserLocale, t, type Locale } from '$lib/i18n/index.svelte';
+	import { LOCALES, browserLocale, t, type Locale } from '#lib/i18n/index.svelte.ts';
 	import Languages from '@lucide/svelte/icons/languages';
-	import type { Account, AiStatus, User } from '$lib/types';
+	import type { Account, AiStatus, User } from '#lib/types.ts';
 	import { onDestroy } from 'svelte';
 	import Wand from '@lucide/svelte/icons/wand-sparkles';
-	import { initials } from '$lib/colors';
-	import { dateTime, iban, percent } from '$lib/format';
-	import BudgetMonthSettings from '$lib/BudgetMonthSettings.svelte';
+	import { initials } from '#lib/colors.ts';
+	import { dateTime, iban, percent } from '#lib/format.ts';
+	import BudgetMonthSettings from '#lib/BudgetMonthSettings.svelte';
 
 	let { data } = $props();
 	let users = $state<User[]>([]);

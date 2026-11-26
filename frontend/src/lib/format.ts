@@ -1,7 +1,7 @@
 import type { Category } from './types';
 import { intlLocale } from './i18n/index.svelte';
 
-// Formatters follow the current UI language (see $lib/i18n)
+// Formatters follow the current UI language (see #lib/i18n)
 const cache = new Map<string, Intl.NumberFormat | Intl.DateTimeFormat>();
 
 function numberFormat(options: Intl.NumberFormatOptions): Intl.NumberFormat {

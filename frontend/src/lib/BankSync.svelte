@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { DatePicker, PasswordInput, RadioGroup } from '$lib/ui';
-	import BankPicker from '$lib/BankPicker.svelte';
+	import { DatePicker, PasswordInput, RadioGroup } from '#lib/ui/index.ts';
+	import BankPicker from '#lib/BankPicker.svelte';
 	import { onDestroy } from 'svelte';
-	import { api } from '$lib/api';
-	import { dateTime, day } from '$lib/format';
-	import { t } from '$lib/i18n/index.svelte';
-	import type { Bank, BankConnection, FintsStatus, SyncJob } from '$lib/types';
+	import { api } from '#lib/api.ts';
+	import { dateTime, day } from '#lib/format.ts';
+	import { t } from '#lib/i18n/index.svelte.ts';
+	import type { Bank, BankConnection, FintsStatus, SyncJob } from '#lib/types.ts';
 	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 	import Smartphone from '@lucide/svelte/icons/smartphone';
 	import KeyRound from '@lucide/svelte/icons/key-round';

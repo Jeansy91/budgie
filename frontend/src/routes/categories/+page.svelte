@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { api } from '$lib/api';
-	import type { Category, Kind } from '$lib/types';
-	import { colorFor } from '$lib/colors';
-	import { RadioGroup, Select } from '$lib/ui';
-	import { t } from '$lib/i18n/index.svelte';
+	import { api } from '#lib/api.ts';
+	import type { Category, Kind } from '#lib/types.ts';
+	import { colorFor } from '#lib/colors.ts';
+	import { RadioGroup, Select } from '#lib/ui/index.ts';
+	import { t } from '#lib/i18n/index.svelte.ts';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import Trash2 from '@lucide/svelte/icons/trash-2';

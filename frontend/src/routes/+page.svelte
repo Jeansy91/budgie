@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { api } from '$lib/api';
-	import { Select, type SelectOption } from '$lib/ui';
-	import { colorFor } from '$lib/colors';
-	import { currentMonth, money, monthLabel, monthShortLabel, percent, shiftMonth } from '$lib/format';
-	import { t } from '$lib/i18n/index.svelte';
-	import type { Account, Category, CategorySum, Overview } from '$lib/types';
+	import { api } from '#lib/api.ts';
+	import { Select, type SelectOption } from '#lib/ui/index.ts';
+	import { colorFor } from '#lib/colors.ts';
+	import { currentMonth, money, monthLabel, monthShortLabel, percent, shiftMonth } from '#lib/format.ts';
+	import { t } from '#lib/i18n/index.svelte.ts';
+	import type { Account, Category, CategorySum, Overview } from '#lib/types.ts';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
@@ -41,7 +41,7 @@
 			.catch((e) => (error = e.message));
 	});
 
-	const go = (m: string) => goto(`/?month=${m}`, { keepFocus: true, noScroll: true });
+	const go = (m: string) => goto(`/?month=${m}`, { reset: false });
 	const color = (c: CategorySum) => colorFor(c.category_id === null ? undefined : categoryIndex.get(c.category_id));
 	const pct = (part: string | number, total: string | number) => (Number(total) > 0 ? Math.round((Number(part) / Number(total)) * 100) : 0);
 	const share = (part: string | number, total: string | number) => percent(Number(total) > 0 ? Number(part) / Number(total) : 0);

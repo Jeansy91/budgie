@@ -192,7 +192,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data flow, the categori
 
 ## Development
 
-Requirements: Python 3.13, Node.js 22 and a PostgreSQL 16 database.
+Requirements: Python 3.13, Node.js 26 and a PostgreSQL 16 database.
 
 ```bash
 # Backend

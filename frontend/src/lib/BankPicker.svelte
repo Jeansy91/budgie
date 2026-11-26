@@ -3,9 +3,9 @@
 	Results are listed inline below the search field (no native <select>).
 -->
 <script lang="ts">
-	import { api } from '$lib/api';
-	import type { Bank } from '$lib/types';
-	import { t } from '$lib/i18n/index.svelte';
+	import { api } from '#lib/api.ts';
+	import type { Bank } from '#lib/types.ts';
+	import { t } from '#lib/i18n/index.svelte.ts';
 	import Search from '@lucide/svelte/icons/search';
 	import Landmark from '@lucide/svelte/icons/landmark';
 

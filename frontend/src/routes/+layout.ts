@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
-import type { Me } from '$lib/types';
-import { applyUserLocale } from '$lib/i18n/index.svelte';
+import type { Me } from '#lib/types.ts';
+import { applyUserLocale } from '#lib/i18n/index.svelte.ts';
 import type { LayoutLoad } from './$types';
 
 // Client-only app: the API delivers all data, nothing is server-rendered
