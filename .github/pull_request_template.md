@@ -10,8 +10,8 @@
 
 <!-- How did you verify the change? -->
 
-- [ ] `pytest` passes (backend)
-- [ ] `npm run check` and `npm run build` pass (frontend)
+- [ ] `ruff check .`, `ruff format --check .`, `mypy` and `pytest` pass (backend)
+- [ ] `npm run lint`, `npm run check`, `npm run test` and `npm run build` pass (frontend)
 - [ ] New or changed behavior is covered by tests
 
 ## Checklist
