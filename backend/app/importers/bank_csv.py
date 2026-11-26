@@ -574,8 +574,6 @@ def _looks_like_date(value: str) -> str | None:
     return None
 
 
-_AMOUNT_RE = re.compile(r"^[+-]?[\d.,\s]+-?(?:\s?(?:€|EUR))?$")
-
 # Column names (normalized, substring match) that suggest a field
 _SUGGEST = (
     ("booking_date", ("buchungstag", "buchungsdatum", "buchung", "booking date", "datum", "date")),

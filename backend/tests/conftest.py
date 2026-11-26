@@ -10,9 +10,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
-from app import models  # noqa: F401
+from app import models
 from app.ai import service as ai_service
-from app.db import Base, engine
+from app.db import engine
 from app.main import app
 
 DATA = Path(__file__).parent / "data"
@@ -20,10 +20,10 @@ DATA = Path(__file__).parent / "data"
 
 @pytest.fixture(scope="session", autouse=True)
 def schema():
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
+    models.Base.metadata.drop_all(engine)
+    models.Base.metadata.create_all(engine)
     yield
-    Base.metadata.drop_all(engine)
+    models.Base.metadata.drop_all(engine)
 
 
 # In tests, AI training and the language model run immediately instead of in the background
@@ -34,7 +34,7 @@ ai_service.SYNC = True
 def clean():
     yield
     ai_service._cache.clear()
-    tables = ", ".join(t.name for t in Base.metadata.sorted_tables)
+    tables = ", ".join(t.name for t in models.Base.metadata.sorted_tables)
     with engine.begin() as conn:
         conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
 

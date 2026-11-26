@@ -38,7 +38,7 @@ from .. import crypto
 from ..config import get_settings
 from ..db import SessionLocal
 from ..i18n import date_text, get_locale, t, use_locale
-from ..importers.common import normalize_iban
+from ..importers.common import mask_iban, normalize_iban
 from ..importers.store import store_transactions
 from ..models import Account, BankConnection, ImportBatch, Transaction, User
 from .convert import to_parsed
@@ -433,7 +433,7 @@ def _update_balance(job: SyncJob, client, sepa, account: Account) -> None:
     except (JobCancelled, JobFailed):
         raise
     except Exception:
-        log.warning("Kontostand für %s nicht abrufbar", account.iban, exc_info=True)
+        log.warning("Kontostand für %s nicht abrufbar", mask_iban(account.iban), exc_info=True)
         return
     if balance is None or getattr(balance, "amount", None) is None:
         return

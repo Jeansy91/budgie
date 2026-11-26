@@ -3,16 +3,16 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from app import models  # noqa: F401  register models
+from app import models
 from app.config import get_settings
-from app.db import Base
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+# Importing the models module registers all tables on the metadata
+target_metadata = models.Base.metadata
 
 
 def run_migrations_offline() -> None:
