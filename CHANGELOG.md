@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- The result of a bank sync is now a compact summary: totals at the top, one line per account with new transactions, and accounts without anything new grouped behind a toggle. With many accounts, the account list of a bank login collapses to a count.
+
 ## [0.2.0] - 2026-11-27
 
 ### Added
