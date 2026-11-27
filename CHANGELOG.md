@@ -6,9 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-27
+
 ### Added
 
 - Automatic FinTS fetch per bank login (opt-in): every 6, 12 or 24 hours a background scheduler fetches new transactions through the normal import path. The PIN is stored encrypted only while it is enabled. It never waits for a TAN: if the bank asks for one, automatic fetching pauses until the next manual sync. New setting `BUDGIE_FINTS_AUTO_SYNC`.
+- Rules can match on the sender (incoming transactions only) or the recipient (outgoing transactions only). The existing payee field still matches both directions and is labelled accordingly.
 - CI runs linters (ruff, mypy, prettier, eslint) and tests with coverage reports, and scans the container images with Trivy on every pull request and push.
 - CodeQL, dependency review and OpenSSF Scorecard workflows, a CODEOWNERS file and pre-commit hooks.
 - CI, CodeQL and OpenSSF Scorecard badges in the README and a "Security tooling" section in the security policy.
@@ -23,7 +26,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Fixed CodeQL findings: side effects in test assertions, unused imports and an unused variable.
 - All GitHub Actions are pinned to commit SHAs, and workflows run with least-privilege permissions.
 - Contributing guide and pull request template list the new lint and test commands.
-
 - Dependabot now keeps GitHub Actions, Python and npm dependencies and Docker base images up to date.
 - CI uses the latest major versions of all GitHub Actions.
 - The license copyright holder is now Jeansy91.
@@ -32,6 +34,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Frontend upgraded to SvelteKit 3 with `@sveltejs/adapter-node` 6, `@sveltejs/vite-plugin-svelte` 7, Vite 8 and TypeScript 6. SvelteKit is configured in `vite.config.ts`, `$lib` imports became `#lib` imports, and the `cookie` dependency is updated (fixes the Dependabot security alerts).
 - Minor and patch updates of backend (FastAPI, SQLAlchemy, cryptography) and frontend dependencies.
 - Dependabot ignores major TypeScript updates until SvelteKit, svelte-check and typescript-eslint support TypeScript 7.
+
+### Fixed
+
+- Segmented controls give their labels more room: segments share an equal width sized by the widest label, and the active segment no longer clips its bold label.
 
 ## [0.1.0] - 2026-11-19
 
@@ -49,5 +55,6 @@ First public release.
 - German and English user interface, light and dark mode, mobile layout.
 - Prebuilt `linux/amd64` images on GHCR (`budgie-api`, `budgie-web`) and a Docker Compose setup for Traefik.
 
-[Unreleased]: https://github.com/Jeansy91/budgie/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Jeansy91/budgie/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Jeansy91/budgie/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Jeansy91/budgie/releases/tag/v0.1.0
