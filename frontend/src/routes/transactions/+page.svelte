@@ -229,17 +229,26 @@
 					class="tx"
 					class:selected={detailId === tx.id}
 					tabindex="0"
-					aria-label={t('transactions.rowLabel', { payee: tx.payee || tx.booking_text, amount: money(tx.amount) })}
+					aria-label={t('transactions.rowLabel', { payee: tx.custom_name || tx.payee || tx.booking_text, amount: money(tx.amount) })}
 					onclick={(e) => rowClick(e, tx)}
 					onkeydown={(e) => rowKey(e, tx)}
 				>
 					<span class="avatar" style:background={avatarColor(tx.payee || tx.booking_text)}>{initials(tx.payee || tx.booking_text)}</span>
 					<div class="main">
 						<div class="payee-row">
-							<span class="payee" title={tx.payee || tx.booking_text}>{tx.payee || tx.booking_text}</span>
+							<span class="payee" title={tx.custom_name || tx.payee || tx.booking_text}>
+								{tx.custom_name || tx.payee || tx.booking_text}
+							</span>
 							<BudgetMonthMenu {tx} onchange={(n) => Object.assign(tx, n)} onerror={(m) => (error = m)} />
 						</div>
-						<div class="purpose" title={tx.purpose || tx.booking_text}>
+						<div
+							class="purpose"
+							title={tx.custom_name ? [tx.payee, tx.purpose].filter(Boolean).join(' · ') : tx.purpose || tx.booking_text}
+						>
+							{#if tx.custom_name && tx.payee}
+								<!-- eslint-disable-next-line svelte/no-useless-mustaches -- explicit separator string keeps its surrounding spaces -->
+								{tx.payee}{' · '}
+							{/if}
 							<!-- eslint-disable-next-line svelte/no-useless-mustaches -- explicit separator string keeps its surrounding spaces -->
 							{tx.booking_text}{#if tx.purpose}{' · '}{tx.purpose}{/if}
 							<!-- eslint-disable-next-line svelte/no-useless-mustaches -- explicit separator string keeps its surrounding spaces -->

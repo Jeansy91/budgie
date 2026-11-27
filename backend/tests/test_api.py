@@ -183,3 +183,34 @@ def test_category_crud(admin):
     assert admin.post("/api/categories", json={"name": "Müllabfuhr", "parent_id": wohnen}).status_code == 409
     response = admin.delete(f"/api/categories/{sub['id']}")
     assert response.status_code == 204
+
+
+def test_transaction_custom_name(admin, sample_csv, no_ai):
+    upload(admin, sample_csv)
+    tx = admin.get("/api/transactions", params={"q": "REWE"}).json()["items"][0]
+    url = f"/api/transactions/{tx['id']}"
+    assert tx["custom_name"] is None
+
+    r = admin.patch(url, json={"custom_name": "  Printer cartridges  "})
+    assert r.status_code == 200, r.text
+    assert r.json()["transaction"]["custom_name"] == "Printer cartridges"
+    detail = admin.get(url).json()
+    assert detail["custom_name"] == "Printer cartridges"
+    assert detail["payee"] == tx["payee"] and detail["purpose"] == tx["purpose"]
+
+    # A patch without custom_name leaves it alone
+    admin.patch(url, json={"note": "Birthday"})
+    assert admin.get(url).json()["custom_name"] == "Printer cartridges"
+
+    # Search finds it by custom name and by note
+    assert [t["id"] for t in admin.get("/api/transactions", params={"q": "cartridges"}).json()["items"]] == [tx["id"]]
+    assert [t["id"] for t in admin.get("/api/transactions", params={"q": "birthday"}).json()["items"]] == [tx["id"]]
+
+    for empty in ("", "   ", None):
+        admin.patch(url, json={"custom_name": "Something"})
+        r = admin.patch(url, json={"custom_name": empty})
+        assert r.status_code == 200, r.text
+        assert admin.get(url).json()["custom_name"] is None
+
+    assert admin.patch(url, json={"custom_name": "x" * 256}).status_code == 422
+    assert admin.patch(url, json={"custom_name": "x" * 255}).status_code == 200

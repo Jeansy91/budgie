@@ -61,6 +61,8 @@ export interface Transaction {
 	booking_text: string;
 	purpose: string;
 	note: string;
+	/** User-defined display name; payee and purpose stay as delivered by the bank */
+	custom_name: string | null;
 	category_id: number | null;
 	category_source: 'manual' | 'rule' | 'model' | 'llm' | 'transfer' | null;
 	rule_id: number | null;

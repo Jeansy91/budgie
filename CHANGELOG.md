@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Transfers between own accounts are detected automatically: a transaction whose counterparty IBAN belongs to another account of the household, or to an additional own account (name and IBAN) entered in the settings, is assigned to the transfer category. Detection runs before rules and AI and never overrides manual assignments; existing transactions are backfilled on upgrade. CSV exports without counterparty IBAN are not affected.
 - A "Hide transfers" switch on the transactions page (on by default) and a "Mark as transfer" quick action in the transaction details.
+- Transactions can get a custom name (for example what was bought in an Amazon payment). It is shown in the transaction list and the detail view and is included in the search; the bank's original payee and purpose stay unchanged. The search now also covers notes.
+
+### Changed
+
+- The result of a bank sync is now a compact summary: totals at the top, one line per account with new transactions, and accounts without anything new grouped behind a toggle. With many accounts, the account list of a bank login collapses to a count.
 
 ## [0.2.0] - 2026-11-27
 

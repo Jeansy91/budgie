@@ -53,7 +53,7 @@ def list_transactions(
     category_id: int | None = Query(None, description="Main category or subcategory"),
     uncategorized: bool = False,
     ai_review: bool = Query(False, description="Only AI assignments and suggestions nobody has reviewed yet"),
-    q: str | None = Query(None, description="Search in payee and purpose"),
+    q: str | None = Query(None, description="Search in payee, purpose, custom name and note"),
     hide_transfers: bool = Query(False, description="Hide transactions in transfer categories"),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
@@ -88,7 +88,14 @@ def list_transactions(
         query = query.where(or_(Transaction.category_id.is_(None), Transaction.category_id.not_in(transfer_ids)))
     if q:
         like = f"%{q.strip()}%"
-        query = query.where(or_(Transaction.payee.ilike(like), Transaction.purpose.ilike(like)))
+        query = query.where(
+            or_(
+                Transaction.payee.ilike(like),
+                Transaction.purpose.ilike(like),
+                Transaction.custom_name.ilike(like),
+                Transaction.note.ilike(like),
+            )
+        )
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     items = db.scalars(
         query.order_by(Transaction.booking_date.desc(), Transaction.id.desc()).limit(limit).offset(offset)
@@ -110,6 +117,9 @@ def update_transaction(transaction_id: int, data: TransactionPatch, db: DB, user
     fields = data.model_fields_set
     if data.note is not None:
         t.note = data.note
+    if "custom_name" in fields:
+        # Empty or whitespace-only clears the name; never part of the dedup hash
+        t.custom_name = (data.custom_name or "").strip() or None
     if data.budget_shift is not None:
         t.budget_shift = None if data.budget_shift == "auto" else BudgetShift(data.budget_shift)
     rule_result: RuleOut | None = None
