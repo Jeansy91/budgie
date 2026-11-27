@@ -10,6 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Transactions can get a custom name (for example what was bought in an Amazon payment). It is shown in the transaction list and the detail view and is included in the search; the bank's original payee and purpose stay unchanged. The search now also covers notes.
 
+### Changed
+
+- The import and settings pages use the full width of wide screens. On the import page the bank sync and the CSV upload sit side by side; settings cards flow into columns.
+- The account list in the settings is grouped by bank and shows one compact row per account (IBAN, transactions, visibility, balance). Name and visibility are edited inline on demand.
+
 ## [0.2.0] - 2026-11-27
 
 ### Added

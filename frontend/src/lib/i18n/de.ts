@@ -377,7 +377,15 @@ const de = {
 		changePassword: 'Passwort ändern',
 		currentPassword: 'Aktuelles Passwort',
 		newPassword: 'Neues Passwort',
-		change: 'Ändern'
+		change: 'Ändern',
+		accountCount: { one: '{count} Konto', other: '{count} Konten' },
+		balance: 'Saldo',
+		visibility: 'Sichtbarkeit',
+		bankCount: { one: '{count} Bank', other: '{count} Banken' },
+		sharedBadge: 'Gemeinsam',
+		privateBadge: 'Privat: {names}',
+		privateNone: 'Privat',
+		editAccount: 'Konto {name} bearbeiten'
 	},
 	budget: {
 		saved: {

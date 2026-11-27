@@ -4,6 +4,7 @@
 	import { MiddleTruncate, Select, type SelectOption } from '#lib/ui/index.ts';
 	import BankSync from '#lib/BankSync.svelte';
 	import { iban, money } from '#lib/format.ts';
+	import { groupAccountsByBank } from '#lib/accounts.ts';
 	import { t } from '#lib/i18n/index.svelte.ts';
 	import type { Account, CsvFormat, CsvPreview, CsvProfile, ImportResult } from '#lib/types.ts';
 	import Upload from '@lucide/svelte/icons/upload';
@@ -87,10 +88,11 @@
 		await loadProfiles();
 	}
 
+	const sortedAccounts = $derived(groupAccountsByBank(accounts).flatMap((g) => g.accounts));
 	const bankNames = $derived(formats.map((f) => f.name.replace(/ \(.*\)$/, '')).filter((n, i, a) => a.indexOf(n) === i));
 </script>
 
-<div class="readable">
+<div>
 	<div class="page-head">
 		<div>
 			<span class="eyebrow">{t('import.eyebrow')}</span>
@@ -99,44 +101,48 @@
 		</div>
 	</div>
 
-	<BankSync onsynced={loadAccounts} />
+	<div class="top">
+		<BankSync onsynced={loadAccounts} />
 
-	<h2 class="section first">{t('import.csvTitle')}</h2>
-	<p class="muted small hint">
-		{t('import.csvHint', { banks: bankNames.join(', ') })}
-	</p>
+		<div class="csv">
+			<h2 class="section first">{t('import.csvTitle')}</h2>
+			<p class="muted small hint">
+				{t('import.csvHint', { banks: bankNames.join(', ') })}
+			</p>
 
-	<label
-		class="drop"
-		class:dragging
-		class:busy
-		ondragover={(e) => {
-			e.preventDefault();
-			dragging = true;
-		}}
-		ondragleave={() => (dragging = false)}
-		ondrop={(e) => {
-			e.preventDefault();
-			dragging = false;
-			if (e.dataTransfer?.files) upload(e.dataTransfer.files);
-		}}
-	>
-		<span class="icon"><Upload size={26} /></span>
-		<strong>{busy ? t('import.importing') : t('import.drop')}</strong>
-		<span class="muted">{t('import.orClick')}</span>
-		<input
-			bind:this={input}
-			type="file"
-			accept=".csv,text/csv"
-			multiple
-			onchange={(e) => e.currentTarget.files && upload(e.currentTarget.files)}
-			disabled={busy}
-		/>
-	</label>
+			<label
+				class="drop"
+				class:dragging
+				class:busy
+				ondragover={(e) => {
+					e.preventDefault();
+					dragging = true;
+				}}
+				ondragleave={() => (dragging = false)}
+				ondrop={(e) => {
+					e.preventDefault();
+					dragging = false;
+					if (e.dataTransfer?.files) upload(e.dataTransfer.files);
+				}}
+			>
+				<span class="icon"><Upload size={26} /></span>
+				<strong>{busy ? t('import.importing') : t('import.drop')}</strong>
+				<span class="muted">{t('import.orClick')}</span>
+				<input
+					bind:this={input}
+					type="file"
+					accept=".csv,text/csv"
+					multiple
+					onchange={(e) => e.currentTarget.files && upload(e.currentTarget.files)}
+					disabled={busy}
+				/>
+			</label>
 
-	<div class="target">
-		<span class="muted">{t('import.into')}</span>
-		<Select options={accountOptions} bind:value={accountId} label={t('common.account')} />
+			<div class="target">
+				<span class="muted">{t('import.into')}</span>
+				<Select options={accountOptions} bind:value={accountId} label={t('common.account')} />
+			</div>
+		</div>
 	</div>
 
 	{#if pending.length}
@@ -189,12 +195,12 @@
 	{#if accounts.length}
 		<h2 class="section">{t('import.accounts')}</h2>
 		<div class="accounts">
-			{#each accounts as a (a.id)}
+			{#each sortedAccounts as a (a.id)}
 				<div class="card acc">
 					<span class="bank"><Landmark size={20} /></span>
 					<div class="who">
 						<strong class="clamp-2" title={a.name}>{a.name}</strong>
-						<span class="muted small">{a.iban ? iban(a.iban) : t('import.noIban')}</span>
+						<span class="muted small break-anywhere">{a.bank} · {a.iban ? iban(a.iban) : t('import.noIban')}</span>
 					</div>
 					<div class="bal">
 						<span class="amount">{a.balance === null ? '–' : money(a.balance)}</span>
@@ -207,9 +213,23 @@
 </div>
 
 <style>
-	/* Forms and text stay readable on very wide screens */
-	.readable {
-		max-width: 72rem;
+	/* Bank sync and CSV import side by side on wide containers */
+	.top {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0 1.5rem;
+		align-items: start;
+	}
+	.csv {
+		min-width: 0;
+	}
+	@container main (min-width: 1300px) {
+		.top {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+		.top > :global(.card) {
+			margin-bottom: 0;
+		}
 	}
 	.drop {
 		position: relative;

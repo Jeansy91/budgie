@@ -362,7 +362,15 @@ const en: Messages = {
 		changePassword: 'Change password',
 		currentPassword: 'Current password',
 		newPassword: 'New password',
-		change: 'Change'
+		change: 'Change',
+		accountCount: { one: '{count} account', other: '{count} accounts' },
+		balance: 'Balance',
+		visibility: 'Visibility',
+		bankCount: { one: '{count} bank', other: '{count} banks' },
+		sharedBadge: 'Shared',
+		privateBadge: 'Private: {names}',
+		privateNone: 'Private',
+		editAccount: 'Edit account {name}'
 	},
 	budget: {
 		saved: {
