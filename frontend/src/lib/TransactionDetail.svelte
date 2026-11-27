@@ -20,6 +20,7 @@
 	import WandSparkles from '@lucide/svelte/icons/wand-sparkles';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Bot from '@lucide/svelte/icons/bot';
+	import ArrowLeftRight from '@lucide/svelte/icons/arrow-left-right';
 	import Info from '@lucide/svelte/icons/info';
 	import Plus from '@lucide/svelte/icons/plus';
 	import CloudDownload from '@lucide/svelte/icons/cloud-download';
@@ -99,6 +100,18 @@
 	// --- Category -----------------------------------------------------------
 	const pct = percent;
 	let isAi = $derived(tx?.category_source === 'model' || tx?.category_source === 'llm');
+	// Quick action: assign the transfer category (first subcategory of a transfer main category)
+	let transferTarget = $derived.by(() => {
+		for (const main of categories) {
+			if (main.kind !== 'transfer') continue;
+			return main.children[0] ?? main;
+		}
+		return null;
+	});
+	let inTransferCategory = $derived.by(() => {
+		if (!tx || tx.category_id === null) return false;
+		return categories.some((m) => m.kind === 'transfer' && (m.id === tx!.category_id || m.children.some((c) => c.id === tx!.category_id)));
+	});
 	const fieldLabel = (field: Rule['field']) => t(`rules.field.${field}`);
 	const matchLabel = (match: Rule['match_type']) => t(`rules.match.${match}`);
 
@@ -318,6 +331,9 @@
 									</span>
 								{/if}
 							</span>
+						{:else if tx.category_source === 'transfer'}
+							<ArrowLeftRight size={16} />
+							<span class="grow">{t('detail.byTransfer')}</span>
 						{:else if tx.category_source === 'llm'}
 							<Bot size={16} />
 							<span class="grow">{t('source.llmTitle')}</span>
@@ -332,6 +348,12 @@
 							</button>
 						{/if}
 					</div>
+					{#if transferTarget && !inTransferCategory}
+						<button class="mark-transfer" type="button" onclick={() => patch({ category_id: transferTarget!.id })}>
+							<ArrowLeftRight size={14} />
+							{t('detail.markTransfer')}
+						</button>
+					{/if}
 					{#if tx.category_id === null && tx.suggested_category_id !== null}
 						<button class="suggest" type="button" onclick={() => patch({ category_id: tx!.suggested_category_id })}>
 							<WandSparkles size={14} />
@@ -707,6 +729,23 @@
 	.confirm:hover {
 		background: var(--accent);
 		color: #fff;
+		filter: none;
+	}
+	.mark-transfer {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-top: 0.6rem;
+		padding: 0.35rem 0.75rem;
+		border-radius: 999px;
+		background: var(--surface-2);
+		color: var(--muted);
+		box-shadow: none;
+		font-size: 0.82rem;
+		font-weight: 550;
+	}
+	.mark-transfer:hover {
+		background: var(--surface-3);
 		filter: none;
 	}
 	.suggest {

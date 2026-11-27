@@ -13,6 +13,7 @@
 	import Landmark from '@lucide/svelte/icons/landmark';
 	import Pencil from '@lucide/svelte/icons/pencil';
 	import BudgetMonthSettings from '#lib/BudgetMonthSettings.svelte';
+	import TransferSettings from '#lib/TransferSettings.svelte';
 
 	let { data } = $props();
 	let users = $state<User[]>([]);
@@ -240,6 +241,8 @@
 			<RadioGroup options={languageOptions} value={language} label={t('settings.language')} onchange={setLanguage} />
 			<p class="muted small">{t('settings.languageHint', { browser: browserLanguage })}</p>
 		</section>
+
+		<TransferSettings />
 
 		<BudgetMonthSettings />
 

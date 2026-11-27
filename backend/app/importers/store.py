@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 from ..ai import service as ai
 from ..models import Account, ImportBatch, Transaction
 from ..rules import apply_rules
+from ..transfers import detect_transfers
 from .common import ParsedTransaction
 
 
@@ -104,11 +105,13 @@ def store_transactions(
 
     batch.rows_imported = len(new)
     batch.rows_duplicate = batch.rows_total - len(new)
+    # An IBAN match with another own account is the strongest signal, so it comes first
+    by_transfer = detect_transfers(db, household_id, new)
     by_rules = apply_rules(db, household_id, new)
     # Whatever no rule matches is categorized by the AI. Uncertain cases go to
     # the language model in the background after the commit, if configured.
     result = ai.categorize(db, household_id, new)
-    batch.rows_categorized = by_rules + result.assigned
+    batch.rows_categorized = by_transfer + by_rules + result.assigned
     if result.unsure_ids:
         ids = result.unsure_ids
         ai.after_commit(db, lambda: ai.schedule_llm(household_id, ids))

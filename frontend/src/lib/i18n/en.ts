@@ -66,17 +66,12 @@ const en: Messages = {
 		allAccounts: 'All accounts',
 		allCategories: 'All categories',
 		allOfMain: 'all',
-		ruleCreated: {
-			one: 'Rule for “{payee}” created, {count} more transaction categorized.',
-			other: 'Rule for “{payee}” created, {count} more transactions categorized.'
-		},
 		count: { one: '{count} transaction', other: '{count} transactions' },
 		searchPlaceholder: 'Search payee, reference, name or note',
 		onlyUncategorized: 'Uncategorized only',
+		hideTransfers: 'Hide transfers',
 		aiReviewTitle: 'AI assignments and suggestions nobody has confirmed yet',
 		aiReview: 'Review AI',
-		learnRulesTitle: 'When categorizing, create a “payee or sender contains …” rule and apply it to similar transactions',
-		learnRules: 'Learn rules',
 		empty: 'No transactions match these filters.',
 		rowLabel: '{payee}, {amount} – show details',
 		suggestionTitle: 'Accept the AI suggestion with one click: {category}',
@@ -93,6 +88,8 @@ const en: Messages = {
 		payer: 'Payer',
 		payee: 'Payee',
 		sourceUnknown: 'Unknown',
+		byTransfer: 'Detected as transfer between own accounts (own IBAN)',
+		markTransfer: 'Mark as transfer',
 		sourceFints: 'FinTS sync',
 		sourceCsv: 'CSV import',
 		closeDetails: 'Close details',
@@ -141,7 +138,9 @@ const en: Messages = {
 		llm: 'AI',
 		model: 'AI',
 		modelTitle: 'Assigned by the AI, {confidence} confident',
-		llmTitle: 'Assigned by the local language model'
+		llmTitle: 'Assigned by the local language model',
+		transfer: 'transfer',
+		transferTitle: 'Detected automatically as a transfer between own accounts'
 	},
 	budgetMenu: {
 		auto: 'Automatic',
@@ -204,6 +203,17 @@ const en: Messages = {
 		retry: 'Try again',
 		cancelled: 'Sync cancelled.',
 		from: 'from {date}',
+		res: {
+			newCount: { zero: 'No new transactions', one: '{count} new transaction', other: '{count} new transactions' },
+			categorized: '{count} categorized automatically',
+			duplicates: '{count} already there',
+			accounts: { one: '{count} account', other: '{count} accounts' },
+			newShort: '+{count} new',
+			categorizedShort: '{count} categorized',
+			withoutNew: { one: '{count} account without new transactions', other: '{count} accounts without new transactions' },
+			existing: '{name} · {count} already there',
+			skipped: '{name}: {reason}'
+		},
 		loginNumber: 'Login number',
 		loginPlaceholder: '10 digits, as used to sign in',
 		saveLogin: 'Save login',
@@ -397,6 +407,32 @@ const en: Messages = {
 		autoDetectHint:
 			'For transactions without a category: booking text “Gehalt/Rente” (salary/pension) or a payer who transfers a similar amount at the end of other months too.',
 		perTransaction: 'Set individual transactions in the transaction list via the calendar icon.'
+	},
+	transfers: {
+		title: 'Transfers',
+		intro:
+			'Payments between your own accounts are neither income nor expenses. "Hide transfers" removes them from the transaction list; the totals in the overview never include them.',
+		autoDetect: 'Detect transfers between own accounts automatically',
+		autoDetectHint:
+			'Detection uses the counterparty IBAN, which the FinTS sync delivers. CSV exports often do not contain it. In that case assign the category "Transfers" manually or with a rule.',
+		detectedCount: {
+			one: '{count} transaction currently detected as a transfer',
+			other: '{count} transactions currently detected as transfers'
+		},
+		ownAccounts: 'Your accounts in Budgie',
+		noOwnAccounts: 'No accounts with an IBAN yet',
+		extra: 'Additional own accounts',
+		extraHint: 'Own accounts that are not tracked in Budgie, e.g. a savings account at another bank.',
+		namePlaceholder: 'Name, e.g. Savings at Bank X',
+		extraPlaceholder: 'IBAN',
+		accountName: 'Account name',
+		ibanLabel: 'Account IBAN',
+		addIban: 'Add account',
+		removeAccount: 'Remove {name}',
+		saved: {
+			one: 'Saved. {count} transaction reassigned.',
+			other: 'Saved. {count} transactions reassigned.'
+		}
 	},
 	ai: {
 		trained: 'AI retrained and open transactions recategorized.',

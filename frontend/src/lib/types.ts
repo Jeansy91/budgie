@@ -64,7 +64,7 @@ export interface Transaction {
 	/** User-defined display name; payee and purpose stay as delivered by the bank */
 	custom_name: string | null;
 	category_id: number | null;
-	category_source: 'manual' | 'rule' | 'model' | 'llm' | null;
+	category_source: 'manual' | 'rule' | 'model' | 'llm' | 'transfer' | null;
 	rule_id: number | null;
 	/** Date that decides which month the transaction counts towards (end-of-month salary → 1st of next month) */
 	budget_date: string;
@@ -128,6 +128,15 @@ export interface BudgetSettings {
 	salary_payees: string[];
 	salary_auto_detect: boolean;
 	shifted_count: number;
+}
+
+export interface TransferSettings {
+	auto_detect: boolean;
+	extra_accounts: { name: string; iban: string }[];
+	account_ibans: { name: string; iban: string }[];
+	detected_count: number;
+	/** Transactions reassigned by the last save */
+	changed: number;
 }
 
 export interface CategorySum {
