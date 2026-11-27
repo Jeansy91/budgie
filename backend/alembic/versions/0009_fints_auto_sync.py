@@ -1,7 +1,7 @@
 """FinTS: automatic fetching (opt-in encrypted PIN, interval, pause state)
 
-Revision ID: 0008
-Revises: 0007
+Revision ID: 0009
+Revises: 0008
 Create Date: 2026-11-27 10:00:00
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0008'
-down_revision: Union[str, Sequence[str], None] = '0007'
+revision: str = '0009'
+down_revision: Union[str, Sequence[str], None] = '0008'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
