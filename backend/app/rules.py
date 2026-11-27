@@ -64,7 +64,7 @@ def first_match(rules: Iterable[Rule], t: Transaction) -> Rule | None:
 def apply_rules(
     db: Session, household_id: int, transactions: Iterable[Transaction], overwrite_rule_results: bool = False
 ) -> int:
-    """Applies rules. Manual assignments are never overwritten, AI assignments are.
+    """Applies rules. Manual assignments and detected transfers are never overwritten, AI assignments are.
 
     Without `overwrite_rule_results`, only uncategorized transactions are
     processed. With the flag, results of earlier rules are recomputed as well.
@@ -73,7 +73,8 @@ def apply_rules(
     rules = active_rules(db, household_id)
     changed = 0
     for t in transactions:
-        if t.category_source == CategorySource.manual:
+        # Detected transfers (IBAN match) are the strongest signal and stay untouched
+        if t.category_source in (CategorySource.manual, CategorySource.transfer):
             continue
         # Rules take precedence over the AI; earlier rule results are only recomputed with the flag
         ai = t.category_source in (CategorySource.model, CategorySource.llm)

@@ -6,6 +6,7 @@ from ..i18n import http_error
 from ..importers.common import normalize_iban
 from ..models import Account, Transaction, User
 from ..schemas import AccountIn, AccountOut, AccountPatch
+from ..transfers import redetect
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -52,6 +53,9 @@ def create_account(data: AccountIn, db: DB, user: CurrentUser):
     # Whoever creates a non-shared account can see it themselves
     account.members = _members(db, user, list({*data.member_ids, user.id}))
     db.add(account)
+    db.flush()
+    if iban:
+        redetect(db, user.household_id)
     db.commit()
     return account_out(db, account)
 
@@ -72,5 +76,9 @@ def update_account(account_id: int, data: AccountPatch, db: DB, user: CurrentUse
 @router.delete("/{account_id}", status_code=204)
 def delete_account(account_id: int, db: DB, user: CurrentUser):
     account = get_visible_account(db, user, account_id)
+    had_iban = bool(account.iban)
     db.delete(account)
+    db.flush()
+    if had_iban:
+        redetect(db, user.household_id)
     db.commit()

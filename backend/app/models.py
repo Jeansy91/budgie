@@ -29,6 +29,7 @@ from sqlalchemy import (
     UniqueConstraint,
     false,
     func,
+    true,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -49,6 +50,7 @@ class CategorySource(str, enum.Enum):
     rule = "rule"
     model = "model"  # local classifier (scikit-learn)
     llm = "llm"  # local language model via Ollama
+    transfer = "transfer"  # detected transfer between own accounts (counterparty IBAN)
 
 
 class BudgetShift(str, enum.Enum):
@@ -352,3 +354,15 @@ class BudgetSettings(Base):
     # Detect salary without a category: booking text "Gehalt/Rente" or a
     # recurring payment from the same payer at the end of the month
     salary_auto_detect: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class TransferSettings(Base):
+    """Household settings for transfers between own accounts."""
+
+    __tablename__ = "transfer_settings"
+
+    household_id: Mapped[int] = mapped_column(ForeignKey("households.id", ondelete="CASCADE"), primary_key=True)
+    # Detect transfers automatically by the counterparty IBAN
+    auto_detect: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    # Own accounts that are not tracked in Budgie (normalized IBANs)
+    extra_ibans: Mapped[list[str]] = mapped_column(ARRAY(String(34)), default=list, server_default="{}")

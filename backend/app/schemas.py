@@ -392,6 +392,29 @@ class BudgetSettingsOut(BudgetSettingsIn, ORM):
     shifted_count: int = 0
 
 
+# --- Transfers ------------------------------------------------------------
+
+
+class TransferSettingsIn(BaseModel):
+    auto_detect: bool = True
+    extra_ibans: list[str] = Field([], max_length=50)
+
+
+class TransferAccountOut(BaseModel):
+    name: str
+    iban: str
+
+
+class TransferSettingsOut(BaseModel):
+    auto_detect: bool
+    extra_ibans: list[str]
+    account_ibans: list[TransferAccountOut]
+    # Transactions currently marked as detected transfers
+    detected_count: int = 0
+    # Transactions reassigned by the last save
+    changed: int = 0
+
+
 # --- FinTS ----------------------------------------------------------------
 
 ING_BANK_CODE = "50010517"

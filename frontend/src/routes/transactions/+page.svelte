@@ -5,7 +5,7 @@
 	import CategorySelect from '#lib/CategorySelect.svelte';
 	import BudgetMonthMenu from '#lib/BudgetMonthMenu.svelte';
 	import TransactionDetail from '#lib/TransactionDetail.svelte';
-	import { MonthPicker, Select, type SelectOption } from '#lib/ui/index.ts';
+	import { MonthPicker, Select, Switch, type SelectOption } from '#lib/ui/index.ts';
 	import { categoryLabels, dateFormat, money, percent } from '#lib/format.ts';
 	import { t } from '#lib/i18n/index.svelte.ts';
 	import { avatarColor, colorFor, initials } from '#lib/colors.ts';
@@ -24,6 +24,23 @@
 	let uncategorized = $state(params.get('uncategorized') === '1');
 	let aiReview = $state(params.get('ai_review') === '1');
 	let q = $state(params.get('q') ?? '');
+	// Transfers between own accounts are hidden by default; the choice is remembered per browser
+	const HIDE_KEY = 'budgie.hideTransfers';
+	function storedHide(): boolean {
+		try {
+			return localStorage.getItem(HIDE_KEY) !== '0';
+		} catch {
+			return true;
+		}
+	}
+	let hideTransfers = $state(params.has('hide_transfers') ? params.get('hide_transfers') === '1' : storedHide());
+	function setHideTransfers(on: boolean) {
+		try {
+			localStorage.setItem(HIDE_KEY, on ? '1' : '0');
+		} catch {
+			// storage unavailable (private mode): the choice only lasts for this page view
+		}
+	}
 	let makeRule = $state(false);
 
 	let items = $state<Transaction[]>([]);
@@ -71,7 +88,15 @@
 		])
 	]);
 
-	const filters = () => ({ month, account_id: accountId, category_id: categoryId, uncategorized, ai_review: aiReview, q });
+	const filters = () => ({
+		month,
+		account_id: accountId,
+		category_id: categoryId,
+		uncategorized,
+		ai_review: aiReview,
+		q,
+		hide_transfers: hideTransfers
+	});
 
 	async function load(append = false) {
 		try {
@@ -183,6 +208,9 @@
 			{#if aiReview}<Check size={15} />{:else}<Wand size={15} />{/if}
 			{t('transactions.aiReview')}
 		</button>
+		<div class="field hide-transfers">
+			<Switch bind:checked={hideTransfers} onchange={setHideTransfers}>{t('transactions.hideTransfers')}</Switch>
+		</div>
 		<button class="pill" class:on={makeRule} onclick={() => (makeRule = !makeRule)} title={t('transactions.learnRulesTitle')}>
 			<Sparkles size={15} />
 			{t('transactions.learnRules')}
@@ -297,6 +325,10 @@
 	.field {
 		flex: 1 1 160px;
 		min-width: 0;
+	}
+	.field.hide-transfers {
+		flex: 0 0 auto;
+		align-self: center;
 	}
 	.field :global(.select-trigger) {
 		width: 100%;

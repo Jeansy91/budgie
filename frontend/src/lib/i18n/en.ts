@@ -73,6 +73,7 @@ const en: Messages = {
 		count: { one: '{count} transaction', other: '{count} transactions' },
 		searchPlaceholder: 'Search payee or reference',
 		onlyUncategorized: 'Uncategorized only',
+		hideTransfers: 'Hide transfers',
 		aiReviewTitle: 'AI assignments and suggestions nobody has confirmed yet',
 		aiReview: 'Review AI',
 		learnRulesTitle: 'When categorizing, create a “payee or sender contains …” rule and apply it to similar transactions',
@@ -93,6 +94,8 @@ const en: Messages = {
 		payer: 'Payer',
 		payee: 'Payee',
 		sourceUnknown: 'Unknown',
+		byTransfer: 'Detected as transfer between own accounts (own IBAN)',
+		markTransfer: 'Mark as transfer',
 		sourceFints: 'FinTS sync',
 		sourceCsv: 'CSV import',
 		closeDetails: 'Close details',
@@ -137,7 +140,9 @@ const en: Messages = {
 		llm: 'AI',
 		model: 'AI',
 		modelTitle: 'Assigned by the AI, {confidence} confident',
-		llmTitle: 'Assigned by the local language model'
+		llmTitle: 'Assigned by the local language model',
+		transfer: 'transfer',
+		transferTitle: 'Detected automatically as a transfer between own accounts'
 	},
 	budgetMenu: {
 		auto: 'Automatic',
@@ -385,6 +390,29 @@ const en: Messages = {
 		autoDetectHint:
 			'For transactions without a category: booking text “Gehalt/Rente” (salary/pension) or a payer who transfers a similar amount at the end of other months too.',
 		perTransaction: 'Set individual transactions in the transaction list via the calendar icon.'
+	},
+	transfers: {
+		title: 'Transfers',
+		intro:
+			'Payments between your own accounts are neither income nor expenses. "Hide transfers" removes them from the transaction list; the totals in the overview never include them.',
+		autoDetect: 'Detect transfers between own accounts automatically',
+		autoDetectHint:
+			'Detection uses the counterparty IBAN, which the FinTS sync delivers. CSV exports often do not contain it. In that case assign the category "Transfers" manually or with a rule.',
+		detectedCount: {
+			one: '{count} transaction currently detected as a transfer',
+			other: '{count} transactions currently detected as transfers'
+		},
+		ownAccounts: 'Your accounts in Budgie',
+		noOwnAccounts: 'No accounts with an IBAN yet',
+		extra: 'Additional own IBANs',
+		extraHint: 'Own accounts that are not tracked in Budgie, e.g. a savings account at another bank.',
+		extraPlaceholder: 'Enter IBAN',
+		addIban: 'Add IBAN',
+		removeIban: 'Remove {iban}',
+		saved: {
+			one: 'Saved. {count} transaction reassigned.',
+			other: 'Saved. {count} transactions reassigned.'
+		}
 	},
 	ai: {
 		trained: 'AI retrained and open transactions recategorized.',

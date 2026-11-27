@@ -10,6 +10,7 @@
 	import { initials } from '#lib/colors.ts';
 	import { dateTime, iban, percent } from '#lib/format.ts';
 	import BudgetMonthSettings from '#lib/BudgetMonthSettings.svelte';
+	import TransferSettings from '#lib/TransferSettings.svelte';
 
 	let { data } = $props();
 	let users = $state<User[]>([]);
@@ -169,6 +170,8 @@
 			<p class="muted">{t('settings.noAccounts')} <a href="/import">{t('settings.noAccountsLink')}</a></p>
 		{/each}
 	</section>
+
+	<TransferSettings />
 
 	<BudgetMonthSettings />
 

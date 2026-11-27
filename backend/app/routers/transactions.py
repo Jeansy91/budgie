@@ -2,11 +2,12 @@ from datetime import date
 
 from fastapi import APIRouter, Query, status
 from sqlalchemy import func, or_, select
+from sqlalchemy.orm import aliased
 
 from ..ai import service as ai
 from ..deps import DB, CurrentUser, visible_account_ids
 from ..i18n import http_error
-from ..models import BudgetShift, Category, CategorySource, Rule, RuleField, RuleMatch, Transaction, User
+from ..models import BudgetShift, Category, CategoryKind, CategorySource, Rule, RuleField, RuleMatch, Transaction, User
 from ..rules import apply_rules
 from ..schemas import (
     RuleOut,
@@ -53,6 +54,7 @@ def list_transactions(
     uncategorized: bool = False,
     ai_review: bool = Query(False, description="Only AI assignments and suggestions nobody has reviewed yet"),
     q: str | None = Query(None, description="Search in payee and purpose"),
+    hide_transfers: bool = Query(False, description="Hide transactions in transfer categories"),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
 ):
@@ -75,6 +77,15 @@ def list_transactions(
                 Transaction.suggested_category_id.is_not(None),
             )
         )
+    if hide_transfers:
+        main = aliased(Category)
+        transfer_ids = (
+            select(Category.id)
+            .outerjoin(main, main.id == Category.parent_id)
+            .where(or_(Category.kind == CategoryKind.transfer, main.kind == CategoryKind.transfer))
+        )
+        # NULL-safe: uncategorized transactions stay visible
+        query = query.where(or_(Transaction.category_id.is_(None), Transaction.category_id.not_in(transfer_ids)))
     if q:
         like = f"%{q.strip()}%"
         query = query.where(or_(Transaction.payee.ilike(like), Transaction.purpose.ilike(like)))

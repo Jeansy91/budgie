@@ -86,6 +86,7 @@ const de = {
 		count: { one: '{count} Buchung', other: '{count} Buchungen' },
 		searchPlaceholder: 'Empfänger oder Verwendungszweck suchen',
 		onlyUncategorized: 'Nur ohne Kategorie',
+		hideTransfers: 'Umbuchungen ausblenden',
 		aiReviewTitle: 'Zuordnungen und Vorschläge der KI, die noch niemand bestätigt hat',
 		aiReview: 'KI prüfen',
 		learnRulesTitle: 'Beim Zuordnen eine Regel „Empfänger oder Sender enthält …“ anlegen und auf ähnliche Buchungen anwenden',
@@ -106,6 +107,8 @@ const de = {
 		payer: 'Auftraggeber',
 		payee: 'Empfänger',
 		sourceUnknown: 'Unbekannt',
+		byTransfer: 'Automatisch als Umbuchung erkannt (eigene IBAN)',
+		markTransfer: 'Als Umbuchung markieren',
 		sourceFints: 'FinTS-Abruf',
 		sourceCsv: 'CSV-Import',
 		closeDetails: 'Details schließen',
@@ -150,7 +153,9 @@ const de = {
 		llm: 'KI',
 		model: 'KI',
 		modelTitle: 'Von der KI zugeordnet, {confidence} sicher',
-		llmTitle: 'Vom lokalen Sprachmodell zugeordnet'
+		llmTitle: 'Vom lokalen Sprachmodell zugeordnet',
+		transfer: 'Umbuchung',
+		transferTitle: 'Automatisch als Umbuchung zwischen eigenen Konten erkannt'
 	},
 	budgetMenu: {
 		auto: 'Automatisch',
@@ -400,6 +405,26 @@ const de = {
 		autoDetectHint:
 			'Für Buchungen ohne Kategorie: Buchungstext „Gehalt/Rente“ oder ein Auftraggeber, der auch in anderen Monaten zum Monatsende einen ähnlichen Betrag überweist.',
 		perTransaction: 'Einzelne Buchungen legst du in der Buchungsliste über das Kalender-Symbol fest.'
+	},
+	transfers: {
+		title: 'Umbuchungen',
+		intro:
+			'Überweisungen zwischen deinen eigenen Konten sind weder Einnahme noch Ausgabe. Mit „Umbuchungen ausblenden“ verschwinden sie aus der Buchungsliste, die Summen in der Übersicht zählen sie nie mit.',
+		autoDetect: 'Umbuchungen zwischen eigenen Konten automatisch erkennen',
+		autoDetectHint:
+			'Die Erkennung nutzt die IBAN der Gegenseite, die der FinTS-Abruf mitliefert. CSV-Exporte enthalten sie oft nicht. Dann ordnest du die Kategorie „Umbuchungen“ von Hand oder über eine Regel zu.',
+		detectedCount: { one: '{count} Buchung derzeit als Umbuchung erkannt', other: '{count} Buchungen derzeit als Umbuchung erkannt' },
+		ownAccounts: 'Deine Konten in Budgie',
+		noOwnAccounts: 'Noch keine Konten mit IBAN',
+		extra: 'Weitere eigene IBANs',
+		extraHint: 'Eigene Konten, die nicht in Budgie geführt werden, z. B. ein Sparkonto bei einer anderen Bank.',
+		extraPlaceholder: 'IBAN eingeben',
+		addIban: 'IBAN hinzufügen',
+		removeIban: '{iban} entfernen',
+		saved: {
+			one: 'Gespeichert. {count} Buchung neu zugeordnet.',
+			other: 'Gespeichert. {count} Buchungen neu zugeordnet.'
+		}
 	},
 	ai: {
 		trained: 'KI neu trainiert und offene Buchungen neu eingeordnet.',
