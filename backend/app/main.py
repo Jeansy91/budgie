@@ -7,7 +7,20 @@ from . import budget_month
 from .config import get_settings
 from .fints import scheduler
 from .i18n import LocaleMiddleware
-from .routers import accounts, ai, auth, budget, categories, fints, imports, overview, rules, transactions, users
+from .routers import (
+    accounts,
+    ai,
+    auth,
+    budget,
+    categories,
+    fints,
+    imports,
+    overview,
+    rules,
+    transactions,
+    transfers,
+    users,
+)
 
 budget_month.register_events()  # automatic recomputation of the budget months (idempotent)
 
@@ -26,7 +39,7 @@ app = FastAPI(title="Budgie", version="0.2.0", docs_url="/api/docs", openapi_url
 app.add_middleware(LocaleMiddleware)
 
 api = APIRouter(prefix="/api")
-for module in (auth, users, accounts, categories, rules, transactions, imports, fints, ai, overview, budget):
+for module in (auth, users, accounts, categories, rules, transactions, imports, fints, ai, overview, budget, transfers):
     api.include_router(module.router)
 
 

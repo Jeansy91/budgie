@@ -5,13 +5,13 @@
 	import CategorySelect from '#lib/CategorySelect.svelte';
 	import BudgetMonthMenu from '#lib/BudgetMonthMenu.svelte';
 	import TransactionDetail from '#lib/TransactionDetail.svelte';
-	import { MonthPicker, Select, type SelectOption } from '#lib/ui/index.ts';
+	import { MonthPicker, Select, Switch, type SelectOption } from '#lib/ui/index.ts';
 	import { categoryLabels, dateFormat, money, percent } from '#lib/format.ts';
 	import { t } from '#lib/i18n/index.svelte.ts';
 	import { avatarColor, colorFor, initials } from '#lib/colors.ts';
 	import Search from '@lucide/svelte/icons/search';
-	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Check from '@lucide/svelte/icons/check';
+	import ArrowLeftRight from '@lucide/svelte/icons/arrow-left-right';
 	import Wand from '@lucide/svelte/icons/wand-sparkles';
 	import type { Account, Category, Transaction } from '#lib/types.ts';
 
@@ -24,14 +24,29 @@
 	let uncategorized = $state(params.get('uncategorized') === '1');
 	let aiReview = $state(params.get('ai_review') === '1');
 	let q = $state(params.get('q') ?? '');
-	let makeRule = $state(false);
+	// Transfers between own accounts are hidden by default; the choice is remembered per browser
+	const HIDE_KEY = 'budgie.hideTransfers';
+	function storedHide(): boolean {
+		try {
+			return localStorage.getItem(HIDE_KEY) !== '0';
+		} catch {
+			return true;
+		}
+	}
+	let hideTransfers = $state(params.has('hide_transfers') ? params.get('hide_transfers') === '1' : storedHide());
+	function setHideTransfers(on: boolean) {
+		try {
+			localStorage.setItem(HIDE_KEY, on ? '1' : '0');
+		} catch {
+			// storage unavailable (private mode): the choice only lasts for this page view
+		}
+	}
 
 	let items = $state<Transaction[]>([]);
 	let total = $state(0);
 	let categories = $state<Category[]>([]);
 	let accounts = $state<Account[]>([]);
 	let error = $state('');
-	let notice = $state('');
 	let labels = $derived(categoryLabels(categories));
 	let accountNames = $derived(new Map(accounts.map((a) => [a.id, a.name])));
 	// Color per category: the color of its main category
@@ -71,7 +86,15 @@
 		])
 	]);
 
-	const filters = () => ({ month, account_id: accountId, category_id: categoryId, uncategorized, ai_review: aiReview, q });
+	const filters = () => ({
+		month,
+		account_id: accountId,
+		category_id: categoryId,
+		uncategorized,
+		ai_review: aiReview,
+		q,
+		hide_transfers: hideTransfers
+	});
 
 	async function load(append = false) {
 		try {
@@ -96,15 +119,13 @@
 		return () => clearTimeout(tx);
 	});
 
-	async function setCategory(tx: Transaction, category_id: number | null, allowRule = true) {
+	async function setCategory(tx: Transaction, category_id: number | null) {
 		try {
-			const res = await api<{ transaction: Transaction; rule: unknown; other_changed: number }>(`/transactions/${tx.id}`, {
+			const res = await api<{ transaction: Transaction }>(`/transactions/${tx.id}`, {
 				method: 'PATCH',
-				body: { category_id, create_rule: allowRule && makeRule && category_id !== null }
+				body: { category_id }
 			});
 			Object.assign(tx, res.transaction);
-			notice = res.rule ? t('transactions.ruleCreated', { payee: tx.payee, count: res.other_changed }) : '';
-			if (res.other_changed) await load();
 		} catch (e) {
 			error = (e as Error).message;
 		}
@@ -183,15 +204,13 @@
 			{#if aiReview}<Check size={15} />{:else}<Wand size={15} />{/if}
 			{t('transactions.aiReview')}
 		</button>
-		<button class="pill" class:on={makeRule} onclick={() => (makeRule = !makeRule)} title={t('transactions.learnRulesTitle')}>
-			<Sparkles size={15} />
-			{t('transactions.learnRules')}
-		</button>
+		<div class="field hide-transfers">
+			<Switch bind:checked={hideTransfers} onchange={setHideTransfers}>{t('transactions.hideTransfers')}</Switch>
+		</div>
 	</div>
 </div>
 
 {#if error}<div class="error">{error}</div>{/if}
-{#if notice}<div class="ok"><Sparkles size={18} /> {notice}</div>{/if}
 
 {#if items.length === 0}
 	<div class="card muted">{t('transactions.empty')}</div>
@@ -239,7 +258,7 @@
 					{#if tx.category_id === null && tx.suggested_category_id !== null}
 						<button
 							class="suggest"
-							onclick={() => setCategory(tx, tx.suggested_category_id, false)}
+							onclick={() => setCategory(tx, tx.suggested_category_id)}
 							title={t('transactions.suggestionTitle', { category: labels.get(tx.suggested_category_id) ?? '' })}
 						>
 							<Wand size={13} /> <span class="lbl">{t('transactions.suggestion')}</span>
@@ -251,14 +270,21 @@
 					<div
 						class="cat"
 						style:--c={tx.category_id ? catColor.get(tx.category_id) : 'var(--faint)'}
+						style:--src-chars={tx.category_source && tx.category_source !== 'transfer' ? sourceLabel(tx).length : null}
 						title={tx.category_id ? labels.get(tx.category_id) : ''}
 					>
 						<CategorySelect {categories} value={tx.category_id} onchange={(v) => setCategory(tx, v)} />
-						{#if tx.category_source}<span class="src" class:ai={isAi(tx)} title={sourceTitle(tx)}>{sourceLabel(tx)}</span>{/if}
+						{#if tx.category_source === 'transfer'}
+							<span class="src icon" title={t('source.transferTitle')} aria-label={t('source.transferTitle')} role="img">
+								<ArrowLeftRight size={13} />
+							</span>
+						{:else if tx.category_source}
+							<span class="src" class:ai={isAi(tx)} title={sourceTitle(tx)}>{sourceLabel(tx)}</span>
+						{/if}
 						{#if isAi(tx)}
 							<button
 								class="confirm"
-								onclick={() => setCategory(tx, tx.category_id, false)}
+								onclick={() => setCategory(tx, tx.category_id)}
 								title={t('transactions.confirmTitle')}
 								aria-label={t('transactions.confirm')}
 							>
@@ -306,6 +332,14 @@
 	.field {
 		flex: 1 1 160px;
 		min-width: 0;
+	}
+	/* Sits on the bottom edge like the pills and selects; same height so the switch is centred with them */
+	.field.hide-transfers {
+		flex: 0 0 auto;
+		align-self: flex-end;
+		flex-direction: row;
+		align-items: center;
+		height: 2.56rem; /* = pill height */
 	}
 	.field :global(.select-trigger) {
 		width: 100%;
@@ -422,8 +456,13 @@
 	.cat :global(.select-trigger:hover) {
 		background: color-mix(in srgb, var(--c) 20%, var(--surface));
 	}
+	/* The badge floats over the right end of the pill; the name's ellipsis stops before it,
+	   so the reserved space follows the badge text length */
 	.cat:has(.src) :global(.select-trigger .value) {
-		padding-right: 3.4rem;
+		padding-right: calc(var(--src-chars, 7) * 0.36rem + 0.5rem);
+	}
+	.cat:has(.src.icon) :global(.select-trigger .value) {
+		padding-right: 1.6rem;
 	}
 	.src {
 		position: absolute;
@@ -434,6 +473,10 @@
 		letter-spacing: 0.04em;
 		color: var(--faint);
 		pointer-events: none;
+	}
+	.src.icon {
+		display: grid;
+		place-items: center;
 	}
 	.src.ai {
 		color: var(--accent-strong);

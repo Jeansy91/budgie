@@ -64,6 +64,12 @@ MESSAGES: dict[str, dict[str, str]] = {
         "de": "Kein Empfänger für die Regel vorhanden",
         "en": "There is no payee to create a rule from",
     },
+    # Transfers
+    "transfers.name_required": {
+        "de": "Bitte einen Namen für das Konto angeben",
+        "en": "Please give the account a name",
+    },
+    "transfers.invalid_iban": {"de": "Ungültige IBAN: {iban}", "en": "Invalid IBAN: {iban}"},
     # CSV import
     "import.too_large": {"de": "Datei ist zu groß", "en": "The file is too large"},
     "import.wrong_account": {

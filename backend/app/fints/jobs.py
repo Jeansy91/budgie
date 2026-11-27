@@ -450,6 +450,9 @@ def _find_or_create_account(db, user: User, connection: BankConnection, iban: st
     )
     db.add(account)
     db.flush()
+    from ..transfers import redetect
+
+    redetect(db, user.household_id)  # earlier transactions may point to the new account
     return account, True
 
 
