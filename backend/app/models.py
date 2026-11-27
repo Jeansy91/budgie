@@ -364,5 +364,5 @@ class TransferSettings(Base):
     household_id: Mapped[int] = mapped_column(ForeignKey("households.id", ondelete="CASCADE"), primary_key=True)
     # Detect transfers automatically by the counterparty IBAN
     auto_detect: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
-    # Own accounts that are not tracked in Budgie (normalized IBANs)
-    extra_ibans: Mapped[list[str]] = mapped_column(ARRAY(String(34)), default=list, server_default="{}")
+    # Own accounts that are not tracked in Budgie: [{"name": ..., "iban": <normalized IBAN>}]
+    extra_accounts: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list, server_default="[]")

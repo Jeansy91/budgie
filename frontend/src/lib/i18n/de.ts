@@ -410,11 +410,14 @@ const de = {
 		detectedCount: { one: '{count} Buchung derzeit als Umbuchung erkannt', other: '{count} Buchungen derzeit als Umbuchung erkannt' },
 		ownAccounts: 'Deine Konten in Budgie',
 		noOwnAccounts: 'Noch keine Konten mit IBAN',
-		extra: 'Weitere eigene IBANs',
+		extra: 'Weitere eigene Konten',
 		extraHint: 'Eigene Konten, die nicht in Budgie geführt werden, z. B. ein Sparkonto bei einer anderen Bank.',
-		extraPlaceholder: 'IBAN eingeben',
-		addIban: 'IBAN hinzufügen',
-		removeIban: '{iban} entfernen',
+		namePlaceholder: 'Name, z. B. Tagesgeld bei Bank X',
+		extraPlaceholder: 'IBAN',
+		accountName: 'Name des Kontos',
+		ibanLabel: 'IBAN des Kontos',
+		addIban: 'Konto hinzufügen',
+		removeAccount: '{name} entfernen',
 		saved: {
 			one: 'Gespeichert. {count} Buchung neu zugeordnet.',
 			other: 'Gespeichert. {count} Buchungen neu zugeordnet.'

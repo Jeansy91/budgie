@@ -11,6 +11,7 @@
 
 	/** Household settings for transfers between own accounts. */
 	let s = $state<TransferSettings | null>(null);
+	let newName = $state('');
 	let newIban = $state('');
 	let error = $state('');
 	let notice = $state('');
@@ -22,9 +23,11 @@
 
 	const addIban = (e?: Event) => {
 		e?.preventDefault();
+		const name = newName.trim();
 		const value = newIban.replace(/\s+/g, '').toUpperCase();
-		if (!s || !value) return;
-		if (!s.extra_ibans.includes(value)) s.extra_ibans = [...s.extra_ibans, value];
+		if (!s || !name || !value) return;
+		if (!s.extra_accounts.some((a) => a.iban === value)) s.extra_accounts = [...s.extra_accounts, { name, iban: value }];
+		newName = '';
 		newIban = '';
 	};
 
@@ -34,7 +37,7 @@
 		try {
 			s = await api<TransferSettings>('/transfers/settings', {
 				method: 'PUT',
-				body: { auto_detect: s.auto_detect, extra_ibans: s.extra_ibans }
+				body: { auto_detect: s.auto_detect, extra_accounts: s.extra_accounts }
 			});
 			error = '';
 			notice = t('transfers.saved', { count: s.changed });
@@ -86,23 +89,37 @@
 					<strong>{t('transfers.extra')}</strong>
 					<span class="muted small">{t('transfers.extraHint')}</span>
 				</div>
-				<div class="chips">
-					{#each s.extra_ibans as i (i)}
-						<span class="chip tag">
-							{formatIban(i)}<button
-								type="button"
-								aria-label={t('transfers.removeIban', { iban: formatIban(i) })}
-								onclick={() => s && (s.extra_ibans = s.extra_ibans.filter((x) => x !== i))}
-							>
-								<X size={13} />
-							</button>
-						</span>
-					{/each}
-					<form class="add" onsubmit={addIban}>
-						<input bind:value={newIban} placeholder={t('transfers.extraPlaceholder')} aria-label={t('transfers.addIban')} />
-						<button type="submit" class="secondary" disabled={!newIban.trim()}><Plus size={15} /> {t('common.add')}</button>
-					</form>
-				</div>
+				{#if s.extra_accounts.length}
+					<ul class="accounts">
+						{#each s.extra_accounts as a (a.iban)}
+							<li>
+								<span>{a.name}</span>
+								<span class="muted small">{formatIban(a.iban)}</span>
+								<button
+									type="button"
+									class="remove"
+									aria-label={t('transfers.removeAccount', { name: a.name })}
+									onclick={() => s && (s.extra_accounts = s.extra_accounts.filter((x) => x.iban !== a.iban))}
+								>
+									<X size={14} />
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+				<form class="add" onsubmit={addIban}>
+					<input
+						bind:value={newName}
+						maxlength="100"
+						placeholder={t('transfers.namePlaceholder')}
+						aria-label={t('transfers.accountName')}
+					/>
+					<input bind:value={newIban} placeholder={t('transfers.extraPlaceholder')} aria-label={t('transfers.ibanLabel')} />
+					<button type="submit" class="secondary" disabled={!newName.trim() || !newIban.trim()}>
+						<Plus size={15} />
+						{t('transfers.addIban')}
+					</button>
+				</form>
 			</div>
 		</div>
 
@@ -178,49 +195,29 @@
 		gap: 0.2rem 0.75rem;
 		align-items: baseline;
 	}
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.45rem;
-		align-items: center;
-	}
-	.chip {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		padding: 0.4rem 0.35rem 0.4rem 0.85rem;
-		border-radius: 999px;
-		background: var(--accent-soft);
-		color: var(--accent-strong);
-		font-size: 0.85rem;
-		font-weight: 550;
-		font-variant-numeric: tabular-nums;
-	}
-	.tag button {
+	.accounts li .remove {
+		margin-left: auto;
 		display: grid;
 		place-items: center;
-		width: 1.35rem;
-		height: 1.35rem;
+		width: 1.6rem;
+		height: 1.6rem;
 		padding: 0;
 		border-radius: 999px;
 		background: transparent;
-		color: inherit;
+		color: var(--muted);
 		box-shadow: none;
 	}
-	.tag button:hover {
-		background: color-mix(in srgb, var(--accent) 20%, transparent);
+	.accounts li .remove:hover {
+		background: var(--surface-3);
 		filter: none;
 	}
 	.add {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 0.45rem;
-		flex: 1 1 18rem;
-		min-width: 0;
-		max-width: 100%;
 	}
 	.add input {
-		flex: 1 1 0;
-		width: 100%;
+		flex: 1 1 12rem;
 		min-width: 0;
 		border-radius: 999px;
 		padding-top: 0.45rem;
@@ -244,10 +241,5 @@
 		align-items: center;
 		gap: 0.3rem;
 		color: var(--accent-strong);
-	}
-	@media (max-width: 640px) {
-		.add {
-			flex-basis: 100%;
-		}
 	}
 </style>

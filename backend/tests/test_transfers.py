@@ -86,14 +86,22 @@ def test_extra_iban(admin, no_ai):
     store(a, parsed("Sparkonto", "-50.00", IBAN_EXTRA))
     assert items(admin)["Sparkonto"]["category_source"] is None
     r = admin.put(
-        "/api/transfers/settings", json={"auto_detect": True, "extra_ibans": [IBAN_EXTRA, IBAN_EXTRA.lower()]}
+        "/api/transfers/settings",
+        json={
+            "auto_detect": True,
+            "extra_accounts": [
+                {"name": " Sparkonto  Bank X ", "iban": IBAN_EXTRA},
+                {"name": "Duplicate", "iban": IBAN_EXTRA.lower()},
+            ],
+        },
     )
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["extra_ibans"] == ["GB82WEST12345698765432"] and body["changed"] == 1
+    assert body["extra_accounts"] == [{"name": "Sparkonto Bank X", "iban": "GB82WEST12345698765432"}]
+    assert body["changed"] == 1
     assert items(admin)["Sparkonto"]["category_source"] == "transfer"
     # Removing the IBAN un-marks the transaction again
-    body = admin.put("/api/transfers/settings", json={"auto_detect": True, "extra_ibans": []}).json()
+    body = admin.put("/api/transfers/settings", json={"auto_detect": True, "extra_accounts": []}).json()
     assert body["changed"] == 1
     assert items(admin)["Sparkonto"]["category_id"] is None
 
@@ -109,7 +117,7 @@ def test_manual_assignment_is_never_overwritten(admin, no_ai):
 
         db.get(Transaction, tid).counterparty_iban = IBAN_B.replace(" ", "")  # type: ignore[union-attr]
         db.commit()
-    assert admin.put("/api/transfers/settings", json={"auto_detect": True, "extra_ibans": []}).json()["changed"] == 0
+    assert admin.put("/api/transfers/settings", json={"auto_detect": True, "extra_accounts": []}).json()["changed"] == 0
     t = items(admin)["Umbuchung"]
     assert (t["category_id"], t["category_source"]) == (food, "manual")
 
@@ -123,12 +131,12 @@ def test_setting_off_unmarks_and_recategorizes(admin, no_ai):
     store(a, parsed("Umbuchung", "-100.00", IBAN_B))
     # The IBAN match beats the rule
     assert items(admin)["Umbuchung"]["category_source"] == "transfer"
-    body = admin.put("/api/transfers/settings", json={"auto_detect": False, "extra_ibans": []}).json()
+    body = admin.put("/api/transfers/settings", json={"auto_detect": False, "extra_accounts": []}).json()
     assert body["changed"] == 1 and body["detected_count"] == 0
     t = items(admin)["Umbuchung"]
     assert (t["category_id"], t["category_source"]) == (food, "rule")
     # Turning it on again marks it as transfer
-    admin.put("/api/transfers/settings", json={"auto_detect": True, "extra_ibans": []})
+    admin.put("/api/transfers/settings", json={"auto_detect": True, "extra_accounts": []})
     assert items(admin)["Umbuchung"]["category_source"] == "transfer"
 
 
@@ -165,10 +173,21 @@ def test_hide_transfers_filter(admin, no_ai):
 
 
 def test_invalid_iban_rejected(admin):
-    r = admin.put("/api/transfers/settings", json={"auto_detect": True, "extra_ibans": ["DE89 3704 0044 0532 0130 01"]})
+    r = admin.put(
+        "/api/transfers/settings",
+        json={"auto_detect": True, "extra_accounts": [{"name": "X", "iban": "DE89 3704 0044 0532 0130 01"}]},
+    )
     assert r.status_code == 400
     assert "DE89 3704 0044 0532 0130 01" in r.json()["detail"]
-    assert admin.get("/api/transfers/settings").json()["extra_ibans"] == []
+    assert admin.get("/api/transfers/settings").json()["extra_accounts"] == []
+
+
+def test_extra_account_needs_name(admin):
+    r = admin.put(
+        "/api/transfers/settings", json={"auto_detect": True, "extra_accounts": [{"name": "  ", "iban": IBAN_EXTRA}]}
+    )
+    assert r.status_code == 400
+    assert admin.get("/api/transfers/settings").json()["extra_accounts"] == []
 
 
 def test_settings_lists_account_ibans(admin):

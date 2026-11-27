@@ -130,7 +130,7 @@ export interface BudgetSettings {
 
 export interface TransferSettings {
 	auto_detect: boolean;
-	extra_ibans: string[];
+	extra_accounts: { name: string; iban: string }[];
 	account_ibans: { name: string; iban: string }[];
 	detected_count: number;
 	/** Transactions reassigned by the last save */

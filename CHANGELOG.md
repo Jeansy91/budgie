@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- Transfers between own accounts are detected automatically: a transaction whose counterparty IBAN belongs to another account of the household, or to an additional own IBAN entered in the settings, is assigned to the transfer category. Detection runs before rules and AI and never overrides manual assignments; existing transactions are backfilled on upgrade. CSV exports without counterparty IBAN are not affected.
+- Transfers between own accounts are detected automatically: a transaction whose counterparty IBAN belongs to another account of the household, or to an additional own account (name and IBAN) entered in the settings, is assigned to the transfer category. Detection runs before rules and AI and never overrides manual assignments; existing transactions are backfilled on upgrade. CSV exports without counterparty IBAN are not affected.
 - A "Hide transfers" switch on the transactions page (on by default) and a "Mark as transfer" quick action in the transaction details.
 
 ## [0.2.0] - 2026-11-27

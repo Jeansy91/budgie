@@ -395,9 +395,21 @@ class BudgetSettingsOut(BudgetSettingsIn, ORM):
 # --- Transfers ------------------------------------------------------------
 
 
+class ExtraAccountIn(BaseModel):
+    """An own account that is not tracked in Budgie."""
+
+    name: str = Field(max_length=100)
+    iban: str = Field(max_length=50)
+
+
+class ExtraAccountOut(BaseModel):
+    name: str
+    iban: str
+
+
 class TransferSettingsIn(BaseModel):
     auto_detect: bool = True
-    extra_ibans: list[str] = Field([], max_length=50)
+    extra_accounts: list[ExtraAccountIn] = Field([], max_length=50)
 
 
 class TransferAccountOut(BaseModel):
@@ -407,7 +419,7 @@ class TransferAccountOut(BaseModel):
 
 class TransferSettingsOut(BaseModel):
     auto_detect: bool
-    extra_ibans: list[str]
+    extra_accounts: list[ExtraAccountOut]
     account_ibans: list[TransferAccountOut]
     # Transactions currently marked as detected transfers
     detected_count: int = 0

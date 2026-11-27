@@ -398,11 +398,14 @@ const en: Messages = {
 		},
 		ownAccounts: 'Your accounts in Budgie',
 		noOwnAccounts: 'No accounts with an IBAN yet',
-		extra: 'Additional own IBANs',
+		extra: 'Additional own accounts',
 		extraHint: 'Own accounts that are not tracked in Budgie, e.g. a savings account at another bank.',
-		extraPlaceholder: 'Enter IBAN',
-		addIban: 'Add IBAN',
-		removeIban: 'Remove {iban}',
+		namePlaceholder: 'Name, e.g. Savings at Bank X',
+		extraPlaceholder: 'IBAN',
+		accountName: 'Account name',
+		ibanLabel: 'Account IBAN',
+		addIban: 'Add account',
+		removeAccount: 'Remove {name}',
 		saved: {
 			one: 'Saved. {count} transaction reassigned.',
 			other: 'Saved. {count} transactions reassigned.'

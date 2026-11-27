@@ -26,7 +26,7 @@ TARGET_KEY = "transfers.own_accounts"
 def get_settings(db: Session, household_id: int) -> TransferSettings:
     settings = db.get(TransferSettings, household_id)
     if settings is None:
-        settings = TransferSettings(household_id=household_id, auto_detect=True, extra_ibans=[])
+        settings = TransferSettings(household_id=household_id, auto_detect=True, extra_accounts=[])
         db.add(settings)
         db.flush()
     return settings
@@ -47,7 +47,7 @@ def own_ibans(db: Session, household_id: int) -> set[str]:
     ibans = {
         normalize_iban(i) for i in db.scalars(select(Account.iban).where(Account.household_id == household_id)) if i
     }
-    ibans.update(normalize_iban(i) for i in get_settings(db, household_id).extra_ibans if i)
+    ibans.update(normalize_iban(a["iban"]) for a in get_settings(db, household_id).extra_accounts if a.get("iban"))
     return ibans
 
 

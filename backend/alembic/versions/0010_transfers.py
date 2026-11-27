@@ -9,7 +9,6 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
@@ -27,12 +26,12 @@ def upgrade() -> None:
         'transfer_settings',
         sa.Column('household_id', sa.Integer(), nullable=False),
         sa.Column('auto_detect', sa.Boolean(), server_default=sa.true(), nullable=False),
-        sa.Column('extra_ibans', postgresql.ARRAY(sa.String(length=34)), server_default='{}', nullable=False),
+        sa.Column('extra_accounts', sa.JSON(), server_default='[]', nullable=False),
         sa.ForeignKeyConstraint(['household_id'], ['households.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('household_id'),
     )
     # Backfill: detect transfers between the household's own accounts in existing data.
-    # Runs after the enum value is committed. Additional own IBANs (extra_ibans) do not
+    # Runs after the enum value is committed. Additional own IBANs (extra_accounts) do not
     # exist yet at this point, so only IBANs of other accounts of the household count.
     op.execute(
         """
