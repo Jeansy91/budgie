@@ -220,33 +220,33 @@
 				</div>
 			{/if}
 		</section>
-	</div>
 
-	<section class="card">
-		<div class="hist-head">
-			<h2>{t('overview.history')}</h2>
-			<div class="keys small muted">
-				<span><span class="dot" style:background="var(--accent)"></span> {t('overview.income')}</span>
-				<span><span class="dot" style:background="var(--expense)"></span> {t('overview.expenses')}</span>
+		<section class="card history-card">
+			<div class="hist-head">
+				<h2>{t('overview.history')}</h2>
+				<div class="keys small muted">
+					<span><span class="dot" style:background="var(--accent)"></span> {t('overview.income')}</span>
+					<span><span class="dot" style:background="var(--expense)"></span> {t('overview.expenses')}</span>
+				</div>
 			</div>
-		</div>
-		<div class="history">
-			{#each data.history as h (h.month)}
-				<button
-					class="col"
-					class:current={h.month === month}
-					onclick={() => go(h.month)}
-					title={`${monthLabel(h.month)}\n${t('overview.income')} ${money(h.income)}\n${t('overview.expenses')} ${money(h.expenses)}`}
-				>
-					<span class="bars">
-						<span class="b in" style:height="{(Number(h.income) / historyMax) * 100}%"></span>
-						<span class="b out" style:height="{(Number(h.expenses) / historyMax) * 100}%"></span>
-					</span>
-					<span class="m">{monthShortLabel(h.month)}</span>
-				</button>
-			{/each}
-		</div>
-	</section>
+			<div class="history">
+				{#each data.history as h (h.month)}
+					<button
+						class="col"
+						class:current={h.month === month}
+						onclick={() => go(h.month)}
+						title={`${monthLabel(h.month)}\n${t('overview.income')} ${money(h.income)}\n${t('overview.expenses')} ${money(h.expenses)}`}
+					>
+						<span class="bars">
+							<span class="b in" style:height="{(Number(h.income) / historyMax) * 100}%"></span>
+							<span class="b out" style:height="{(Number(h.expenses) / historyMax) * 100}%"></span>
+						</span>
+						<span class="m">{monthShortLabel(h.month)}</span>
+					</button>
+				{/each}
+			</div>
+		</section>
+	</div>
 {/if}
 
 <style>
@@ -391,6 +391,12 @@
 	.grid .card {
 		margin: 0;
 	}
+	.history-card {
+		display: flex;
+		flex-direction: column;
+		/* Full width below the wide breakpoint, a third column above it */
+		grid-column: 1 / -1;
+	}
 	.split {
 		display: grid;
 		grid-template-columns: 170px minmax(0, 1fr);
@@ -532,7 +538,8 @@
 		display: flex;
 		gap: 0.3rem;
 		align-items: end;
-		height: 200px;
+		flex: 1;
+		min-height: 200px;
 		background: repeating-linear-gradient(
 			to top,
 			transparent 0,
@@ -588,6 +595,20 @@
 	.m {
 		font-size: 0.72rem;
 		padding: 0.35rem 0;
+	}
+
+	/* Wide screens: category breakdown, income and history side by side (container = main content box) */
+	@container main (min-width: 1450px) {
+		.grid {
+			grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.4fr);
+		}
+		.history-card {
+			grid-column: auto;
+		}
+		.history {
+			gap: 0.2rem;
+			min-height: 260px;
+		}
 	}
 
 	@media (max-width: 1100px) {

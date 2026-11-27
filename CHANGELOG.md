@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- The app uses the full width of wide screens: content grows up to 1920px and is centred next to the sidebar. On wide screens the monthly overview shows the category breakdown, income and the 12-month chart side by side. Settings and import keep a readable maximum width.
 - Backend dependencies are hash-locked with pip-compile (`requirements.in` and `requirements-dev.in` are the sources) and installed with `--require-hashes` in the Dockerfile and CI. The workflow is documented in the contributing guide.
 - Docker base images are pinned by digest.
 - CodeQL configuration moved to `.github/codeql/codeql-config.yml` and ignores the Alembic revision files, whose module variables are read by Alembic.
