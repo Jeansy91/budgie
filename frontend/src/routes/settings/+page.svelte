@@ -197,23 +197,30 @@
 					</div>
 					{#if draft && draft.id === a.id}
 						<div class="editor">
-							<label>{t('common.name')} <input bind:value={draft.name} /></label>
-							<Switch bind:checked={draft.shared}>{t('settings.shared')}</Switch>
-							{#if !draft.shared}
-								<div class="row small">
-									{t('settings.visibleFor')}
-									{#each users as u (u.id)}
-										<Checkbox
-											checked={draft.member_ids.includes(u.id)}
-											onchange={() => draft && toggleMember(draft, u.id)}
-											disabled={u.id === data.me?.id}
-										>
-											{u.display_name}
-										</Checkbox>
-									{/each}
+							<div class="editor-body">
+								<label>{t('common.name')} <input bind:value={draft.name} /></label>
+								<div class="field">
+									<span>{t('settings.visibility')}</span>
+									<div class="controls">
+										<Switch bind:checked={draft.shared}>{t('settings.shared')}</Switch>
+										{#if !draft.shared}
+											<div class="members">
+												<span class="members-hint">{t('settings.visibleFor')}</span>
+												{#each users as u (u.id)}
+													<Checkbox
+														checked={draft.member_ids.includes(u.id)}
+														onchange={() => draft && toggleMember(draft, u.id)}
+														disabled={u.id === data.me?.id}
+													>
+														{u.display_name}
+													</Checkbox>
+												{/each}
+											</div>
+										{/if}
+									</div>
 								</div>
-							{/if}
-							<div class="row actions">
+							</div>
+							<div class="actions">
 								<button onclick={() => draft && saveAccount(draft)}>{t('common.save')}</button>
 								<button class="secondary" onclick={() => (draft = null)}>{t('common.cancel')}</button>
 								<button class="danger del" onclick={() => draft && deleteAccount(draft)}>{t('common.delete')}</button>
@@ -436,7 +443,7 @@
 		grid-template-areas: 'name iban count vis bal edit';
 		align-items: center;
 		gap: 0.5rem 1rem;
-		padding: 0.55rem 0.25rem;
+		padding: 0.8rem 0.25rem;
 	}
 	.acc-row {
 		border-bottom: 1px solid var(--border);
@@ -513,18 +520,51 @@
 	}
 	.editor {
 		display: grid;
-		gap: 0.75rem;
-		padding: 0.85rem 0.75rem;
+		gap: 1.25rem;
+		padding: 1.25rem 1.5rem;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-sm);
 		background: var(--surface);
-		margin: 0.25rem 0 0.5rem;
+		margin: 0.5rem 0 0.75rem;
 	}
-	.editor label {
-		max-width: min(28rem, 100%);
+	/* Two-column responsive body; collapses to one column when narrow */
+	.editor-body {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+		gap: 1.25rem 2rem;
+		align-items: start;
+		max-width: 56rem;
 	}
-	.editor > :global(.switch) {
-		justify-self: start;
+	.editor-body input {
+		width: 100%;
+		box-sizing: border-box;
+	}
+	/* Controls keep normal text size, not the muted .field label style */
+	.controls {
+		display: grid;
+		gap: 0.75rem;
+		justify-items: start;
+		color: var(--text);
+		font-size: 0.9rem;
+		font-weight: 400;
+		text-transform: none;
+		letter-spacing: normal;
+	}
+	.members {
+		display: grid;
+		gap: 0.5rem;
+	}
+	.members-hint {
+		color: var(--muted);
+		font-size: 0.8rem;
+	}
+	.editor .actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem;
+		border-top: 1px solid var(--border);
+		padding-top: 1rem;
+		margin-top: 0.25rem;
 	}
 	.actions .del {
 		margin-left: auto;
