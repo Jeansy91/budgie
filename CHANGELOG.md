@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Transactions can get a custom name (for example what was bought in an Amazon payment). It is shown in the transaction list and the detail view and is included in the search; the bank's original payee and purpose stay unchanged. The search now also covers notes.
 
+### Changed
+
+- The result of a bank sync is now a compact summary: totals at the top, one line per account with new transactions, and accounts without anything new grouped behind a toggle. With many accounts, the account list of a bank login collapses to a count.
+
 ## [0.2.0] - 2026-11-27
 
 ### Added
