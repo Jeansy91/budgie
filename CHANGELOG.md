@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-27
+
 ### Added
 
 - Transfers between own accounts are detected automatically: a transaction whose counterparty IBAN belongs to another account of the household, or to an additional own account (name and IBAN) entered in the settings, is assigned to the transfer category. Detection runs before rules and AI and never overrides manual assignments; existing transactions are backfilled on upgrade. CSV exports without counterparty IBAN are not affected.
@@ -67,6 +69,7 @@ First public release.
 - German and English user interface, light and dark mode, mobile layout.
 - Prebuilt `linux/amd64` images on GHCR (`budgie-api`, `budgie-web`) and a Docker Compose setup for Traefik.
 
-[Unreleased]: https://github.com/Jeansy91/budgie/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Jeansy91/budgie/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Jeansy91/budgie/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Jeansy91/budgie/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Jeansy91/budgie/releases/tag/v0.1.0

@@ -35,7 +35,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         scheduler.stop()
 
 
-app = FastAPI(title="Budgie", version="0.2.0", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
+app = FastAPI(title="Budgie", version="0.3.0", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 app.add_middleware(LocaleMiddleware)
 
 api = APIRouter(prefix="/api")
