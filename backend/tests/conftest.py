@@ -3,6 +3,7 @@ from pathlib import Path
 
 os.environ.setdefault("BUDGIE_DATABASE_URL", "postgresql+psycopg://postgres@/budgie_test?host=/tmp&port=5433")
 os.environ["BUDGIE_COOKIE_SECURE"] = "false"
+os.environ["BUDGIE_FINTS_AUTO_SYNC"] = "false"  # no scheduler thread in tests
 os.environ.setdefault("BUDGIE_SECRET_KEY", "nur-fuer-tests-0123456789")
 os.environ.setdefault("BUDGIE_FINTS_PRODUCT_ID", "TESTPRODUKT")
 

@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     # Optional path to the official FinTS institute list (fints_institute.csv) of the
     # Deutsche Kreditwirtschaft. Without it, Budgie uses its bundled bank directory.
     fints_institutes_file: str = ""
+    # Periodic background fetch for connections where the user enabled it
+    fints_auto_sync: bool = True
 
     # --- AI categorization (fully local) ---
     # Local classifier, learns from manual assignments and rules

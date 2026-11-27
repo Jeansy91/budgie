@@ -181,7 +181,8 @@ const en: Messages = {
 		confirmRemove: 'Remove the login “{name}”? Accounts and transactions are kept.',
 		never: 'never',
 		title: 'Sync directly from the bank',
-		intro: 'Via FinTS, with almost all German banks and savings banks. You enter your PIN for every sync; it is never stored.',
+		intro:
+			'Via FinTS, with almost all German banks and savings banks. You enter your PIN for every sync. It is only stored if you turn on automatic fetching.',
 		notConfigured: 'FinTS is not set up yet. Missing in',
 		login: 'Login …{hint}',
 		lastSync: 'last synced {when}',
@@ -225,13 +226,33 @@ const en: Messages = {
 		customerId: 'Customer ID',
 		noServerUrl:
 			"Budgie does not know a FinTS address for this bank. You usually find it in your bank's help pages under “FinTS” or “HBCI PIN/TAN”.",
-		encryptedHint: 'The login name is stored encrypted; the PIN never is.',
+		encryptedHint: 'The login name is stored encrypted. The PIN is only stored if you turn on automatic fetching, and then encrypted too.',
 		bankCode: 'Bank code',
 		changeBank: 'Change',
 		searchPlaceholder: 'Bank, city, bank code or BIC',
 		search: 'Search bank',
 		noServerUrlShort: 'no FinTS address known',
-		notFound: 'No bank found. Tip: the bank code is in your IBAN at positions 5 to 12.'
+		notFound: 'No bank found. Tip: the bank code is in your IBAN at positions 5 to 12.',
+		auto: {
+			title: 'Automatic fetch',
+			intro: 'Budgie fetches new transactions in the background and categorizes them like a manual sync.',
+			interval: 'Interval',
+			every: 'every {hours} h',
+			pin: 'Online banking PIN',
+			pinNote:
+				'The PIN is stored encrypted with the secret key of this server (BUDGIE_SECRET_KEY) and is deleted when you turn automatic fetching off. Anyone with access to the server and its key could read it.',
+			enable: 'Turn on',
+			savePin: 'Save PIN',
+			enableFirstHint: 'Run a first fetch manually so Budgie learns your TAN method. Automatic fetching starts after that.',
+			next: 'Next fetch: {when}',
+			last: 'Last fetch: {when}',
+			paused: {
+				tan_required: 'Your bank asked for a TAN/approval. Run a manual fetch once to resume.',
+				pin_rejected: 'The bank rejected the PIN. Automatic fetch was paused and the PIN deleted; enter it again.',
+				locked: 'Your bank access is temporarily locked. Unlock it in online banking, then run a manual fetch to resume.',
+				manual_sync_required: 'Run the first fetch manually. Automatic fetching resumes after that.'
+			}
+		}
 	},
 	csv: {
 		notPresent: '– not present –',

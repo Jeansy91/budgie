@@ -27,7 +27,7 @@ Budgie (budgerigar + budget) pulls your transactions straight from your bank via
 
 ## Features
 
-- **Bank sync via FinTS** – pick your bank from a built-in directory and fetch transactions for all accounts of a login, with app approval (ING, pushTAN 2.0, …) or classic TAN entry such as chipTAN or photoTAN. The PIN is never stored.
+- **Bank sync via FinTS** – pick your bank from a built-in directory and fetch transactions for all accounts of a login, with app approval (ING, pushTAN 2.0, …) or classic TAN entry such as chipTAN or photoTAN. By default the PIN is not stored.
 - **CSV import** – CSV exports of ING, Sparkasse, Volksbank/Raiffeisenbank, DKB, comdirect, Commerzbank, Deutsche Bank and N26 are recognized automatically; for any other bank you assign the columns once and save the mapping as a template. Duplicates are detected across both sources.
 - **Learning categorization** – a local scikit-learn classifier assigns categories and suggests them when unsure. Every correction becomes a training example and the model retrains in the background.
 - **Optional local LLM** – uncertain cases can be handed to a language model running in [Ollama](https://ollama.com) on your own CPU.
@@ -110,6 +110,7 @@ All settings are read from `.env` (see [`.env.example`](.env.example)). Credenti
 | `BUDGIE_COOKIE_SECURE` | `true` | Send the session cookie over HTTPS only. |
 | `BUDGIE_SECRET_KEY` | – | Key for encrypting stored bank logins. Required for FinTS. |
 | `BUDGIE_FINTS_PRODUCT_ID` | – | FinTS product ID. Required for FinTS. |
+| `BUDGIE_FINTS_AUTO_SYNC` | `true` | Run the background scheduler for automatic FinTS fetches. Set to `false` to disable it for the whole installation. |
 | `BUDGIE_FINTS_INSTITUTES_FILE` | – | Path to the official FinTS institute list (`fints_institute.csv`) inside the api container. Replaces the bundled bank directory. |
 | `BUDGIE_AI_ENABLED` | `true` | Enable the local classifier. |
 | `BUDGIE_AI_AUTO_THRESHOLD` | `0.6` | Confidence at which the AI assigns a category itself; below it only suggests one. |
@@ -126,12 +127,24 @@ One-time setup:
 
 Syncing:
 
-1. Click **Umsätze abrufen** and enter your online banking PIN. The PIN is **never stored**, not even encrypted; it only lives in the API process memory for the duration of the sync.
+1. Click **Umsätze abrufen** and enter your online banking PIN. By default the PIN is **not stored**; it only lives in the API process memory for the duration of the sync. Only if you turn on automatic fetching (below) is it stored, encrypted.
 2. On the first sync, Budgie selects the TAN mechanism: if the bank offers exactly one app approval mechanism, it is used; otherwise you choose from the list the bank reports. If the bank knows several TAN devices (e.g. two phones), you pick one as well. The choice is remembered and can be reset with **TAN-Verfahren ändern**.
 3. If the bank asks for approval, Budgie waits until you confirm in your banking app and then continues automatically. For TAN mechanisms that require input (chipTAN, photoTAN, smsTAN), an input field with the challenge text or image is shown.
 4. All accounts of the login are fetched and matched by IBAN; missing accounts are created. The first sync fetches the last 90 days, later syncs continue from the last one with a 14-day overlap. You can choose an earlier start date, but because of PSD2 banks often require an extra approval for older transactions.
 
 FinTS and CSV can be mixed: transactions already imported from a CSV file are recognized during a FinTS sync (same day and amount) and vice versa. A common approach is to import the older history once via CSV and use FinTS from then on.
+
+### Automatic fetch
+
+Per bank login you can turn on **Automatischer Abruf**. Budgie then fetches new transactions in the background, imports them through the same path as a manual sync (duplicate detection, rules and AI categorization) and shows when the next fetch is due.
+
+- **Intervals:** every 6, 12 or 24 hours. Under PSD2, access without the customer being present is limited; banks commonly allow about four such fetches per day, and many rate-limit FinTS dialogs. The scheduler adds a small random delay so it does not hit the bank at the same minute. Connections are fetched one after another, never in parallel.
+- **PIN storage (opt-in, per login):** unattended fetches need the PIN, so turning the feature on stores it, encrypted with a key derived from `BUDGIE_SECRET_KEY`. Anyone who has both the database and the secret key (or can run code on the server) can read it. Turning automatic fetch off deletes the PIN, as does changing the login name or customer ID. If you do not want this trade-off, leave automatic fetch off and enter the PIN for every sync.
+- **First fetch is manual:** Budgie has to learn your TAN method first, so run one manual fetch before automatic fetching starts.
+- **TAN behaviour:** an automatic fetch never waits for you. If the bank asks for a TAN or an approval in the banking app, the fetch is aborted and automatic fetching is **paused** for that login (at most one prompt reaches your phone). Run a manual fetch once to resume. Whether your bank asks depends on the bank and on how old the requested transactions are.
+- **Wrong PIN:** if the bank rejects the stored PIN, automatic fetching is paused and the PIN is deleted right away, so repeated attempts cannot lock your bank access. Enter the PIN again to resume. If the bank reports the access as locked, automatic fetching is paused until you unlock it and run a manual fetch.
+- **Other errors** (e.g. the bank is unreachable) are retried with a growing delay: the interval doubles with every consecutive failure, up to 48 hours, and resets after a successful fetch.
+- Set `BUDGIE_FINTS_AUTO_SYNC=false` to disable the scheduler completely. The scheduler runs inside the single API process.
 
 A bank login always belongs to one user. Other household members see the synced accounts, but not the login itself.
 
