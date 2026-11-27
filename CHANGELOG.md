@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - The result of a bank sync is now a compact summary: totals at the top, one line per account with new transactions, and accounts without anything new grouped behind a toggle. With many accounts, the account list of a bank login collapses to a count.
+- The import and settings pages use the full width of wide screens. On the import page the bank sync and the CSV upload sit side by side; settings cards flow into columns.
+- The account list in the settings is grouped by bank and shows one compact row per account (IBAN, transactions, visibility, balance). Name and visibility are edited inline on demand.
 
 ## [0.2.0] - 2026-11-27
 
