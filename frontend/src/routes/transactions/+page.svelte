@@ -12,6 +12,7 @@
 	import Search from '@lucide/svelte/icons/search';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Check from '@lucide/svelte/icons/check';
+	import ArrowLeftRight from '@lucide/svelte/icons/arrow-left-right';
 	import Wand from '@lucide/svelte/icons/wand-sparkles';
 	import type { Account, Category, Transaction } from '#lib/types.ts';
 
@@ -270,10 +271,17 @@
 					<div
 						class="cat"
 						style:--c={tx.category_id ? catColor.get(tx.category_id) : 'var(--faint)'}
+						style:--src-chars={tx.category_source && tx.category_source !== 'transfer' ? sourceLabel(tx).length : null}
 						title={tx.category_id ? labels.get(tx.category_id) : ''}
 					>
 						<CategorySelect {categories} value={tx.category_id} onchange={(v) => setCategory(tx, v)} />
-						{#if tx.category_source}<span class="src" class:ai={isAi(tx)} title={sourceTitle(tx)}>{sourceLabel(tx)}</span>{/if}
+						{#if tx.category_source === 'transfer'}
+							<span class="src icon" title={t('source.transferTitle')} aria-label={t('source.transferTitle')} role="img">
+								<ArrowLeftRight size={13} />
+							</span>
+						{:else if tx.category_source}
+							<span class="src" class:ai={isAi(tx)} title={sourceTitle(tx)}>{sourceLabel(tx)}</span>
+						{/if}
 						{#if isAi(tx)}
 							<button
 								class="confirm"
@@ -326,9 +334,13 @@
 		flex: 1 1 160px;
 		min-width: 0;
 	}
+	/* Sits on the bottom edge like the pills and selects; same height so the switch is centred with them */
 	.field.hide-transfers {
 		flex: 0 0 auto;
-		align-self: center;
+		align-self: flex-end;
+		flex-direction: row;
+		align-items: center;
+		height: 2.56rem; /* = pill height */
 	}
 	.field :global(.select-trigger) {
 		width: 100%;
@@ -445,8 +457,13 @@
 	.cat :global(.select-trigger:hover) {
 		background: color-mix(in srgb, var(--c) 20%, var(--surface));
 	}
+	/* The badge floats over the right end of the pill; the name's ellipsis stops before it,
+	   so the reserved space follows the badge text length */
 	.cat:has(.src) :global(.select-trigger .value) {
-		padding-right: 3.4rem;
+		padding-right: calc(var(--src-chars, 7) * 0.36rem + 0.5rem);
+	}
+	.cat:has(.src.icon) :global(.select-trigger .value) {
+		padding-right: 1.6rem;
 	}
 	.src {
 		position: absolute;
@@ -457,6 +474,10 @@
 		letter-spacing: 0.04em;
 		color: var(--faint);
 		pointer-events: none;
+	}
+	.src.icon {
+		display: grid;
+		place-items: center;
 	}
 	.src.ai {
 		color: var(--accent-strong);
