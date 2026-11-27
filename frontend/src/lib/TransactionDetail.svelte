@@ -2,8 +2,8 @@
 	Detail view of a single transaction.
 	Desktop: side panel on the right. Mobile (narrower than 760 px): bottom sheet.
 	Shows every stored field and offers the actions that belong to one
-	transaction: change the category, override the budget month, edit the note
-	and create a rule from it.
+	transaction: change the category, override the budget month, edit the custom
+	name and the note, and create a rule from it.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -35,7 +35,7 @@
 		id: number;
 		categories: Category[];
 		onclose: () => void;
-		/** The transaction changed (category, budget month, note) */
+		/** The transaction changed (category, budget month, custom name, note) */
 		onchange?: (tx: Transaction) => void;
 		/** Other transactions may have changed too (a rule was applied) */
 		onreload?: () => void;
@@ -45,6 +45,7 @@
 	let error = $state('');
 	let notice = $state('');
 	let note = $state('');
+	let customName = $state('');
 	let panel = $state<HTMLElement>();
 	let labels = $derived(categoryLabels(categories));
 
@@ -52,6 +53,7 @@
 		try {
 			tx = await api<TransactionDetail>(`/transactions/${id}`);
 			note = tx.note;
+			customName = tx.custom_name ?? '';
 			error = '';
 		} catch (e) {
 			error = (e as Error).message;
@@ -113,6 +115,26 @@
 				]
 			: []
 	);
+
+	// --- Custom name --------------------------------------------------------
+	function saveCustomName() {
+		if (!tx) return;
+		const value = customName.trim();
+		customName = value;
+		if (value !== (tx.custom_name ?? '')) patch({ custom_name: value });
+	}
+
+	function clearCustomName() {
+		customName = '';
+		saveCustomName();
+	}
+
+	function nameKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			saveCustomName();
+		}
+	}
 
 	// --- Note ---------------------------------------------------------------
 	function saveNote() {
@@ -236,7 +258,10 @@
 					{initials(tx.payee || tx.booking_text)}
 				</span>
 				<div class="title">
-					<h2 id="tx-detail-title">{tx.payee || tx.booking_text || t('detail.transaction')}</h2>
+					<h2 id="tx-detail-title">{tx.custom_name || tx.payee || tx.booking_text || t('detail.transaction')}</h2>
+					{#if tx.custom_name && (tx.payee || tx.booking_text)}
+						<span class="sub original">{t('detail.originalName', { name: tx.payee || tx.booking_text })}</span>
+					{/if}
 					<span class="sub">{longDay.format(new Date(tx.booking_date + 'T12:00:00'))}</span>
 				</div>
 			{:else}
@@ -410,6 +435,33 @@
 					{/if}
 				</section>
 
+				<!-- Custom name -->
+				<section>
+					<h3><label for="tx-custom-name">{t('detail.customName')}</label></h3>
+					<div class="name-field">
+						<input
+							id="tx-custom-name"
+							type="text"
+							maxlength="255"
+							placeholder={t('detail.customNamePlaceholder')}
+							bind:value={customName}
+							onblur={saveCustomName}
+							onkeydown={nameKeydown}
+						/>
+						{#if customName}
+							<button
+								class="ghost icon clear"
+								type="button"
+								onclick={clearCustomName}
+								aria-label={t('detail.clearCustomName')}
+								title={t('detail.clearCustomName')}
+							>
+								<X size={16} />
+							</button>
+						{/if}
+					</div>
+				</section>
+
 				<!-- Note -->
 				<section>
 					<h3><label for="tx-note">{t('detail.note')}</label></h3>
@@ -533,6 +585,10 @@
 	.sub {
 		font-size: 0.83rem;
 		color: var(--muted);
+	}
+	.original {
+		display: block;
+		overflow-wrap: anywhere;
 	}
 	.close {
 		flex: none;
@@ -742,6 +798,20 @@
 	}
 	.source > span {
 		min-width: 0;
+	}
+	.name-field {
+		position: relative;
+	}
+	.name-field input {
+		width: 100%;
+		padding-right: 2.4rem;
+	}
+	.clear {
+		position: absolute;
+		top: 50%;
+		right: 0.3rem;
+		transform: translateY(-50%);
+		padding: 0.25rem;
 	}
 	textarea {
 		width: 100%;

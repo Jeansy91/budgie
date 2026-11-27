@@ -183,6 +183,7 @@ class TransactionOut(ORM):
     booking_text: str
     purpose: str
     note: str
+    custom_name: str | None = None
     category_id: int | None
     category_source: CategorySource | None
     rule_id: int | None
@@ -233,6 +234,7 @@ class TransactionPage(BaseModel):
 class TransactionPatch(BaseModel):
     category_id: int | None = None
     note: str | None = None
+    custom_name: str | None = Field(None, max_length=255)
     # Create a rule "payee contains …" straight from the correction
     create_rule: bool = False
     rule_pattern: str | None = None

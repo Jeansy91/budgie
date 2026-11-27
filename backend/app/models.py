@@ -280,6 +280,8 @@ class Transaction(Base):
     purpose: Mapped[str] = mapped_column(Text, default="")
     balance_after: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     note: Mapped[str] = mapped_column(Text, default="")
+    # User-defined display name; payee/purpose stay exactly as delivered by the bank
+    custom_name: Mapped[str | None] = mapped_column(String(255))
 
     # SEPA details of the counterparty, as far as the source delivers them.
     # FinTS (MT940/camt) usually does; the ING CSV export does not.
