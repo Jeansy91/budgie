@@ -43,7 +43,7 @@
 			/>
 			{#if variant === 'list'}<span class="ring" aria-hidden="true"></span>{/if}
 			{#if o.color}<span class="dot" style:background={o.color}></span>{/if}
-			<span>{o.label}</span>
+			<span class="text" data-label={o.label}>{o.label}</span>
 		</label>
 	{/each}
 </div>
@@ -71,17 +71,20 @@
 
 	/* Segments */
 	.segmented {
+		display: inline-grid;
+		grid-auto-flow: column;
+		/* equal-width columns, sized by the widest label */
+		grid-auto-columns: minmax(min-content, 1fr);
 		background: var(--surface-2);
 		border-radius: var(--radius-sm);
 		padding: 0.2rem;
-		gap: 0.2rem;
+		gap: 0.25rem;
 		max-width: 100%;
 	}
 	.segmented .opt {
-		flex: 1 1 0;
 		min-width: 0;
 		justify-content: center;
-		padding: 0.45rem 0.6rem;
+		padding: 0.45rem 1rem;
 		font-size: 0.85rem;
 		border-radius: 9px;
 		white-space: nowrap;
@@ -89,6 +92,28 @@
 			background 0.15s,
 			color 0.15s,
 			box-shadow 0.15s;
+	}
+	/* Ellipsis instead of overflowing on narrow containers */
+	.text {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	/* Reserve the bold width so the active segment never clips or jumps */
+	.segmented .text::after {
+		content: attr(data-label);
+		display: block;
+		font-weight: 600;
+		height: 0;
+		overflow: hidden;
+		visibility: hidden;
+	}
+	/* Tighter segments on small screens so labels fit without ellipsis */
+	@media (max-width: 480px) {
+		.segmented .opt {
+			padding-inline: 0.3rem;
+		}
 	}
 	.segmented .opt:hover {
 		color: var(--text);
