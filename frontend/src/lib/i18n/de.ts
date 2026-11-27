@@ -79,18 +79,12 @@ const de = {
 		allAccounts: 'Alle Konten',
 		allCategories: 'Alle Kategorien',
 		allOfMain: 'alle',
-		ruleCreated: {
-			one: 'Regel für „{payee}“ angelegt, {count} weitere Buchung zugeordnet.',
-			other: 'Regel für „{payee}“ angelegt, {count} weitere Buchungen zugeordnet.'
-		},
 		count: { one: '{count} Buchung', other: '{count} Buchungen' },
 		searchPlaceholder: 'Empfänger oder Verwendungszweck suchen',
 		onlyUncategorized: 'Nur ohne Kategorie',
 		hideTransfers: 'Umbuchungen ausblenden',
 		aiReviewTitle: 'Zuordnungen und Vorschläge der KI, die noch niemand bestätigt hat',
 		aiReview: 'KI prüfen',
-		learnRulesTitle: 'Beim Zuordnen eine Regel „Empfänger oder Sender enthält …“ anlegen und auf ähnliche Buchungen anwenden',
-		learnRules: 'Regeln lernen',
 		empty: 'Keine Buchungen für diese Filter.',
 		rowLabel: '{payee}, {amount} – Details anzeigen',
 		suggestionTitle: 'Vorschlag der KI mit einem Klick übernehmen: {category}',

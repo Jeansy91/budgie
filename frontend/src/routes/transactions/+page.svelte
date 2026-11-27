@@ -10,7 +10,6 @@
 	import { t } from '#lib/i18n/index.svelte.ts';
 	import { avatarColor, colorFor, initials } from '#lib/colors.ts';
 	import Search from '@lucide/svelte/icons/search';
-	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import Check from '@lucide/svelte/icons/check';
 	import ArrowLeftRight from '@lucide/svelte/icons/arrow-left-right';
 	import Wand from '@lucide/svelte/icons/wand-sparkles';
@@ -42,14 +41,12 @@
 			// storage unavailable (private mode): the choice only lasts for this page view
 		}
 	}
-	let makeRule = $state(false);
 
 	let items = $state<Transaction[]>([]);
 	let total = $state(0);
 	let categories = $state<Category[]>([]);
 	let accounts = $state<Account[]>([]);
 	let error = $state('');
-	let notice = $state('');
 	let labels = $derived(categoryLabels(categories));
 	let accountNames = $derived(new Map(accounts.map((a) => [a.id, a.name])));
 	// Color per category: the color of its main category
@@ -122,15 +119,13 @@
 		return () => clearTimeout(tx);
 	});
 
-	async function setCategory(tx: Transaction, category_id: number | null, allowRule = true) {
+	async function setCategory(tx: Transaction, category_id: number | null) {
 		try {
-			const res = await api<{ transaction: Transaction; rule: unknown; other_changed: number }>(`/transactions/${tx.id}`, {
+			const res = await api<{ transaction: Transaction }>(`/transactions/${tx.id}`, {
 				method: 'PATCH',
-				body: { category_id, create_rule: allowRule && makeRule && category_id !== null }
+				body: { category_id }
 			});
 			Object.assign(tx, res.transaction);
-			notice = res.rule ? t('transactions.ruleCreated', { payee: tx.payee, count: res.other_changed }) : '';
-			if (res.other_changed) await load();
 		} catch (e) {
 			error = (e as Error).message;
 		}
@@ -212,15 +207,10 @@
 		<div class="field hide-transfers">
 			<Switch bind:checked={hideTransfers} onchange={setHideTransfers}>{t('transactions.hideTransfers')}</Switch>
 		</div>
-		<button class="pill" class:on={makeRule} onclick={() => (makeRule = !makeRule)} title={t('transactions.learnRulesTitle')}>
-			<Sparkles size={15} />
-			{t('transactions.learnRules')}
-		</button>
 	</div>
 </div>
 
 {#if error}<div class="error">{error}</div>{/if}
-{#if notice}<div class="ok"><Sparkles size={18} /> {notice}</div>{/if}
 
 {#if items.length === 0}
 	<div class="card muted">{t('transactions.empty')}</div>
@@ -259,7 +249,7 @@
 					{#if tx.category_id === null && tx.suggested_category_id !== null}
 						<button
 							class="suggest"
-							onclick={() => setCategory(tx, tx.suggested_category_id, false)}
+							onclick={() => setCategory(tx, tx.suggested_category_id)}
 							title={t('transactions.suggestionTitle', { category: labels.get(tx.suggested_category_id) ?? '' })}
 						>
 							<Wand size={13} /> <span class="lbl">{t('transactions.suggestion')}</span>
@@ -285,7 +275,7 @@
 						{#if isAi(tx)}
 							<button
 								class="confirm"
-								onclick={() => setCategory(tx, tx.category_id, false)}
+								onclick={() => setCategory(tx, tx.category_id)}
 								title={t('transactions.confirmTitle')}
 								aria-label={t('transactions.confirm')}
 							>

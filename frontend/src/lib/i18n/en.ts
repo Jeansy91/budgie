@@ -66,18 +66,12 @@ const en: Messages = {
 		allAccounts: 'All accounts',
 		allCategories: 'All categories',
 		allOfMain: 'all',
-		ruleCreated: {
-			one: 'Rule for “{payee}” created, {count} more transaction categorized.',
-			other: 'Rule for “{payee}” created, {count} more transactions categorized.'
-		},
 		count: { one: '{count} transaction', other: '{count} transactions' },
 		searchPlaceholder: 'Search payee or reference',
 		onlyUncategorized: 'Uncategorized only',
 		hideTransfers: 'Hide transfers',
 		aiReviewTitle: 'AI assignments and suggestions nobody has confirmed yet',
 		aiReview: 'Review AI',
-		learnRulesTitle: 'When categorizing, create a “payee or sender contains …” rule and apply it to similar transactions',
-		learnRules: 'Learn rules',
 		empty: 'No transactions match these filters.',
 		rowLabel: '{payee}, {amount} – show details',
 		suggestionTitle: 'Accept the AI suggestion with one click: {category}',
