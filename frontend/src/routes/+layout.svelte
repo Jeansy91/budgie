@@ -88,6 +88,8 @@
 <style>
 	.shell {
 		min-height: 100vh;
+		/* Room for the fixed sidebar; main is centred in the remaining space */
+		padding-left: 248px;
 	}
 	.sidebar {
 		position: fixed;
@@ -182,9 +184,12 @@
 		flex: none;
 	}
 	main {
-		margin-left: 248px;
-		max-width: 1180px;
+		/* 1920px of content plus the horizontal padding; wider screens get centred margins */
+		max-width: calc(1920px + 5rem);
+		margin-inline: auto;
 		padding: 2rem 2.5rem 4rem;
+		/* Pages query the real content width (viewport minus sidebar) via @container main */
+		container: main / inline-size;
 	}
 	.topbar,
 	.tabbar {
@@ -192,6 +197,9 @@
 	}
 
 	@media (max-width: 900px) {
+		.shell {
+			padding-left: 0;
+		}
 		.sidebar {
 			display: none;
 		}
@@ -210,7 +218,6 @@
 			padding: 0;
 		}
 		main {
-			margin: 0;
 			padding: 0.5rem 1rem 6.5rem;
 		}
 		.tabbar {
