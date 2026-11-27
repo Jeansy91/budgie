@@ -39,6 +39,8 @@ services:
       # FinTS: key for stored credentials and product ID from the Deutsche Kreditwirtschaft
       BUDGIE_SECRET_KEY: ${BUDGIE_SECRET_KEY:-}
       BUDGIE_FINTS_PRODUCT_ID: ${BUDGIE_FINTS_PRODUCT_ID:-}
+      # Background fetch for logins with automatic fetch turned on (stores the PIN encrypted)
+      BUDGIE_FINTS_AUTO_SYNC: ${BUDGIE_FINTS_AUTO_SYNC:-true}
       # AI categorization always runs locally. The language model is used only if BUDGIE_OLLAMA_URL is set.
       BUDGIE_AI_ENABLED: ${BUDGIE_AI_ENABLED:-true}
       BUDGIE_AI_AUTO_THRESHOLD: ${BUDGIE_AI_AUTO_THRESHOLD:-0.6}

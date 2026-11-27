@@ -22,7 +22,7 @@ Only the latest release and the current `main` branch receive security fixes.
 
 ## How Budgie protects banking data
 
-- **The online banking PIN is never stored**, neither in plain text nor encrypted. It is entered for every sync, kept in the memory of the API process only for the duration of that sync, and never logged.
+- **The online banking PIN is not stored by default.** It is entered for every sync, kept in the memory of the API process only for the duration of that sync, and never logged. Only if you opt into automatic fetch for a bank login is the PIN stored, encrypted with a key derived from `BUDGIE_SECRET_KEY`; it is deleted when you turn the feature off, change the login or the bank rejects it, and it is never returned by the API or logged.
 - **TANs** are passed through to the bank and not stored.
 - **Stored bank data** (login name, customer ID and the cached FinTS client state) is encrypted with Fernet (AES-128-CBC + HMAC-SHA256). The key is derived from `BUDGIE_SECRET_KEY`, which lives only in your environment and never in the database. A database backup alone does not reveal it.
 - **Bank logins are personal:** other users in the same household can see synced accounts, but not the login used to sync them.

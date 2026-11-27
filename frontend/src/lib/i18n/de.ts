@@ -194,7 +194,8 @@ const de = {
 		confirmRemove: 'Zugang „{name}“ entfernen? Konten und Buchungen bleiben erhalten.',
 		never: 'noch nie',
 		title: 'Direkt von der Bank abrufen',
-		intro: 'Per FinTS, bei fast allen deutschen Banken und Sparkassen. Die PIN gibst du bei jedem Abruf ein, gespeichert wird sie nicht.',
+		intro:
+			'Per FinTS, bei fast allen deutschen Banken und Sparkassen. Die PIN gibst du bei jedem Abruf ein. Gespeichert wird sie nur, wenn du den automatischen Abruf einschaltest.',
 		notConfigured: 'FinTS ist noch nicht eingerichtet. Es fehlt in der',
 		login: 'Zugang …{hint}',
 		lastSync: 'zuletzt abgerufen {when}',
@@ -238,13 +239,34 @@ const de = {
 		customerId: 'Kunden-ID',
 		noServerUrl:
 			'Für diese Bank kennt Budgie keine FinTS-Adresse. Du findest sie meist in der Hilfe deiner Bank unter „FinTS“ oder „HBCI PIN/TAN“.',
-		encryptedHint: 'Der Anmeldename wird verschlüsselt gespeichert, die PIN nie.',
+		encryptedHint:
+			'Der Anmeldename wird verschlüsselt gespeichert. Die PIN wird nur gespeichert, wenn du den automatischen Abruf einschaltest, und dann ebenfalls verschlüsselt.',
 		bankCode: 'BLZ',
 		changeBank: 'Ändern',
 		searchPlaceholder: 'Bank, Ort, BLZ oder BIC',
 		search: 'Bank suchen',
 		noServerUrlShort: 'keine FinTS-Adresse bekannt',
-		notFound: 'Keine Bank gefunden. Tipp: Die Bankleitzahl steht in deiner IBAN an Stelle 5 bis 12.'
+		notFound: 'Keine Bank gefunden. Tipp: Die Bankleitzahl steht in deiner IBAN an Stelle 5 bis 12.',
+		auto: {
+			title: 'Automatischer Abruf',
+			intro: 'Budgie ruft neue Umsätze im Hintergrund ab und ordnet sie wie bei einem manuellen Abruf Kategorien zu.',
+			interval: 'Intervall',
+			every: 'alle {hours} Std.',
+			pin: 'Online-Banking-PIN',
+			pinNote:
+				'Die PIN wird mit dem geheimen Schlüssel dieses Servers (BUDGIE_SECRET_KEY) verschlüsselt gespeichert und gelöscht, sobald du den automatischen Abruf ausschaltest. Wer Zugriff auf den Server und den Schlüssel hat, könnte sie lesen.',
+			enable: 'Einschalten',
+			savePin: 'PIN speichern',
+			enableFirstHint: 'Ruf zuerst einmal manuell ab, damit Budgie dein TAN-Verfahren kennt. Danach startet der automatische Abruf.',
+			next: 'Nächster Abruf: {when}',
+			last: 'Letzter Abruf: {when}',
+			paused: {
+				tan_required: 'Deine Bank hat eine TAN/Freigabe verlangt. Ruf einmal manuell ab, dann geht es weiter.',
+				pin_rejected: 'Die Bank hat die PIN abgelehnt. Der automatische Abruf wurde pausiert und die PIN gelöscht. Gib sie erneut ein.',
+				locked: 'Dein Bankzugang ist vorübergehend gesperrt. Entsperre ihn im Online-Banking und ruf dann manuell ab, damit es weitergeht.',
+				manual_sync_required: 'Starte den ersten Abruf manuell. Danach läuft der automatische Abruf weiter.'
+			}
+		}
 	},
 	csv: {
 		notPresent: '– nicht vorhanden –',

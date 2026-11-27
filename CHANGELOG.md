@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Automatic FinTS fetch per bank login (opt-in): every 6, 12 or 24 hours a background scheduler fetches new transactions through the normal import path. The PIN is stored encrypted only while it is enabled. It never waits for a TAN: if the bank asks for one, automatic fetching pauses until the next manual sync. New setting `BUDGIE_FINTS_AUTO_SYNC`.
 - CI runs linters (ruff, mypy, prettier, eslint) and tests with coverage reports, and scans the container images with Trivy on every pull request and push.
 - CodeQL, dependency review and OpenSSF Scorecard workflows, a CODEOWNERS file and pre-commit hooks.
 - CI, CodeQL and OpenSSF Scorecard badges in the README and a "Security tooling" section in the security policy.

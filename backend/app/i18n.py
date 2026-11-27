@@ -222,6 +222,21 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "Cannot connect to the bank's FinTS server: {error}",
     },
     "fints.error": {"de": "Fehler beim Abruf: {error}", "en": "Sync error: {error}"},
+    "fints.attention.tan_required": {
+        "de": (
+            "Die Bank verlangt eine TAN oder Freigabe. "
+            "Bitte einmal manuell abrufen, dann geht der automatische Abruf weiter."
+        ),
+        "en": "The bank asked for a TAN or approval. Run a manual fetch once to resume automatic fetching.",
+    },
+    "fints.attention.manual_sync_required": {
+        "de": "Bitte den ersten Abruf manuell starten, danach läuft der automatische Abruf.",
+        "en": "Please run the first fetch manually; automatic fetching works after that.",
+    },
+    "fints.auto_sync_needs_pin": {
+        "de": "Für den automatischen Abruf muss die PIN gespeichert werden",
+        "en": "Automatic fetching needs the PIN to be stored",
+    },
     "fints.import_name": {"de": "FinTS ab {date}", "en": "FinTS from {date}"},
     # Encryption of stored credentials
     "crypto.key_missing": {

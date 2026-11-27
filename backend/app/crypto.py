@@ -2,7 +2,8 @@
 
 The key is derived from `BUDGIE_SECRET_KEY` and is never stored in the
 database. Someone with only a database backup cannot read the data.
-The PIN is not stored at all, not even encrypted.
+By default the PIN is not stored. Only if the user opts into automatic
+fetching is it stored here encrypted too (see fints/autosync.py).
 """
 
 import base64

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from .. import crypto
 from ..config import get_settings
 from ..deps import DB, CurrentUser
-from ..fints import directory, jobs
+from ..fints import autosync, directory, jobs
 from ..i18n import http_error
 from ..models import Account, BankConnection
 from ..schemas import (
@@ -136,6 +136,7 @@ def update_connection(connection_id: int, data: BankConnectionPatch, db: DB, use
         connection.client_state_enc = None
         connection.tan_mechanism = None
         connection.tan_mechanism_name = None
+        autosync.disable(connection)
     if data.customer_id is not None:
         _require_enabled()
         customer_id = data.customer_id.strip()
@@ -143,13 +144,43 @@ def update_connection(connection_id: int, data: BankConnectionPatch, db: DB, use
         connection.client_state_enc = None
         connection.tan_mechanism = None
         connection.tan_mechanism_name = None
+        autosync.disable(connection)
     if data.server_url is not None:
         connection.server_url = data.server_url.strip()
     if data.reset_tan_mechanism:
         connection.tan_mechanism = None
         connection.tan_mechanism_name = None
+    _update_auto_sync(connection, data)
     db.commit()
     return connection
+
+
+def _update_auto_sync(connection: BankConnection, data: BankConnectionPatch) -> None:
+    """Applies the automatic-fetch settings of a PATCH. A PIN is only kept while auto sync is on."""
+    enabled = connection.auto_sync_enabled if data.auto_sync_enabled is None else data.auto_sync_enabled
+    interval = data.auto_sync_interval_hours or connection.auto_sync_interval_hours
+    if not enabled:
+        if connection.auto_sync_enabled or connection.pin_enc:
+            autosync.disable(connection)
+        return
+    _require_enabled()
+    if data.pin is not None:
+        autosync.store_pin(connection, data.pin)
+        # A new PIN answers a rejection; other pauses need a manual sync
+        if connection.auto_sync_paused_reason == autosync.PAUSE_PIN_REJECTED:
+            connection.auto_sync_paused_reason = None
+            connection.auto_sync_failures = 0
+            connection.next_auto_sync_at = None
+    if connection.pin_enc is None:
+        raise http_error(status.HTTP_400_BAD_REQUEST, "fints.auto_sync_needs_pin")
+    changed = not connection.auto_sync_enabled or interval != connection.auto_sync_interval_hours
+    if changed:
+        paused = connection.auto_sync_paused_reason
+        autosync.enable(connection, interval)
+        # Keep a pause the user has not resolved yet (e.g. TAN needed) when only the interval changes
+        if connection.auto_sync_paused_reason is None and paused not in (None, autosync.PAUSE_PIN_REJECTED):
+            connection.auto_sync_paused_reason = paused
+            connection.next_auto_sync_at = None
 
 
 @router.delete("/connections/{connection_id}", status_code=204)

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DatePicker, PasswordInput, RadioGroup } from '#lib/ui/index.ts';
+	import { DatePicker, PasswordInput, RadioGroup, Switch } from '#lib/ui/index.ts';
 	import BankPicker from '#lib/BankPicker.svelte';
 	import { onDestroy } from 'svelte';
 	import { api } from '#lib/api.ts';
@@ -15,6 +15,8 @@
 	import ListChecks from '@lucide/svelte/icons/list-checks';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import Clock from '@lucide/svelte/icons/clock';
+	import Lock from '@lucide/svelte/icons/lock';
 
 	let { onsynced }: { onsynced?: () => void } = $props();
 
@@ -177,6 +179,52 @@
 		job = null;
 	}
 
+	// Automatic fetch
+	const INTERVALS = [6, 12, 24];
+	const intervalOptions = INTERVALS.map((h) => ({ value: h, label: t('bank.auto.every', { hours: h }) }));
+	const pausedText = {
+		tan_required: 'bank.auto.paused.tan_required',
+		pin_rejected: 'bank.auto.paused.pin_rejected',
+		locked: 'bank.auto.paused.locked',
+		manual_sync_required: 'bank.auto.paused.manual_sync_required'
+	} as const;
+	// Connection for which the "turn on" form is open
+	let autoFor = $state<number | null>(null);
+	let autoPin = $state('');
+	let autoInterval = $state(12);
+
+	async function patchAuto(c: BankConnection, body: Record<string, unknown>) {
+		error = '';
+		try {
+			await api(`/fints/connections/${c.id}`, { method: 'PATCH', body });
+			autoFor = null;
+			await load();
+		} catch (err) {
+			error = (err as Error).message;
+		} finally {
+			// Do not keep the PIN in the browser
+			autoPin = '';
+		}
+	}
+
+	function toggleAuto(c: BankConnection, on: boolean) {
+		if (on) {
+			autoFor = c.id;
+			autoPin = '';
+			autoInterval = c.auto_sync_interval_hours;
+		} else if (autoFor === c.id && !c.auto_sync_enabled) {
+			autoFor = null;
+		} else {
+			// Turning off also deletes the stored PIN on the server
+			patchAuto(c, { auto_sync_enabled: false });
+		}
+	}
+
+	function enableAuto(e: SubmitEvent, c: BankConnection) {
+		e.preventDefault();
+		patchAuto(c, { auto_sync_enabled: true, auto_sync_interval_hours: autoInterval, pin: autoPin });
+	}
+
 	const when = (iso: string | null) => (iso ? dateTime(iso) : t('bank.never'));
 
 	onDestroy(() => clearTimeout(timer));
@@ -213,7 +261,9 @@
 						{c.accounts.map((a) => a.name).join(', ')}
 					</span>
 				{/if}
-				{#if c.last_error && syncFor?.id !== c.id}<span class="small err break-anywhere">{c.last_error}</span>{/if}
+				{#if c.last_error && syncFor?.id !== c.id && !c.auto_sync_paused_reason}<span class="small err break-anywhere">
+						{c.last_error}
+					</span>{/if}
 			</div>
 			{#if syncFor?.id !== c.id}
 				<div class="actions">
@@ -225,6 +275,64 @@
 				</div>
 			{/if}
 		</div>
+
+		{#if status?.enabled && syncFor?.id !== c.id}
+			{@const needsPin = c.auto_sync_enabled && !c.has_stored_pin}
+			{@const formOpen = autoFor === c.id || needsPin}
+			<div class="auto">
+				<div class="auto-head">
+					<Switch checked={c.auto_sync_enabled || autoFor === c.id} label={t('bank.auto.title')} onchange={(on) => toggleAuto(c, on)}>
+						<strong>{t('bank.auto.title')}</strong>
+					</Switch>
+					{#if c.auto_sync_enabled && c.has_stored_pin}
+						<span class="muted small stamp">
+							<Clock size={14} />
+							{#if c.auto_sync_paused_reason}
+								{t('bank.auto.last', { when: when(c.last_sync_at) })}
+							{:else if c.next_auto_sync_at}
+								{t('bank.auto.next', { when: when(c.next_auto_sync_at) })} · {t('bank.auto.last', { when: when(c.last_sync_at) })}
+							{/if}
+						</span>
+					{/if}
+				</div>
+				{#if c.auto_sync_enabled && c.auto_sync_paused_reason}
+					<div class="warn">
+						<CircleAlert size={18} />
+						<span>{t(pausedText[c.auto_sync_paused_reason])}</span>
+					</div>
+				{/if}
+				{#if c.auto_sync_enabled && c.has_stored_pin}
+					<RadioGroup
+						options={intervalOptions}
+						value={c.auto_sync_interval_hours}
+						label={t('bank.auto.interval')}
+						onchange={(h) => patchAuto(c, { auto_sync_interval_hours: h })}
+					/>
+				{/if}
+				{#if formOpen}
+					<form class="auto-form" onsubmit={(e) => enableAuto(e, c)}>
+						{#if !c.tan_mechanism_name}<p class="muted small">{t('bank.auto.enableFirstHint')}</p>{/if}
+						<div class="row">
+							<label>
+								{t('bank.auto.pin')}
+								<PasswordInput bind:value={autoPin} required autocomplete="off" inputmode="numeric" />
+							</label>
+							{#if !needsPin}
+								<div class="field">
+									<span>{t('bank.auto.interval')}</span>
+									<RadioGroup options={intervalOptions} bind:value={autoInterval} label={t('bank.auto.interval')} />
+								</div>
+							{/if}
+							<button>{needsPin ? t('bank.auto.savePin') : t('bank.auto.enable')}</button>
+							{#if !needsPin}
+								<button type="button" class="ghost" onclick={() => (autoFor = null)}>{t('common.cancel')}</button>
+							{/if}
+						</div>
+						<p class="muted small note"><Lock size={14} /> {t('bank.auto.pinNote')}</p>
+					</form>
+				{/if}
+			</div>
+		{/if}
 
 		{#if syncFor?.id === c.id}
 			<div class="sync">
@@ -450,6 +558,49 @@
 		display: flex;
 		gap: 0.5rem;
 		align-items: center;
+	}
+	.auto {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.6rem;
+		padding: 0.2rem 0 1rem;
+	}
+	.auto :global(.warn) {
+		align-self: stretch;
+		margin: 0;
+	}
+	.auto-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem 1rem;
+	}
+	.stamp {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+	.auto-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		width: 100%;
+	}
+	.auto-form p {
+		margin: 0;
+	}
+	.auto-form :global(.pw) {
+		width: 11rem;
+	}
+	.note {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.35rem;
+	}
+	.note :global(svg) {
+		flex: none;
+		margin-top: 0.15rem;
 	}
 	.sync {
 		padding: 0.25rem 0 1rem;

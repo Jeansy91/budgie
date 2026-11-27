@@ -429,6 +429,12 @@ class BankConnectionPatch(BaseModel):
     server_url: str | None = Field(None, pattern=r"^https://", max_length=255)
     # Asks for the TAN mechanism (and TAN medium) again on the next sync
     reset_tan_mechanism: bool = False
+    # Automatic fetching. Enabling needs a stored PIN; disabling deletes it.
+    auto_sync_enabled: bool | None = None
+    # Hours between fetches (PSD2 limits unattended access, see fints/autosync.py)
+    auto_sync_interval_hours: Literal[6, 12, 24] | None = None
+    # Write-only: stored encrypted, never returned
+    pin: str | None = Field(None, min_length=1, max_length=100)
 
 
 class LinkedAccount(ORM):
@@ -446,6 +452,12 @@ class BankConnectionOut(ORM):
     tan_mechanism_name: str | None
     last_sync_at: datetime | None
     last_error: str | None
+    auto_sync_enabled: bool
+    auto_sync_interval_hours: int
+    has_stored_pin: bool
+    next_auto_sync_at: datetime | None
+    # "tan_required", "pin_rejected", "locked" or "manual_sync_required"
+    auto_sync_paused_reason: str | None
     accounts: list[LinkedAccount] = []
 
 

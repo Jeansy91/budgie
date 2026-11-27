@@ -10,6 +10,11 @@ submits the TAN or the choice when needed.
 The FinTS dialog and the PIN only live in this thread's memory and are gone
 after the sync. Jobs are therefore kept in the memory of the API process; the
 API runs as exactly one uvicorn process (see Dockerfile).
+
+Automatic fetches (see scheduler.py) use the same flow with `unattended=True`.
+Nobody is there to answer, so such a job never waits: as soon as the bank wants
+a TAN, an approval or a choice, it aborts with `AttentionRequired` and the
+connection is paused until the user runs a manual sync.
 """
 
 from __future__ import annotations
@@ -41,6 +46,8 @@ from ..i18n import date_text, get_locale, t, use_locale
 from ..importers.common import normalize_iban
 from ..importers.store import store_transactions
 from ..models import Account, BankConnection, ImportBatch, Transaction, User
+from . import autosync
+from .autosync import AttentionRequired
 from .convert import to_parsed
 
 log = logging.getLogger(__name__)
@@ -85,6 +92,8 @@ class SyncJob:
     # running → (need_choice | need_tan → running)* → done | error | cancelled
     # Language of the user who started the sync; messages are written in it
     locale: str = "de"
+    # No user is present: never wait for a TAN, approval or choice
+    unattended: bool = False
     state: str = "running"
     message: str = ""
     challenge: str | None = None
@@ -102,6 +111,11 @@ class SyncJob:
     _choice: str | None = field(default=None, repr=False)
     _tan_event: threading.Event = field(default_factory=threading.Event, repr=False)
     _cancel: threading.Event = field(default_factory=threading.Event, repr=False)
+    _finished: threading.Event = field(default_factory=threading.Event, repr=False)
+
+    def wait(self, timeout: float | None = None) -> bool:
+        """Waits until the job thread is completely done (state and database are final)."""
+        return self._finished.wait(timeout)
 
     @property
     def finished(self) -> bool:
@@ -143,7 +157,9 @@ def _cleanup() -> None:
             del _jobs[job_id]
 
 
-def start_sync(connection: BankConnection, user: User, pin: str, start_date: date | None) -> SyncJob:
+def start_sync(
+    connection: BankConnection, user: User, pin: str, start_date: date | None, unattended: bool = False
+) -> SyncJob:
     _cleanup()
     with _lock:
         for other in _jobs.values():
@@ -154,6 +170,7 @@ def start_sync(connection: BankConnection, user: User, pin: str, start_date: dat
             user_id=user.id,
             connection_id=connection.id,
             locale=get_locale(),
+            unattended=unattended,
             message=t("fints.connecting"),
         )
         _jobs[job.id] = job
@@ -171,9 +188,15 @@ def _run(job: SyncJob, pin: str, start_date: date | None) -> None:
         try:
             if connection is None:
                 raise JobFailed(t("fints.connection_not_found"))
+            if job.unattended and not autosync.has_client_state(connection):
+                # The first sync must be manual: the user picks the TAN mechanism and approves
+                raise AttentionRequired(autosync.PAUSE_MANUAL_SYNC_REQUIRED, t("fints.attention.manual_sync_required"))
             _sync(db, job, connection, pin, start_date)
-            connection.last_sync_at = datetime.now(UTC)
+            now = datetime.now(UTC)
+            connection.last_sync_at = now
             connection.last_error = None
+            # A successful sync (manual or unattended) clears a pause and reschedules
+            autosync.apply_success(connection, now)
             db.commit()
             job.set(state="done", message=t("fints.done"), **_CLEARED)
         except JobCancelled:
@@ -182,15 +205,21 @@ def _run(job: SyncJob, pin: str, start_date: date | None) -> None:
         except Exception as exc:
             db.rollback()
             text = _error_text(exc)
-            if not isinstance(exc, (JobFailed, FinTSError)):
+            if not isinstance(exc, (JobFailed, FinTSError, AttentionRequired)):
                 log.exception("FinTS-Abruf fehlgeschlagen")
             if connection is not None:
                 connection.last_error = text
+                if job.unattended:
+                    autosync.apply_failure(connection, exc)
                 db.commit()
             job.set(state="error", error=text, message=t("fints.failed"), **_CLEARED)
+        finally:
+            job._finished.set()
 
 
 def _error_text(exc: Exception) -> str:
+    if isinstance(exc, AttentionRequired):
+        return str(exc)
     if isinstance(exc, FinTSClientPINError):
         return t("fints.pin_rejected")
     if isinstance(exc, FinTSClientTemporaryAuthError):
@@ -300,6 +329,7 @@ def _choose_tan_mechanism(job: SyncJob, client, connection: BankConnection) -> N
                 {"id": f, "name": getattr(p, "name", None) or f, "decoupled": _is_decoupled(p)}
                 for f, p in mechanisms.items()
             ]
+            _no_ask_when_unattended(job)
             chosen = _ask(job, "tan_mechanism", t("fints.choose_mechanism"), options)
         client.set_tan_mechanism(chosen)
     current = client.get_current_tan_mechanism()
@@ -314,6 +344,7 @@ def _choose_tan_mechanism(job: SyncJob, client, connection: BankConnection) -> N
         names = [m for m in (getattr(m, "tan_medium_name", None) for m in media) if m]
         if len(names) > 1:
             options = [{"id": n, "name": n, "decoupled": False} for n in names]
+            _no_ask_when_unattended(job)
             chosen = _ask(job, "tan_medium", t("fints.choose_medium"), options)
             medium = next(m for m in media if getattr(m, "tan_medium_name", None) == chosen)
             client.set_tan_medium(medium)
@@ -325,6 +356,11 @@ def _choose_tan_mechanism(job: SyncJob, client, connection: BankConnection) -> N
 
 def _is_decoupled(params) -> bool:
     return getattr(params, "decoupled_max_poll_number", None) is not None
+
+
+def _no_ask_when_unattended(job: SyncJob) -> None:
+    if job.unattended:
+        raise AttentionRequired(autosync.PAUSE_TAN_REQUIRED, t("fints.attention.tan_required"))
 
 
 def _ask(job: SyncJob, kind: str, message: str, options: list[dict]) -> str:
@@ -347,6 +383,8 @@ def _resolve(job: SyncJob, client, response):
     deadline = time.monotonic() + get_settings().fints_tan_timeout
     poll_seconds = DECOUPLED_POLL_SECONDS
     while isinstance(response, NeedTANResponse):
+        # Unattended: do not poll for the approval, an unanswered push would only pile up
+        _no_ask_when_unattended(job)
         image = None
         if getattr(response, "challenge_matrix", None):
             mime, data = response.challenge_matrix

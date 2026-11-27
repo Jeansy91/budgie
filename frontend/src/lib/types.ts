@@ -221,6 +221,12 @@ export interface BankConnection {
 	tan_mechanism_name: string | null;
 	last_sync_at: string | null;
 	last_error: string | null;
+	auto_sync_enabled: boolean;
+	auto_sync_interval_hours: number;
+	has_stored_pin: boolean;
+	next_auto_sync_at: string | null;
+	/** Why automatic fetching is paused (needs the user), or null */
+	auto_sync_paused_reason: 'tan_required' | 'pin_rejected' | 'locked' | 'manual_sync_required' | null;
 	accounts: { id: number; name: string; iban: string | null }[];
 }
 
