@@ -200,6 +200,17 @@ const en: Messages = {
 		retry: 'Try again',
 		cancelled: 'Sync cancelled.',
 		from: 'from {date}',
+		res: {
+			newCount: { zero: 'No new transactions', one: '{count} new transaction', other: '{count} new transactions' },
+			categorized: '{count} categorized automatically',
+			duplicates: '{count} already there',
+			accounts: { one: '{count} account', other: '{count} accounts' },
+			newShort: '+{count} new',
+			categorizedShort: '{count} categorized',
+			withoutNew: { one: '{count} account without new transactions', other: '{count} accounts without new transactions' },
+			existing: '{name} · {count} already there',
+			skipped: '{name}: {reason}'
+		},
 		loginNumber: 'Login number',
 		loginPlaceholder: '10 digits, as used to sign in',
 		saveLogin: 'Save login',

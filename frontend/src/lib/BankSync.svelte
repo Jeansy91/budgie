@@ -5,13 +5,13 @@
 	import { api } from '#lib/api.ts';
 	import { dateTime, day } from '#lib/format.ts';
 	import { t } from '#lib/i18n/index.svelte.ts';
+	import { summarizeSync } from '#lib/syncSummary.ts';
 	import type { Bank, BankConnection, FintsStatus, SyncJob } from '#lib/types.ts';
 	import RefreshCw from '@lucide/svelte/icons/refresh-cw';
 	import Smartphone from '@lucide/svelte/icons/smartphone';
 	import KeyRound from '@lucide/svelte/icons/key-round';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import CircleAlert from '@lucide/svelte/icons/circle-alert';
-	import Check from '@lucide/svelte/icons/check';
 	import ListChecks from '@lucide/svelte/icons/list-checks';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -49,6 +49,9 @@
 	let tan = $state('');
 	let job = $state<SyncJob | null>(null);
 	let timer: ReturnType<typeof setTimeout> | undefined;
+	// Expanded lists: accounts without news in the sync result, account names per connection
+	let showQuiet = $state(false);
+	let openAccounts = $state<Record<number, boolean>>({});
 
 	const active = $derived(job !== null && (job.state === 'running' || job.state === 'need_tan' || job.state === 'need_choice'));
 
@@ -120,12 +123,14 @@
 		tan = '';
 		startDate = '';
 		error = '';
+		showQuiet = false;
 	}
 
 	async function startSync(e: SubmitEvent) {
 		e.preventDefault();
 		if (!syncFor) return;
 		error = '';
+		showQuiet = false;
 		try {
 			job = await api<SyncJob>(`/fints/connections/${syncFor.id}/sync`, {
 				method: 'POST',
@@ -177,6 +182,7 @@
 	function close() {
 		syncFor = null;
 		job = null;
+		showQuiet = false;
 	}
 
 	// Automatic fetch
@@ -256,10 +262,21 @@
 					{t('bank.login', { hint: c.login_hint })} · {t('bank.lastSync', { when: when(c.last_sync_at) })}
 					{#if c.tan_mechanism_name}· {c.tan_mechanism_name}{/if}
 				</span>
-				{#if c.accounts.length}
-					<span class="muted small accounts" title={c.accounts.map((a) => a.name).join(', ')}>
-						{c.accounts.map((a) => a.name).join(', ')}
-					</span>
+				{#if c.accounts.length > 3}
+					<button
+						type="button"
+						class="ghost small toggle"
+						onclick={() => (openAccounts[c.id] = !openAccounts[c.id])}
+						aria-expanded={!!openAccounts[c.id]}
+					>
+						{t('bank.res.accounts', { count: c.accounts.length })}
+						{#if openAccounts[c.id]}<ChevronDown size={16} />{:else}<ChevronRight size={16} />{/if}
+					</button>
+					{#if openAccounts[c.id]}
+						<span class="muted small break-anywhere">{c.accounts.map((a) => a.name).join(', ')}</span>
+					{/if}
+				{:else if c.accounts.length}
+					<span class="muted small break-anywhere">{c.accounts.map((a) => a.name).join(', ')}</span>
 				{/if}
 				{#if c.last_error && syncFor?.id !== c.id && !c.auto_sync_paused_reason}<span class="small err break-anywhere">
 						{c.last_error}
@@ -416,27 +433,63 @@
 					<p class="muted">{t('bank.cancelled')}</p>
 					<button class="secondary" onclick={close}>{t('common.close')}</button>
 				{:else}
-					{#each job.results as r (r.iban)}
-						<div class="result">
-							<span class="ok-icon"><Check size={16} /></span>
-							<div class="info">
-								<strong class="break-anywhere">{r.account_name ?? r.iban}</strong>
-								{#if r.account_created}<span class="badge accent">{t('import.newAccount')}</span>{/if}
-								{#if r.skipped}
-									<span class="muted small">{r.skipped}</span>
-								{:else}
-									<div class="stats">
-										<span><b>{r.rows_imported}</b> {t('import.new')}</span>
-										<span><b>{r.rows_duplicate}</b> {t('import.duplicate')}</span>
-										<span><b>{r.rows_categorized}</b> {t('import.byRule')}</span>
-										{#if r.since}<span>{t('bank.from', { date: day(r.since) })}</span>{/if}
-									</div>
-								{/if}
-							</div>
-						</div>
-					{/each}
-					<div class="row">
-						<a href="/transactions?uncategorized=1">{t('import.categorize')} →</a>
+					{@const sum = summarizeSync(job.results)}
+					<div class="summary">
+						<strong>{t('bank.res.newCount', { count: sum.imported })}</strong>
+						<span class="muted small">
+							{[
+								t('bank.res.categorized', { count: sum.categorized }),
+								t('bank.res.duplicates', { count: sum.duplicates }),
+								t('bank.res.accounts', { count: sum.accounts }),
+								sum.since ? t('bank.from', { date: day(sum.since) }) : ''
+							]
+								.filter(Boolean)
+								.join(' · ')}
+						</span>
+					</div>
+					{#if sum.withNew.length}
+						<ul class="rows">
+							{#each sum.withNew as r (r.iban)}
+								<li>
+									<span class="name">
+										<span class="truncate">{r.account_name ?? r.iban}</span>
+										{#if r.account_created}<span class="badge accent">{t('import.newAccount')}</span>{/if}
+									</span>
+									<span class="nums small">
+										<b>{t('bank.res.newShort', { count: r.rows_imported })}</b>
+										<span class="muted">{t('bank.res.categorizedShort', { count: r.rows_categorized })}</span>
+									</span>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+					{#if sum.withoutNew.length}
+						<button type="button" class="ghost small toggle quiet" onclick={() => (showQuiet = !showQuiet)} aria-expanded={showQuiet}>
+							{t('bank.res.withoutNew', { count: sum.withoutNew.length })}
+							{#if showQuiet}<ChevronDown size={16} />{:else}<ChevronRight size={16} />{/if}
+						</button>
+						{#if showQuiet}
+							<ul class="quiet-list muted small">
+								{#each sum.withoutNew as r (r.iban)}
+									<li class="break-anywhere">{t('bank.res.existing', { name: r.account_name ?? r.iban, count: r.rows_duplicate })}</li>
+								{/each}
+							</ul>
+						{/if}
+					{/if}
+					{#if sum.skipped.length}
+						<ul class="skipped muted small">
+							{#each sum.skipped as r (r.iban)}
+								<li class="break-anywhere">
+									<CircleAlert size={14} />
+									<span>{t('bank.res.skipped', { name: r.account_name ?? r.iban, reason: r.skipped ?? '' })}</span>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+					<div class="row result-actions">
+						{#if sum.imported > 0}
+							<a class="btn-link" href="/transactions?uncategorized=1">{t('import.categorize')} →</a>
+						{/if}
 						<button class="ghost" onclick={close}>{t('common.close')}</button>
 					</div>
 				{/if}
@@ -542,11 +595,6 @@
 		/* Grow next to the buttons, but wrap them below before getting squeezed */
 		flex: 1 1 16rem;
 		min-width: 0;
-	}
-	.accounts {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.actions {
 		flex-wrap: wrap;
@@ -669,35 +717,110 @@
 			transform: rotate(360deg);
 		}
 	}
-	.result {
+	.summary {
 		display: flex;
-		align-items: flex-start;
-		gap: 0.75rem;
-		margin-bottom: 0.75rem;
-	}
-	.result .info {
-		flex: 1;
-		min-width: 0;
-	}
-	.ok-icon {
-		display: grid;
-		place-items: center;
-		width: 2rem;
-		height: 2rem;
-		border-radius: 999px;
+		flex-direction: column;
+		gap: 0.15rem;
+		padding: 0.8rem 1rem;
+		margin-bottom: 0.5rem;
+		border-radius: var(--radius-sm);
 		background: var(--accent-soft);
-		color: var(--accent-strong);
+	}
+	.summary strong {
+		font-size: 1.05rem;
+	}
+	.rows,
+	.quiet-list,
+	.skipped {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.rows li {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: baseline;
+		gap: 0.2rem 1rem;
+		padding: 0.5rem 0.25rem;
+		border-top: 1px solid var(--border);
+	}
+	.rows li:first-child {
+		border-top: 0;
+	}
+	.name {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+		font-weight: 600;
+	}
+	.name .badge {
 		flex: none;
 	}
-	.stats {
+	.nums {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.3rem 1.1rem;
-		font-size: 0.87rem;
-		color: var(--muted);
+		justify-content: flex-end;
+		gap: 0 0.75rem;
+		white-space: nowrap;
 	}
-	.stats b {
+	.nums b {
+		color: var(--accent-strong);
+	}
+	@media (max-width: 480px) {
+		.rows li {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.nums {
+			justify-content: flex-start;
+		}
+	}
+	.quiet {
+		margin-top: 0.25rem;
+	}
+	.quiet-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1.1rem;
+		padding: 0.25rem 0.6rem 0.5rem;
+	}
+	.skipped {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		margin-top: 0.5rem;
+	}
+	.skipped li {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.35rem;
+	}
+	.skipped :global(svg) {
+		flex: none;
+		margin-top: 0.15rem;
+	}
+	.result-actions {
+		margin-top: 0.75rem;
+		align-items: center;
+	}
+	/* Keep the toggle labels aligned with the text above them */
+	.who .toggle,
+	.quiet {
+		margin-left: -0.6rem;
+	}
+	.btn-link {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.6rem 1.15rem;
+		border-radius: 999px;
+		background: var(--surface-2);
 		color: var(--text);
+		font-weight: 600;
+		font-size: 0.92rem;
+		text-decoration: none;
+	}
+	.btn-link:hover {
+		background: var(--surface-3);
 	}
 	.add {
 		padding-top: 0.85rem;

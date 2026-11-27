@@ -213,6 +213,17 @@ const de = {
 		retry: 'Noch einmal',
 		cancelled: 'Abruf abgebrochen.',
 		from: 'ab {date}',
+		res: {
+			newCount: { zero: 'Keine neuen Buchungen', one: '{count} neue Buchung', other: '{count} neue Buchungen' },
+			categorized: '{count} automatisch zugeordnet',
+			duplicates: '{count} schon vorhanden',
+			accounts: { one: '{count} Konto', other: '{count} Konten' },
+			newShort: '+{count} neu',
+			categorizedShort: '{count} zugeordnet',
+			withoutNew: { one: '{count} Konto ohne neue Buchungen', other: '{count} Konten ohne neue Buchungen' },
+			existing: '{name} · {count} vorhanden',
+			skipped: '{name}: {reason}'
+		},
 		loginNumber: 'Zugangsnummer',
 		loginPlaceholder: '10-stellig, wie beim Login',
 		saveLogin: 'Zugang speichern',
