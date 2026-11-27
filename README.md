@@ -31,7 +31,7 @@ Budgie (budgerigar + budget) pulls your transactions straight from your bank via
 - **CSV import** – CSV exports of ING, Sparkasse, Volksbank/Raiffeisenbank, DKB, comdirect, Commerzbank, Deutsche Bank and N26 are recognized automatically; for any other bank you assign the columns once and save the mapping as a template. Duplicates are detected across both sources.
 - **Learning categorization** – a local scikit-learn classifier assigns categories and suggests them when unsure. Every correction becomes a training example and the model retrains in the background.
 - **Optional local LLM** – uncertain cases can be handed to a language model running in [Ollama](https://ollama.com) on your own CPU.
-- **Rules** – deterministic rules (contains, equals, starts with, regex) always take precedence over the AI. Manual assignments are never overwritten.
+- **Rules** – deterministic rules on payee, sender, recipient or purpose (contains, equals, starts with, regex) always take precedence over the AI. Manual assignments are never overwritten.
 - **Transaction details** – tap a transaction to see everything the bank delivered: full purpose text, counterparty IBAN/BIC, mandate reference, creditor ID, end-to-end reference, import source and how the category was assigned. Change the category or budget month, add a note or create a rule right from there.
 - **Budget month** – salary paid at the end of a month automatically counts towards the following month, so your monthly overview matches how you actually spend.
 - **Multi-user households** – separate logins, shared or private accounts, and a default set of 14 main categories with subcategories (fully editable).
@@ -162,7 +162,7 @@ Recognized layouts: ING ("Umsatzanzeige"), Sparkasse (CSV-CAMT and CSV-MT940), V
 - **AI:** during import (CSV and FinTS), a local classifier categorizes every transaction that no rule matches. At or above 60 % confidence it assigns the category itself (badge "KI 87 %"); below that it shows a **suggestion** you can accept with one click.
 - **Learning:** every category you change and every AI assignment you confirm is a training example. A few seconds later Budgie retrains in the background and re-evaluates open transactions. Out of the box the model already knows typical German payees such as REWE, Aral or Netflix.
 - **Review:** a filter under **Buchungen** shows all AI assignments and suggestions nobody has confirmed yet. **Einstellungen → KI-Kategorisierung** shows accuracy, training status and buttons to retrain immediately.
-- **Rules** always win: create them from the transaction list ("Regeln lernen") or under **Regeln** (payee/purpose contains, equals, starts with, regex). Rules override AI assignments; manual assignments are never overwritten.
+- **Rules** always win: create them from the transaction list ("Regeln lernen") or under **Regeln** (payee, sender or recipient, or purpose; contains, equals, starts with, regex). Rules override AI assignments; manual assignments are never overwritten.
 - Transfers between your own accounts count as neither income nor expense.
 
 ### Optional: local language model

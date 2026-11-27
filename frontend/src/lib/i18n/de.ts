@@ -88,7 +88,7 @@ const de = {
 		onlyUncategorized: 'Nur ohne Kategorie',
 		aiReviewTitle: 'Zuordnungen und Vorschläge der KI, die noch niemand bestätigt hat',
 		aiReview: 'KI prüfen',
-		learnRulesTitle: 'Beim Zuordnen eine Regel „Empfänger enthält …“ anlegen und auf ähnliche Buchungen anwenden',
+		learnRulesTitle: 'Beim Zuordnen eine Regel „Empfänger oder Sender enthält …“ anlegen und auf ähnliche Buchungen anwenden',
 		learnRules: 'Regeln lernen',
 		empty: 'Keine Buchungen für diese Filter.',
 		rowLabel: '{payee}, {amount} – Details anzeigen',
@@ -292,9 +292,11 @@ const de = {
 	},
 	rules: {
 		field: {
-			payee: 'Empfänger',
+			payee: 'Empfänger oder Sender',
+			recipient: 'Empfänger (Ausgang)',
+			sender: 'Sender (Eingang)',
 			purpose: 'Verwendungszweck',
-			any: 'Empfänger oder Zweck'
+			any: 'Name oder Zweck'
 		},
 		match: {
 			contains: 'enthält',

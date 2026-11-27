@@ -12,6 +12,12 @@ from .models import CategorySource, Rule, RuleField, RuleMatch, Transaction
 
 
 def _texts(rule: Rule, t: Transaction) -> list[str]:
+    if rule.field == RuleField.recipient:
+        # Counterparty of outgoing transactions only
+        return [t.payee or ""] if t.amount < 0 else []
+    if rule.field == RuleField.sender:
+        # Counterparty of incoming transactions only
+        return [t.payee or ""] if t.amount > 0 else []
     if rule.field == RuleField.payee:
         return [t.payee or ""]
     if rule.field == RuleField.purpose:
