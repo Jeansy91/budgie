@@ -198,7 +198,11 @@
 		flex-direction: column;
 	}
 	.add :global(.kind) {
-		display: flex;
+		display: grid;
+	}
+	/* the add card is narrow: keep the three kind labels untruncated */
+	.add :global(.kind .opt) {
+		padding-inline: 0.2rem;
 	}
 	.foot {
 		display: flex;
