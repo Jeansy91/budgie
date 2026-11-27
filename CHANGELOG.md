@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Transactions can get a custom name (for example what was bought in an Amazon payment). It is shown in the transaction list and the detail view and is included in the search; the bank's original payee and purpose stay unchanged. The search now also covers notes.
+
 ## [0.2.0] - 2026-11-27
 
 ### Added

@@ -32,7 +32,7 @@ Budgie (budgerigar + budget) pulls your transactions straight from your bank via
 - **Learning categorization** – a local scikit-learn classifier assigns categories and suggests them when unsure. Every correction becomes a training example and the model retrains in the background.
 - **Optional local LLM** – uncertain cases can be handed to a language model running in [Ollama](https://ollama.com) on your own CPU.
 - **Rules** – deterministic rules on payee, sender, recipient or purpose (contains, equals, starts with, regex) always take precedence over the AI. Manual assignments are never overwritten.
-- **Transaction details** – tap a transaction to see everything the bank delivered: full purpose text, counterparty IBAN/BIC, mandate reference, creditor ID, end-to-end reference, import source and how the category was assigned. Change the category or budget month, add a note or create a rule right from there.
+- **Transaction details** – tap a transaction to see everything the bank delivered: full purpose text, counterparty IBAN/BIC, mandate reference, creditor ID, end-to-end reference, import source and how the category was assigned. Change the category or budget month, give it a custom name (searchable, the bank's original data stays untouched), add a note or create a rule right from there.
 - **Budget month** – salary paid at the end of a month automatically counts towards the following month, so your monthly overview matches how you actually spend.
 - **Multi-user households** – separate logins, shared or private accounts, and a default set of 14 main categories with subcategories (fully editable).
 - **Modern, mobile-friendly UI** – light and dark mode, custom form controls, bottom sheets on phones.
