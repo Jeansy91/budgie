@@ -138,7 +138,8 @@ def test_new_account_detects_earlier_transfers_and_delete_unmarks(admin, no_ai):
     assert items(admin)["Umbuchung"]["category_source"] is None
     b = admin.post("/api/accounts", json={"name": "Tagesgeld", "iban": IBAN_B}).json()["id"]
     assert items(admin)["Umbuchung"]["category_source"] == "transfer"
-    assert admin.delete(f"/api/accounts/{b}").status_code == 204
+    response = admin.delete(f"/api/accounts/{b}")
+    assert response.status_code == 204
     assert items(admin)["Umbuchung"]["category_source"] is None
 
 
