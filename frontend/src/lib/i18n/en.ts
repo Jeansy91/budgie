@@ -75,7 +75,7 @@ const en: Messages = {
 		onlyUncategorized: 'Uncategorized only',
 		aiReviewTitle: 'AI assignments and suggestions nobody has confirmed yet',
 		aiReview: 'Review AI',
-		learnRulesTitle: 'When categorizing, create a “payee contains …” rule and apply it to similar transactions',
+		learnRulesTitle: 'When categorizing, create a “payee or sender contains …” rule and apply it to similar transactions',
 		learnRules: 'Learn rules',
 		empty: 'No transactions match these filters.',
 		rowLabel: '{payee}, {amount} – show details',
@@ -278,9 +278,11 @@ const en: Messages = {
 	},
 	rules: {
 		field: {
-			payee: 'Payee',
+			payee: 'Payee or sender',
+			recipient: 'Payee (outgoing)',
+			sender: 'Sender (incoming)',
 			purpose: 'Reference',
-			any: 'Payee or reference'
+			any: 'Name or reference'
 		},
 		match: {
 			contains: 'contains',

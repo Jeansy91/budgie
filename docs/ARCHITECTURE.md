@@ -74,7 +74,7 @@ Overview: monthly totals per category, history, budget month
 
 ## Learning categorization
 
-1. **Rules:** fixed assignments, often created from corrections, e.g. "payee contains REWE → Lebensmittel › Supermarkt".
+1. **Rules:** fixed assignments, often created from corrections, e.g. "payee contains REWE → Lebensmittel › Supermarkt". A rule matches the payee (any direction), only the recipient of outgoing transactions, only the sender of incoming ones, the purpose, or payee and purpose together.
 2. **Classifier:** TF-IDF character n-grams over payee, booking text and purpose, plus structural features (direction, amount size, booking type, part of month), with logistic regression. It is trained per household from manual assignments, rule matches and a small set of built-in seed examples, and retrains in the background after corrections.
 3. **LLM fallback (optional):** for low-confidence cases, Ollama receives the category list and similar, already corrected transactions as examples. The answer is constrained to existing categories with a JSON schema.
 
