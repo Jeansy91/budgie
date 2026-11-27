@@ -31,7 +31,9 @@
 
 	const fieldLabel = (field: Rule['field']) => t(`rules.field.${field}`);
 	const matchLabel = (match: Rule['match_type']) => t(`rules.match.${match}`);
-	let fieldOptions = $derived((['payee', 'purpose', 'any'] as const).map((value) => ({ value, label: fieldLabel(value) })));
+	let fieldOptions = $derived(
+		(['payee', 'recipient', 'sender', 'purpose', 'any'] as const).map((value) => ({ value, label: fieldLabel(value) }))
+	);
 	let matchOptions = $derived(
 		(['contains', 'equals', 'starts_with', 'regex'] as const).map((value) => ({ value, label: matchLabel(value) }))
 	);

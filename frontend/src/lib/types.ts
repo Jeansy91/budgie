@@ -42,7 +42,7 @@ export interface Category {
 export interface Rule {
 	id: number;
 	category_id: number;
-	field: 'payee' | 'purpose' | 'any';
+	field: 'payee' | 'recipient' | 'sender' | 'purpose' | 'any';
 	match_type: 'contains' | 'equals' | 'starts_with' | 'regex';
 	pattern: string;
 	priority: number;

@@ -123,171 +123,180 @@
 	};
 </script>
 
-<div class="page-head">
-	<div>
-		<span class="eyebrow break-anywhere">{data.me?.household_name}</span>
-		<h1>{t('nav.settings')}</h1>
-	</div>
-</div>
-{#if error}<div class="error">{error}</div>{/if}
-{#if notice}<div class="ok">{notice}</div>{/if}
-
-<section class="card">
-	<h2><Languages size={20} /> {t('settings.language')}</h2>
-	<RadioGroup options={languageOptions} value={language} label={t('settings.language')} onchange={setLanguage} />
-	<p class="muted small">{t('settings.languageHint', { browser: browserLanguage })}</p>
-</section>
-
-<section class="card">
-	<h2>{t('import.accounts')}</h2>
-	{#each accounts as a (a.id)}
-		<div class="account">
-			<div class="row">
-				<label>{t('common.name')} <input bind:value={a.name} /></label>
-				<span class="small muted">
-					{a.iban ? iban(a.iban) : t('import.noIban')} · {t('transactions.count', { count: a.transaction_count })}
-				</span>
-			</div>
-			<Switch bind:checked={a.shared}>{t('settings.shared')}</Switch>
-			{#if !a.shared}
-				<div class="row small">
-					{t('settings.visibleFor')}
-					{#each users as u (u.id)}
-						<Checkbox checked={a.member_ids.includes(u.id)} onchange={() => toggleMember(a, u.id)} disabled={u.id === data.me?.id}>
-							{u.display_name}
-						</Checkbox>
-					{/each}
-				</div>
-			{/if}
-			<div class="row">
-				<button class="secondary" onclick={() => saveAccount(a)}>{t('common.save')}</button>
-				<button class="danger" onclick={() => deleteAccount(a)}>{t('common.delete')}</button>
-			</div>
+<div class="readable">
+	<div class="page-head">
+		<div>
+			<span class="eyebrow break-anywhere">{data.me?.household_name}</span>
+			<h1>{t('nav.settings')}</h1>
 		</div>
-	{:else}
-		<p class="muted">{t('settings.noAccounts')} <a href="/import">{t('settings.noAccountsLink')}</a></p>
-	{/each}
-</section>
+	</div>
+	{#if error}<div class="error">{error}</div>{/if}
+	{#if notice}<div class="ok">{notice}</div>{/if}
 
-<BudgetMonthSettings />
+	<section class="card">
+		<h2><Languages size={20} /> {t('settings.language')}</h2>
+		<RadioGroup options={languageOptions} value={language} label={t('settings.language')} onchange={setLanguage} />
+		<p class="muted small">{t('settings.languageHint', { browser: browserLanguage })}</p>
+	</section>
 
-<section class="card">
-	<h2><Wand size={20} /> {t('ai.title')}</h2>
-	{#if ai}
-		{#if !ai.enabled}
-			<p class="muted">{t('ai.disabled')} (BUDGIE_AI_ENABLED=false).</p>
-		{:else}
-			<p class="muted small">
-				{t('ai.intro', { threshold: pct(ai.auto_threshold) })}
-			</p>
-			<div class="stats">
-				<div>
-					<span class="label">{t('ai.learnedFrom')}</span>
-					<strong>{ai.model ? ai.model.samples : 0}</strong>
+	<section class="card">
+		<h2>{t('import.accounts')}</h2>
+		{#each accounts as a (a.id)}
+			<div class="account">
+				<div class="row">
+					<label>{t('common.name')} <input bind:value={a.name} /></label>
 					<span class="small muted">
-						{t('ai.ownTransactions')}{#if ai.model}{t('ai.manualShare', { count: ai.model.corrections })}{/if}
+						{a.iban ? iban(a.iban) : t('import.noIban')} · {t('transactions.count', { count: a.transaction_count })}
 					</span>
 				</div>
-				<div>
-					<span class="label">{t('ai.accuracy')}</span>
-					<strong>{ai.model?.accuracy != null ? pct(ai.model.accuracy) : '–'}</strong>
-					<span class="small muted">{ai.model?.accuracy != null ? t('ai.accuracyHint') : t('ai.accuracyLater')}</span>
-				</div>
-				<a class="stat-link" href="/transactions?ai_review=1">
-					<span class="label">{t('ai.toReview')}</span>
-					<strong>{ai.ai_categorized + ai.suggestions}</strong>
-					<span class="small muted">{t('ai.toReviewHint', { assigned: ai.ai_categorized, suggestions: ai.suggestions })}</span>
-				</a>
-				<a class="stat-link" href="/transactions?uncategorized=1">
-					<span class="label">{t('ai.uncategorized')}</span>
-					<strong>{ai.uncategorized}</strong>
-					<span class="small muted">{t('ai.transactions', { count: ai.uncategorized })}</span>
-				</a>
-			</div>
-			<p class="small muted">
-				{#if ai.model}{t('ai.lastTrained', { when: when(ai.model.trained_at) })}{:else}{t('ai.notTrained')}{/if}
-			</p>
-
-			<div class="llm">
-				<span class="dot" class:on={ai.llm.configured && ai.llm.model_available} class:off={ai.llm.configured && !ai.llm.model_available}
-				></span>
-				<div>
-					<strong>{t('ai.llmTitle')}</strong>
-					{#if !ai.llm.configured}
-						<div class="small muted">
-							{t('ai.llmOff')}
-						</div>
-					{:else if ai.llm.error}
-						<div class="small warn-text">{ai.llm.error}</div>
-					{:else}
-						<div class="small muted">{t('ai.llmReady', { model: ai.llm.model })}</div>
-					{/if}
-					{#if ai.llm.running}
-						<div class="small">{t('ai.llmRunning', { done: ai.llm.done, total: ai.llm.total })}</div>
-					{/if}
+				<Switch bind:checked={a.shared}>{t('settings.shared')}</Switch>
+				{#if !a.shared}
+					<div class="row small">
+						{t('settings.visibleFor')}
+						{#each users as u (u.id)}
+							<Checkbox checked={a.member_ids.includes(u.id)} onchange={() => toggleMember(a, u.id)} disabled={u.id === data.me?.id}>
+								{u.display_name}
+							</Checkbox>
+						{/each}
+					</div>
+				{/if}
+				<div class="row">
+					<button class="secondary" onclick={() => saveAccount(a)}>{t('common.save')}</button>
+					<button class="danger" onclick={() => deleteAccount(a)}>{t('common.delete')}</button>
 				</div>
 			</div>
+		{:else}
+			<p class="muted">{t('settings.noAccounts')} <a href="/import">{t('settings.noAccountsLink')}</a></p>
+		{/each}
+	</section>
 
-			<div class="row">
-				<button class="secondary" onclick={train} disabled={aiBusy}>{t('ai.train')}</button>
-				<button class="secondary" onclick={recategorize} disabled={aiBusy}>{t('ai.recategorize')}</button>
-			</div>
-		{/if}
-	{/if}
-</section>
+	<BudgetMonthSettings />
 
-<section class="card">
-	<h2>{t('settings.users')}</h2>
-	<table class="users">
-		<tbody>
-			{#each users as u (u.id)}
-				<tr>
-					<td>
-						<span class="user">
-							<span class="av">{initials(u.display_name)}</span>
-							<span class="who">
-								<strong class="truncate" title={u.display_name}>{u.display_name}</strong>
-								<span class="muted small truncate" title="@{u.username}">@{u.username}</span>
-							</span>
-							{#if u.is_admin}<span class="badge accent">Admin</span>{/if}
+	<section class="card">
+		<h2><Wand size={20} /> {t('ai.title')}</h2>
+		{#if ai}
+			{#if !ai.enabled}
+				<p class="muted">{t('ai.disabled')} (BUDGIE_AI_ENABLED=false).</p>
+			{:else}
+				<p class="muted small">
+					{t('ai.intro', { threshold: pct(ai.auto_threshold) })}
+				</p>
+				<div class="stats">
+					<div>
+						<span class="label">{t('ai.learnedFrom')}</span>
+						<strong>{ai.model ? ai.model.samples : 0}</strong>
+						<span class="small muted">
+							{t('ai.ownTransactions')}{#if ai.model}{t('ai.manualShare', { count: ai.model.corrections })}{/if}
 						</span>
-					</td>
-					<td class="amount">
-						{#if data.me?.is_admin && u.id !== data.me.id}<button class="link small" onclick={() => deleteUser(u)}>
-								{t('settings.deleteUser')}
-							</button>{/if}
-					</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-	{#if data.me?.is_admin}
-		<form class="row" style="margin-top: 1rem" onsubmit={addUser}>
-			<label>{t('common.name')} <input bind:value={newUser.display_name} required /></label>
-			<label>{t('auth.username')} <input bind:value={newUser.username} required pattern="[A-Za-z0-9._\-]+" /></label>
-			<label>{t('auth.password')} <PasswordInput bind:value={newUser.password} minlength={8} required autocomplete="new-password" /></label>
-			<Checkbox bind:checked={newUser.is_admin} class="admin">Admin</Checkbox>
-			<button>{t('settings.createUser')}</button>
-		</form>
-	{/if}
-</section>
+					</div>
+					<div>
+						<span class="label">{t('ai.accuracy')}</span>
+						<strong>{ai.model?.accuracy != null ? pct(ai.model.accuracy) : '–'}</strong>
+						<span class="small muted">{ai.model?.accuracy != null ? t('ai.accuracyHint') : t('ai.accuracyLater')}</span>
+					</div>
+					<a class="stat-link" href="/transactions?ai_review=1">
+						<span class="label">{t('ai.toReview')}</span>
+						<strong>{ai.ai_categorized + ai.suggestions}</strong>
+						<span class="small muted">{t('ai.toReviewHint', { assigned: ai.ai_categorized, suggestions: ai.suggestions })}</span>
+					</a>
+					<a class="stat-link" href="/transactions?uncategorized=1">
+						<span class="label">{t('ai.uncategorized')}</span>
+						<strong>{ai.uncategorized}</strong>
+						<span class="small muted">{t('ai.transactions', { count: ai.uncategorized })}</span>
+					</a>
+				</div>
+				<p class="small muted">
+					{#if ai.model}{t('ai.lastTrained', { when: when(ai.model.trained_at) })}{:else}{t('ai.notTrained')}{/if}
+				</p>
 
-<section class="card">
-	<h2>{t('settings.changePassword')}</h2>
-	<form class="row" onsubmit={changePassword}>
-		<label>
-			{t('settings.currentPassword')}
-			<PasswordInput bind:value={pw.current_password} required autocomplete="current-password" />
-		</label>
-		<label>
-			{t('settings.newPassword')}
-			<PasswordInput bind:value={pw.new_password} minlength={8} required autocomplete="new-password" />
-		</label>
-		<button>{t('settings.change')}</button>
-	</form>
-</section>
+				<div class="llm">
+					<span class="dot" class:on={ai.llm.configured && ai.llm.model_available} class:off={ai.llm.configured && !ai.llm.model_available}
+					></span>
+					<div>
+						<strong>{t('ai.llmTitle')}</strong>
+						{#if !ai.llm.configured}
+							<div class="small muted">
+								{t('ai.llmOff')}
+							</div>
+						{:else if ai.llm.error}
+							<div class="small warn-text">{ai.llm.error}</div>
+						{:else}
+							<div class="small muted">{t('ai.llmReady', { model: ai.llm.model })}</div>
+						{/if}
+						{#if ai.llm.running}
+							<div class="small">{t('ai.llmRunning', { done: ai.llm.done, total: ai.llm.total })}</div>
+						{/if}
+					</div>
+				</div>
+
+				<div class="row">
+					<button class="secondary" onclick={train} disabled={aiBusy}>{t('ai.train')}</button>
+					<button class="secondary" onclick={recategorize} disabled={aiBusy}>{t('ai.recategorize')}</button>
+				</div>
+			{/if}
+		{/if}
+	</section>
+
+	<section class="card">
+		<h2>{t('settings.users')}</h2>
+		<table class="users">
+			<tbody>
+				{#each users as u (u.id)}
+					<tr>
+						<td>
+							<span class="user">
+								<span class="av">{initials(u.display_name)}</span>
+								<span class="who">
+									<strong class="truncate" title={u.display_name}>{u.display_name}</strong>
+									<span class="muted small truncate" title="@{u.username}">@{u.username}</span>
+								</span>
+								{#if u.is_admin}<span class="badge accent">Admin</span>{/if}
+							</span>
+						</td>
+						<td class="amount">
+							{#if data.me?.is_admin && u.id !== data.me.id}<button class="link small" onclick={() => deleteUser(u)}>
+									{t('settings.deleteUser')}
+								</button>{/if}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+		{#if data.me?.is_admin}
+			<form class="row" style="margin-top: 1rem" onsubmit={addUser}>
+				<label>{t('common.name')} <input bind:value={newUser.display_name} required /></label>
+				<label>{t('auth.username')} <input bind:value={newUser.username} required pattern="[A-Za-z0-9._\-]+" /></label>
+				<label>
+					{t('auth.password')}
+					<PasswordInput bind:value={newUser.password} minlength={8} required autocomplete="new-password" />
+				</label>
+				<Checkbox bind:checked={newUser.is_admin} class="admin">Admin</Checkbox>
+				<button>{t('settings.createUser')}</button>
+			</form>
+		{/if}
+	</section>
+
+	<section class="card">
+		<h2>{t('settings.changePassword')}</h2>
+		<form class="row" onsubmit={changePassword}>
+			<label>
+				{t('settings.currentPassword')}
+				<PasswordInput bind:value={pw.current_password} required autocomplete="current-password" />
+			</label>
+			<label>
+				{t('settings.newPassword')}
+				<PasswordInput bind:value={pw.new_password} minlength={8} required autocomplete="new-password" />
+			</label>
+			<button>{t('settings.change')}</button>
+		</form>
+	</section>
+</div>
 
 <style>
+	/* Forms and text stay readable on very wide screens */
+	.readable {
+		max-width: 60rem;
+	}
 	/* Let the name cell take the remaining width and shrink instead of widening the table */
 	.users td:first-child {
 		width: 100%;

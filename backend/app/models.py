@@ -59,7 +59,9 @@ class BudgetShift(str, enum.Enum):
 
 
 class RuleField(str, enum.Enum):
-    payee = "payee"
+    payee = "payee"  # counterparty, any direction
+    recipient = "recipient"  # counterparty, outgoing only (amount < 0)
+    sender = "sender"  # counterparty, incoming only (amount > 0)
     purpose = "purpose"
     any = "any"  # payee or purpose
 

@@ -129,7 +129,7 @@
 		apply: true
 	});
 	let fieldOptions = $derived<SelectOption<Rule['field']>[]>(
-		(['payee', 'purpose', 'any'] as const).map((value) => ({ value, label: fieldLabel(value) }))
+		(['payee', 'recipient', 'sender', 'purpose', 'any'] as const).map((value) => ({ value, label: fieldLabel(value) }))
 	);
 	let matchOptions = $derived<SelectOption<Rule['match_type']>[]>(
 		(['contains', 'equals', 'starts_with', 'regex'] as const).map((value) => ({ value, label: matchLabel(value) }))
@@ -139,7 +139,7 @@
 	function openRule() {
 		if (!tx) return;
 		rule = {
-			field: tx.payee ? 'payee' : 'purpose',
+			field: tx.payee ? (Number(tx.amount) > 0 ? 'sender' : 'payee') : 'purpose',
 			match_type: 'contains',
 			pattern: '',
 			category_id: tx.category_id ?? tx.suggested_category_id,
@@ -161,7 +161,21 @@
 		if (!tx) return false;
 		const pattern = rule.pattern.trim();
 		if (!pattern) return false;
-		const texts = rule.field === 'payee' ? [tx.payee] : rule.field === 'purpose' ? [tx.purpose] : [tx.payee, tx.purpose];
+		const amount = Number(tx.amount);
+		const texts =
+			rule.field === 'recipient'
+				? amount < 0
+					? [tx.payee]
+					: []
+				: rule.field === 'sender'
+					? amount > 0
+						? [tx.payee]
+						: []
+					: rule.field === 'payee'
+						? [tx.payee]
+						: rule.field === 'purpose'
+							? [tx.purpose]
+							: [tx.payee, tx.purpose];
 		const norm = (s: string) => s.split(/\s+/).filter(Boolean).join(' ').toLocaleLowerCase('de');
 		return texts.some((text) => {
 			if (rule.match_type === 'regex') {

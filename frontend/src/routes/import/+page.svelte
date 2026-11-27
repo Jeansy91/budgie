@@ -90,121 +90,127 @@
 	const bankNames = $derived(formats.map((f) => f.name.replace(/ \(.*\)$/, '')).filter((n, i, a) => a.indexOf(n) === i));
 </script>
 
-<div class="page-head">
-	<div>
-		<span class="eyebrow">{t('import.eyebrow')}</span>
-		<h1>{t('import.title')}</h1>
-		<p>{t('import.intro')}</p>
+<div class="readable">
+	<div class="page-head">
+		<div>
+			<span class="eyebrow">{t('import.eyebrow')}</span>
+			<h1>{t('import.title')}</h1>
+			<p>{t('import.intro')}</p>
+		</div>
 	</div>
-</div>
 
-<BankSync onsynced={loadAccounts} />
+	<BankSync onsynced={loadAccounts} />
 
-<h2 class="section first">{t('import.csvTitle')}</h2>
-<p class="muted small hint">
-	{t('import.csvHint', { banks: bankNames.join(', ') })}
-</p>
+	<h2 class="section first">{t('import.csvTitle')}</h2>
+	<p class="muted small hint">
+		{t('import.csvHint', { banks: bankNames.join(', ') })}
+	</p>
 
-<label
-	class="drop"
-	class:dragging
-	class:busy
-	ondragover={(e) => {
-		e.preventDefault();
-		dragging = true;
-	}}
-	ondragleave={() => (dragging = false)}
-	ondrop={(e) => {
-		e.preventDefault();
-		dragging = false;
-		if (e.dataTransfer?.files) upload(e.dataTransfer.files);
-	}}
->
-	<span class="icon"><Upload size={26} /></span>
-	<strong>{busy ? t('import.importing') : t('import.drop')}</strong>
-	<span class="muted">{t('import.orClick')}</span>
-	<input
-		bind:this={input}
-		type="file"
-		accept=".csv,text/csv"
-		multiple
-		onchange={(e) => e.currentTarget.files && upload(e.currentTarget.files)}
-		disabled={busy}
-	/>
-</label>
-
-<div class="target">
-	<span class="muted">{t('import.into')}</span>
-	<Select options={accountOptions} bind:value={accountId} label={t('common.account')} />
-</div>
-
-{#if pending.length}
-	{#key pending[0].file}
-		<CsvMapping
-			filename={pending[0].file.name}
-			preview={pending[0].preview}
-			{busy}
-			onsubmit={importMapped}
-			oncancel={() => (pending = pending.slice(1))}
+	<label
+		class="drop"
+		class:dragging
+		class:busy
+		ondragover={(e) => {
+			e.preventDefault();
+			dragging = true;
+		}}
+		ondragleave={() => (dragging = false)}
+		ondrop={(e) => {
+			e.preventDefault();
+			dragging = false;
+			if (e.dataTransfer?.files) upload(e.dataTransfer.files);
+		}}
+	>
+		<span class="icon"><Upload size={26} /></span>
+		<strong>{busy ? t('import.importing') : t('import.drop')}</strong>
+		<span class="muted">{t('import.orClick')}</span>
+		<input
+			bind:this={input}
+			type="file"
+			accept=".csv,text/csv"
+			multiple
+			onchange={(e) => e.currentTarget.files && upload(e.currentTarget.files)}
+			disabled={busy}
 		/>
-	{/key}
-{/if}
+	</label>
 
-{#each results as r, i (i)}
-	{#if r.error}
-		<div class="error"><CircleAlert size={18} /> <span><strong class="break-anywhere">{r.name}:</strong> {r.error}</span></div>
-	{:else if r.result}
-		<div class="card result">
-			<span class="ok-icon"><Check size={18} /></span>
-			<div class="info">
-				<strong class="file"><MiddleTruncate text={r.name} /></strong>
-				{#if r.result.format_name}<span class="badge">{r.result.format_name}</span>{/if}
-				{#if r.result.account_created}<span class="badge accent">{t('import.newAccount')}</span>{/if}
-				<div class="stats">
-					<span><b>{r.result.rows_imported}</b> {t('import.new')}</span>
-					<span><b>{r.result.rows_duplicate}</b> {t('import.duplicate')}</span>
-					<span><b>{r.result.rows_categorized}</b> {t('import.byRule')}</span>
+	<div class="target">
+		<span class="muted">{t('import.into')}</span>
+		<Select options={accountOptions} bind:value={accountId} label={t('common.account')} />
+	</div>
+
+	{#if pending.length}
+		{#key pending[0].file}
+			<CsvMapping
+				filename={pending[0].file.name}
+				preview={pending[0].preview}
+				{busy}
+				onsubmit={importMapped}
+				oncancel={() => (pending = pending.slice(1))}
+			/>
+		{/key}
+	{/if}
+
+	{#each results as r, i (i)}
+		{#if r.error}
+			<div class="error"><CircleAlert size={18} /> <span><strong class="break-anywhere">{r.name}:</strong> {r.error}</span></div>
+		{:else if r.result}
+			<div class="card result">
+				<span class="ok-icon"><Check size={18} /></span>
+				<div class="info">
+					<strong class="file"><MiddleTruncate text={r.name} /></strong>
+					{#if r.result.format_name}<span class="badge">{r.result.format_name}</span>{/if}
+					{#if r.result.account_created}<span class="badge accent">{t('import.newAccount')}</span>{/if}
+					<div class="stats">
+						<span><b>{r.result.rows_imported}</b> {t('import.new')}</span>
+						<span><b>{r.result.rows_duplicate}</b> {t('import.duplicate')}</span>
+						<span><b>{r.result.rows_categorized}</b> {t('import.byRule')}</span>
+					</div>
 				</div>
+				<a class="go" href="/transactions?uncategorized=1">{t('import.categorize')} →</a>
 			</div>
-			<a class="go" href="/transactions?uncategorized=1">{t('import.categorize')} →</a>
+		{/if}
+	{/each}
+
+	{#if profiles.length}
+		<h2 class="section">{t('import.profiles')}</h2>
+		<div class="profiles">
+			{#each profiles as p (p.id)}
+				<span class="profile">
+					<span class="break-anywhere">{p.name}</span>
+					<button class="ghost small" onclick={() => removeProfile(p)} aria-label={t('import.deleteProfile', { name: p.name })}>
+						{t('common.delete')}
+					</button>
+				</span>
+			{/each}
 		</div>
 	{/if}
-{/each}
 
-{#if profiles.length}
-	<h2 class="section">{t('import.profiles')}</h2>
-	<div class="profiles">
-		{#each profiles as p (p.id)}
-			<span class="profile">
-				<span class="break-anywhere">{p.name}</span>
-				<button class="ghost small" onclick={() => removeProfile(p)} aria-label={t('import.deleteProfile', { name: p.name })}>
-					{t('common.delete')}
-				</button>
-			</span>
-		{/each}
-	</div>
-{/if}
-
-{#if accounts.length}
-	<h2 class="section">{t('import.accounts')}</h2>
-	<div class="accounts">
-		{#each accounts as a (a.id)}
-			<div class="card acc">
-				<span class="bank"><Landmark size={20} /></span>
-				<div class="who">
-					<strong class="clamp-2" title={a.name}>{a.name}</strong>
-					<span class="muted small">{a.iban ? iban(a.iban) : t('import.noIban')}</span>
+	{#if accounts.length}
+		<h2 class="section">{t('import.accounts')}</h2>
+		<div class="accounts">
+			{#each accounts as a (a.id)}
+				<div class="card acc">
+					<span class="bank"><Landmark size={20} /></span>
+					<div class="who">
+						<strong class="clamp-2" title={a.name}>{a.name}</strong>
+						<span class="muted small">{a.iban ? iban(a.iban) : t('import.noIban')}</span>
+					</div>
+					<div class="bal">
+						<span class="amount">{a.balance === null ? '–' : money(a.balance)}</span>
+						<span class="muted small">{t('transactions.count', { count: a.transaction_count })}</span>
+					</div>
 				</div>
-				<div class="bal">
-					<span class="amount">{a.balance === null ? '–' : money(a.balance)}</span>
-					<span class="muted small">{t('transactions.count', { count: a.transaction_count })}</span>
-				</div>
-			</div>
-		{/each}
-	</div>
-{/if}
+			{/each}
+		</div>
+	{/if}
+</div>
 
 <style>
+	/* Forms and text stay readable on very wide screens */
+	.readable {
+		max-width: 72rem;
+	}
 	.drop {
 		position: relative;
 		display: flex;
